@@ -1,0 +1,29 @@
+.home-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.additional-content {
+  min-height: calc(100vh - 100px);
+  width: 100%;
+  padding: 4rem 1rem;
+  background-color: #f3f4f6;
+}
+
+.additional-content-inner {
+  max-width: 896px;
+  margin: 0 auto;
+}
+
+.additional-content h2 {
+  font-size: 1.875rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 1.5rem;
+}
+
+.additional-content p {
+  font-size: 1.125rem;
+  color: #4b5563;
+  margin-bottom: 1rem;
+}
