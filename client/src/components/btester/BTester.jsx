@@ -9,10 +9,9 @@ const BTester = () => {
     setLoading(true);
     setError(null);
     setResponse(null);
-
+    console.log(import.meta.env.VITE_API_URL);
     try {
-      // Replace with your actual backend endpoint
-      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/test`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/test`, {
         method: "GET", // or 'POST', depending on your backend
         headers: {
           "Content-Type": "application/json",

@@ -28,7 +28,7 @@ const Tracker = () => {
     };
 
     // Fetch IP address from backend
-    fetch(`${import.meta.env.VITE_SERVER_URL}/api/ip`)
+    fetch(`${import.meta.env.VITE_API_URL}/api/ip`)
       .then((res) => res.json())
       .then((data) => {
         setIpAddress(data.ip);
