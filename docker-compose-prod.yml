@@ -1,27 +1,27 @@
 services:
-  postgres:
-    container_name: database
-    ports:
-      - '5431:5432'
-    image: postgres
-    environment:
-      POSTGRES_USER: '${POSTGRES_USER}'
-      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - ./docker_test_db:/var/lib/postgresql/data
-    healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'",
-        ]
-      interval: 5s
-      timeout: 60s
-      retries: 5
-      start_period: 80s
-    networks:
-      - app-network
+  # postgres:
+  #   container_name: database
+  #   ports:
+  #     - '5431:5432'
+  #   image: postgres
+  #   environment:
+  #     POSTGRES_USER: '${POSTGRES_USER}'
+  #     POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #   volumes:
+  #     - ./docker_test_db:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test:
+  #       [
+  #         'CMD-SHELL',
+  #         "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'",
+  #       ]
+  #     interval: 5s
+  #     timeout: 60s
+  #     retries: 5
+  #     start_period: 80s
+  #   networks:
+  #     - app-network
 
   server:
     container_name: server
@@ -32,13 +32,15 @@ services:
       - '7999:8000'
     #command: bash -c "npx prisma migrate reset --force && npm start"
     command: bash -c "npm start"
-    environment:
-      - NODE_ENV=development
-      - DATABASE_URL=postgresql://john_doe:john.doe@postgres:5432/docker_test_db?schema=public
-      - PORT=8000
-    depends_on:
-      postgres:
-        condition: service_healthy
+    volumes:
+      - truenas-media:/app/media
+    # environment:
+    #   - NODE_ENV=development
+    #   - DATABASE_URL=postgresql://john_doe:john.doe@postgres:5432/docker_test_db?schema=public
+    #   - PORT=8000
+    # depends_on:
+    #   postgres:
+    #     condition: service_healthy
     networks:
       - app-network
 
@@ -54,6 +56,13 @@ services:
       - server
     networks:
       - app-network
+volumes:
+  truenas-media:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/aidensrocks/test/media
 networks:
   app-network:
     driver: bridge

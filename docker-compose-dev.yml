@@ -1,27 +1,28 @@
 services:
-  postgres:
-    container_name: database
-    ports:
-      - '5431:5432'
-    image: postgres
-    environment:
-      POSTGRES_USER: '${POSTGRES_USER}'
-      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - ./docker_test_db:/var/lib/postgresql/data
-    healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'",
-        ]
-      interval: 5s
-      timeout: 60s
-      retries: 5
-      start_period: 80s
-    networks:
-      - app-network
+  # postgres:
+  #   container_name: database
+  #   ports:
+  #     - '5431:5432'
+  #   image: postgres
+  #   environment:
+  #     POSTGRES_USER: '${POSTGRES_USER}'
+  #     POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #   volumes:
+  #     - ./docker_test_db:/var/lib/postgresql/data
+  #     #- truenas-sql:/var/lib/postgresql/data # Mount TrueNAS sql folder
+  #   healthcheck:
+  #     test:
+  #       [
+  #         'CMD-SHELL',
+  #         "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'",
+  #       ]
+  #     interval: 5s
+  #     timeout: 60s
+  #     retries: 5
+  #     start_period: 80s
+  #   networks:
+  #     - app-network
   server:
     container_name: server
     build:
@@ -38,9 +39,10 @@ services:
     volumes:
       - ./server:/app
       - /app/node_modules
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - truenas-media:/app/media
+    # depends_on:
+    #   postgres:
+    #     condition: service_healthy
     networks:
       - app-network
   client:
@@ -54,10 +56,18 @@ services:
     volumes:
       - ./client:/app
       - /app/node_modules
+      - truenas-media:/app/media
     depends_on:
       - server
     networks:
       - app-network
+volumes:
+  truenas-media:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/aidensrocks/test/media
 networks:
   app-network:
     driver: bridge

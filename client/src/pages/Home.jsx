@@ -1,11 +1,10 @@
-import backgroundImage from "../assets/background2.jpeg";
 import BkgImage from "../components/bkgimage/BkgImage";
 import "./Home.css";
 
 function Home() {
+  const backgroundImage = "/media/background2.jpeg";
   return (
     <div className="home-container">
-      {/* Hero section with background image and scroll icon */}
       <BkgImage
         backgroundImage={backgroundImage}
         scrollTargetSelector=".additional-content"

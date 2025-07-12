@@ -5,6 +5,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const HTTP_STATUS = require('./constants/httpStatus');
 const prisma = require('./config/database');
+const path = require('path');
 dotenv.config();
 app.use(cors());
 
@@ -118,6 +119,8 @@ router.get(`/api/test`, async (req, res) => {
   console.log('CAlled TESTING');
   res.json('TEST AGAIN');
 });
+
+app.use('/media', express.static(path.join(__dirname, 'media')));
 
 app.use('/', router);
 
