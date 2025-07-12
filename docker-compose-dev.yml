@@ -34,7 +34,7 @@ services:
     volumes:
       - ./server:/app
       - /app/node_modules
-      - truenas-media:/server/media
+      - truenas-media:/app/media
     # depends_on:
     #   postgres:
     #     condition: service_healthy

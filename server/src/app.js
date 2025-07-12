@@ -5,8 +5,8 @@ const router = express.Router();
 const cors = require('cors');
 app.use(cors());
 
-// Serve static files from /server/media at /media route
-app.use('/media', express.static('/server/media'));
+// Serve static files from /app/media at /media route
+app.use('/media', express.static('/app/media'));
 
 router.get(`/api/test`, async (req, res) => {
   console.log('CAlled TESTING');
