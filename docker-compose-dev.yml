@@ -24,7 +24,6 @@ services:
   #   networks:
   #     - app-network
   server:
-    container_name: server
     build:
       context: ./server
       dockerfile: docker/Dockerfile.dev
@@ -32,14 +31,10 @@ services:
       - '7999:8000'
     #command: bash -c "npx prisma migrate reset --force && npm run dev"
     command: bash -c "npm run dev"
-    environment:
-      - NODE_ENV=development
-      - DATABASE_URL=postgresql://john_doe:john.doe@postgres:5432/docker_test_db?schema=public
-      - PORT=8000
     volumes:
       - ./server:/app
       - /app/node_modules
-      - truenas-media:/app/media
+      - truenas-media:/server/media
     # depends_on:
     #   postgres:
     #     condition: service_healthy
@@ -56,7 +51,6 @@ services:
     volumes:
       - ./client:/app
       - /app/node_modules
-      - truenas-media:/app/media
     depends_on:
       - server
     networks:
