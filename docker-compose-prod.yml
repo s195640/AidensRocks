@@ -1,25 +1,25 @@
 services:
-  # postgres:
-  #   container_name: database
-  #   env_file:
-  #     - prod.env
-  #   ports:
-  #     - '5431:5432'
-  #   image: postgres
-  #   environment:
-  #     POSTGRES_USER: ${DB_USER}
-  #     POSTGRES_PASSWORD: ${DB_PASSWORD}
-  #     POSTGRES_DB: ${DB_NAME}
-  #   volumes:
-  #     - truenas-sql:/var/lib/postgresql/data
-  #   healthcheck:
-  #     test: ['CMD-SHELL', "sh -c 'pg_isready -U ${DB_USER} -d ${DB_NAME}'"]
-  #     interval: 5s
-  #     timeout: 60s
-  #     retries: 5
-  #     start_period: 80s
-  #   networks:
-  #     - app-network
+  postgres:
+    container_name: database
+    env_file:
+      - prod.env
+    ports:
+      - '5431:5432'
+    image: postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - truenas-sql:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', "sh -c 'pg_isready -U ${DB_USER} -d ${DB_NAME}'"]
+      interval: 5s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+    networks:
+      - app-network
   server:
     container_name: server
     env_file:
@@ -33,9 +33,9 @@ services:
     command: bash -c "npm start"
     volumes:
       - truenas-media:/app/media
-    # depends_on:
-    #   postgres:
-    #     condition: service_healthy
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - app-network
 
