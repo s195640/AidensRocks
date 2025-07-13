@@ -3,7 +3,6 @@ import "./App.css";
 import BTester from "./components/btester/BTester.jsx";
 import Footer from "./components/footer/Footer.jsx";
 import NavBar from "./components/navbar/Navbar";
-import Tracker from "./components/tracker/Tracker.jsx";
 import Home from "./pages/Home.jsx";
 import Page1 from "./pages/Page1.jsx";
 import Page2 from "./pages/Page2.jsx";
@@ -20,7 +19,7 @@ function App() {
         <Route path="/page3" element={<Page3 />} />
       </Routes>
       <Footer />
-      <Tracker />
+      {/* <Tracker /> */}
       <BTester />
     </div>
   );
