@@ -1,11 +1,39 @@
 const express = require('express');
 const { Pool } = require('pg');
 const path = require('path');
+const fs = require('fs').promises;
 const app = express();
 const router = express.Router();
 const cors = require('cors');
 app.use(cors());
 require('dotenv').config();
+
+// Write file to truenas-media volume
+router.post('/api/write-file', async (req, res) => {
+  const { filename, content } = req.body;
+  try {
+    // Sanitize filename to prevent path traversal
+    const safeFilename = path.basename(filename);
+    const filePath = path.join('/app/media', safeFilename);
+    await fs.writeFile(filePath, content);
+    res.json({ message: 'File written successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to write file: ' + error.message });
+  }
+});
+
+// Read file from truenas-media volume
+router.get('/api/read-file/:filename', async (req, res) => {
+  try {
+    // Sanitize filename to prevent path traversal
+    const safeFilename = path.basename(req.params.filename);
+    const filePath = path.join('/app/media', safeFilename);
+    const content = await fs.readFile(filePath, 'utf-8');
+    res.json({ content });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to read file: ' + error.message });
+  }
+});
 
 const pool = new Pool({
   user: process.env.DB_USER,
