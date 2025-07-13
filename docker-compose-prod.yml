@@ -73,13 +73,13 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /mnt/aidensrocks/prod/sql/certs
+      device: /mnt/aidensrocks/prod/ssl/certs
   truenas-private:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /mnt/aidensrocks/prod/sql/private
+      device: /mnt/aidensrocks/prod/ssl/private
 networks:
   app-network:
     driver: bridge
