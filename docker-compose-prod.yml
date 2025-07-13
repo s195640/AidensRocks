@@ -23,8 +23,8 @@ services:
     build:
       context: ./server
       dockerfile: docker/Dockerfile.prod
-    ports:
-      - '7999:8000'
+    # ports:
+    #   - '7999:8000'
     #command: bash -c "npx prisma migrate reset --force && npm start"
     command: bash -c "npm start"
     volumes:
@@ -41,13 +41,14 @@ services:
       context: ./client
       dockerfile: docker/Dockerfile.prod
     command: bash -c "npm run preview"
-    ports:
-      - '4172:4173'
+    # ports:
+    #   - '4172:4173'
     depends_on:
       - server
     networks:
       - app-network
   nginx:
+    container_name: nginx
     image: nginx:latest
     ports:
       - '80:80'
