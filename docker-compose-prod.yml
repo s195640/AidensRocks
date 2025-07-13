@@ -11,7 +11,7 @@ services:
     volumes:
       - truenas-sql:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', "sh -c 'pg_isready -U $$DB_USER} -d $$DB_NAME'"]
+      test: ['CMD-SHELL', "sh -c 'pg_isready -U $$DB_USER -d $$DB_NAME'"]
       interval: 5s
       timeout: 60s
       retries: 5
