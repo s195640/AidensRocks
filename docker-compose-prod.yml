@@ -47,6 +47,18 @@ services:
       - server
     networks:
       - app-network
+  nginx:
+    image: nginx:latest
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - client
+      - server
+    networks:
+      - app-network
 volumes:
   truenas-media:
     driver: local
