@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useState } from "react";
 
 const BTester = () => {
@@ -10,26 +11,43 @@ const BTester = () => {
     setError(null);
     setResponse(null);
     console.log(import.meta.env.VITE_API_URL);
+
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/test`, {
-        method: "GET", // or 'POST', depending on your backend
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP error! Status: ${res.status}`);
-      }
-
-      const data = await res.json();
-      setResponse(data);
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/test`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      setResponse(response.data);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+  //   try {
+  //     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/test`, {
+  //       method: "GET", // or 'POST', depending on your backend
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //     });
+
+  //     if (!res.ok) {
+  //       throw new Error(`HTTP error! Status: ${res.status}`);
+  //     }
+
+  //     const data = await res.json();
+  //     setResponse(data);
+  //   } catch (err) {
+  //     setError(err.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <div>

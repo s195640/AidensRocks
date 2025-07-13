@@ -1,28 +1,23 @@
 services:
-  # postgres:
-  #   container_name: database
-  #   ports:
-  #     - '5431:5432'
-  #   image: postgres
-  #   environment:
-  #     POSTGRES_USER: '${POSTGRES_USER}'
-  #     POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
-  #     POSTGRES_DB: ${POSTGRES_DB}
-  #   volumes:
-  #     - ./docker_test_db:/var/lib/postgresql/data
-  #     #- truenas-sql:/var/lib/postgresql/data # Mount TrueNAS sql folder
-  #   healthcheck:
-  #     test:
-  #       [
-  #         'CMD-SHELL',
-  #         "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'",
-  #       ]
-  #     interval: 5s
-  #     timeout: 60s
-  #     retries: 5
-  #     start_period: 80s
-  #   networks:
-  #     - app-network
+  postgres:
+    container_name: database
+    ports:
+      - '5431:5432'
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: OmegaA..1154
+      POSTGRES_DB: aidensrocks
+    volumes:
+      - truenas-sql:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', "sh -c 'pg_isready -U postgres -d aidensrocks'"]
+      interval: 5s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+    networks:
+      - app-network
   server:
     build:
       context: ./server
@@ -35,9 +30,9 @@ services:
       - ./server:/app
       - /app/node_modules
       - truenas-media:/app/media
-    # depends_on:
-    #   postgres:
-    #     condition: service_healthy
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - app-network
   client:
@@ -62,6 +57,18 @@ volumes:
       type: none
       o: bind
       device: /mnt/aidensrocks/test/media
+  truenas-sql:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/aidensrocks/test/sql
+  sql-create:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./create_test_db
 networks:
   app-network:
     driver: bridge

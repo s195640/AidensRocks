@@ -1,17 +1,68 @@
 const express = require('express');
+const { Pool } = require('pg');
 const path = require('path');
 const app = express();
 const router = express.Router();
 const cors = require('cors');
 app.use(cors());
 
+// PostgreSQL connection configuration
+const pool = new Pool({
+  user: 'postgres',
+  host: '192.168.1.50',
+  database: 'aidensrocks',
+  password: 'OmegaA..1154',
+  port: 5431,
+});
+
 // Serve static files from /app/media at /media route
 app.use('/media', express.static('/app/media'));
+
+console.log('Express version:', require('express/package.json').version);
+app.use(express.json());
+app.use((req, res, next) => {
+  console.log('Raw body:', req.body);
+  next();
+});
+
+router.post('/api/test', (req, res) => {
+  console.log('POST /api/test - Body:', req.body);
+  res.json({ body: req.body });
+});
+
+// Get row count
+router.get('/api/testdata/count', async (req, res) => {
+  try {
+    console.log('COUNT');
+    const result = await pool.query('SELECT COUNT(*) FROM testdata');
+    res.json({ count: parseInt(result.rows[0].count) });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Add new row
+router.post('/api/testdata', async (req, res) => {
+  console.log('POST /api/test - Body:', req.body);
+  const { comment, date } = req.body;
+  try {
+    await pool.query('INSERT INTO testdata (comment, date) VALUES ($1, $2)', [
+      comment,
+      date,
+    ]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error adding row:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
 
 router.get(`/api/test`, async (req, res) => {
   console.log('CAlled TESTING');
   res.json('TEST AGAIN');
 });
+
 router.get(`/api/ip`, async (req, res) => {
   console.log('calling ip address lookup');
   const ip =
@@ -40,7 +91,6 @@ router.get('/api/location', (req, res) => {
 });
 
 app.use('/', router);
-// Start server
 const PORT = 8000;
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
