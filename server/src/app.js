@@ -3,13 +3,12 @@ const { Pool } = require('pg');
 const path = require('path');
 const fs = require('fs').promises;
 const app = express();
-const router = express.Router();
 const cors = require('cors');
 app.use(cors());
 require('dotenv').config();
 
 // Write file to truenas-media volume
-router.post('/api/write-file', async (req, res) => {
+app.post('/api/write-file', async (req, res) => {
   const { filename, content } = req.body;
   try {
     // Sanitize filename to prevent path traversal
@@ -23,7 +22,7 @@ router.post('/api/write-file', async (req, res) => {
 });
 
 // Read file from truenas-media volume
-router.get('/api/read-file/:filename', async (req, res) => {
+app.get('/api/read-file/:filename', async (req, res) => {
   try {
     // Sanitize filename to prevent path traversal
     const safeFilename = path.basename(req.params.filename);
@@ -53,13 +52,13 @@ app.use((req, res, next) => {
   next();
 });
 
-router.post('/api/test', (req, res) => {
+app.post('/api/test', (req, res) => {
   console.log('POST /api/test - Body:', req.body);
   res.json({ body: req.body });
 });
 
 // Get row count
-router.get('/api/testdata/count', async (req, res) => {
+app.get('/api/testdata/count', async (req, res) => {
   try {
     console.log('COUNT');
     const result = await pool.query('SELECT COUNT(*) FROM testdata');
@@ -71,7 +70,7 @@ router.get('/api/testdata/count', async (req, res) => {
 });
 
 // Add new row
-router.post('/api/testdata', async (req, res) => {
+app.post('/api/testdata', async (req, res) => {
   console.log('POST /api/test - Body:', req.body);
   const { comment, date } = req.body;
   try {
@@ -86,12 +85,12 @@ router.post('/api/testdata', async (req, res) => {
   }
 });
 
-router.get(`/api/test`, async (req, res) => {
+app.get(`/api/test`, async (req, res) => {
   console.log('CAlled TESTING');
   res.json('TEST AGAIN');
 });
 
-router.get(`/api/ip`, async (req, res) => {
+app.get(`/api/ip`, async (req, res) => {
   console.log('calling ip address lookup');
   const ip =
     req.headers['x-forwarded-for']?.split(',')[0].trim() ||
@@ -100,7 +99,7 @@ router.get(`/api/ip`, async (req, res) => {
   res.json({ ip });
 });
 
-router.get('/api/location', (req, res) => {
+app.get('/api/location', (req, res) => {
   // Get client IP (Note: req.ip may need adjustment in production, e.g., behind proxies)
   const ip = req.ip === '::1' ? '127.0.0.1' : req.ip; // Handle localhost
   const geo = geoip.lookup(ip);
@@ -118,7 +117,7 @@ router.get('/api/location', (req, res) => {
   }
 });
 
-app.use('/', router);
+// app.use('/', router);
 const PORT = 8000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running at http://localhost:${PORT}`);
