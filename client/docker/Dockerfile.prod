@@ -1,11 +1,11 @@
-FROM node:18
-ARG VITE_API_URL=http://75.81.221.38:7999
-ENV VITE_API_URL=$VITE_API_URL
+# Build stage
+FROM node:18 AS build
 WORKDIR /app
-COPY public/ /app/public
-COPY src/ /app/src
-COPY index.html /app/
-COPY package.json /app/
-COPY vite.config.js /app/
+COPY package.json package-lock.json* ./
 RUN npm install
+COPY . .
 RUN npm run build
+
+# Production stage
+FROM nginx:stable-alpine
+COPY --from=build /app/dist /usr/share/nginx/html
