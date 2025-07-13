@@ -13,7 +13,5 @@ ENV DB_NAME=$DB_NAME
 
 WORKDIR /app
 COPY src/ /app/src
-COPY prisma/ /app/prisma
 COPY package.json /app
 RUN npm install
-RUN npx prisma generate

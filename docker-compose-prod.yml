@@ -23,9 +23,6 @@ services:
     build:
       context: ./server
       dockerfile: docker/Dockerfile.prod
-    # ports:
-    #   - '7999:8000'
-    #command: bash -c "npx prisma migrate reset --force && npm start"
     command: bash -c "npm start"
     volumes:
       - truenas-media:/app/media
@@ -34,15 +31,12 @@ services:
         condition: service_healthy
     networks:
       - app-network
-
   client:
     container_name: client
     build:
       context: ./client
       dockerfile: docker/Dockerfile.prod
     command: bash -c "npm run preview"
-    # ports:
-    #   - '4172:4173'
     depends_on:
       - server
     networks:

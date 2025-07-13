@@ -23,10 +23,6 @@ services:
     build:
       context: ./server
       dockerfile: docker/Dockerfile.dev
-    ports:
-      - '7999:8000'
-    #command: bash -c "npx prisma migrate reset --force && npm run dev"
-    command: bash -c "npm run dev"
     volumes:
       - ./server:/app
       - /app/node_modules
@@ -41,13 +37,23 @@ services:
     build:
       context: ./client
       dockerfile: docker/Dockerfile.dev
-    command: bash -c "npm run dev -- --host"
-    ports:
-      - '5172:5173'
     volumes:
       - ./client:/app
       - /app/node_modules
     depends_on:
+      - server
+    networks:
+      - app-network
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - client
       - server
     networks:
       - app-network

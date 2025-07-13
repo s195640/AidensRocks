@@ -7,11 +7,10 @@ const TestFile = () => {
   const [fileContent, setFileContent] = useState("");
   const [message, setMessage] = useState("");
 
-  const API_URL = import.meta.env.VITE_API_URL;
-
   const writeFile = async () => {
     try {
-      const response = await axios.post(`${API_URL}/api/write-file`, {
+      console.log(`${filename} :: ${comment}`);
+      const response = await axios.post(`/api/write-file`, {
         filename,
         content: comment,
       });
@@ -23,7 +22,7 @@ const TestFile = () => {
 
   const readFile = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/read-file/${filename}`);
+      const response = await axios.get(`/api/read-file/${filename}`);
       setFileContent(response.data.content);
       setMessage("File read successfully");
     } catch (error) {

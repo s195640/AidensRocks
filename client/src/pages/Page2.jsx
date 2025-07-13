@@ -5,7 +5,7 @@ function Page2() {
     <div style={{ padding: "80px 20px", textAlign: "center" }}>
       <TestFile />
       <h1>Page 2</h1>
-      <p>This is the content for Page 2.</p>
+      <p>This is the content for Page 2!</p>
     </div>
   );
 }

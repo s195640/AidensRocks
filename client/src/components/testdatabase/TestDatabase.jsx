@@ -10,16 +10,14 @@ const TestDataComponent = () => {
 
   // Function to fetch total number of rows
   const handleRead = async () => {
+    console.log("here");
     setLoading(true);
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/testdata/count`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await axios.get(`/api/testdata/count`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
       setRowCount(response.data.count);
       setMessage(`Total rows: ${response.data.count}`);
     } catch (err) {
@@ -40,7 +38,7 @@ const TestDataComponent = () => {
     setLoading(true);
     try {
       await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/testdata`,
+        `/api/testdata`,
         {
           comment,
           date: new Date().toISOString(),

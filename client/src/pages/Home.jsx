@@ -2,9 +2,7 @@ import BkgImage from "../components/bkgimage/BkgImage";
 import "./Home.css";
 
 function Home() {
-  const backgroundImage = `${
-    import.meta.env.VITE_API_URL
-  }/media/background2.jpeg`;
+  const backgroundImage = `/media/background2.jpeg`;
 
   return (
     <div className="home-container">

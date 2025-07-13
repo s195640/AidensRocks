@@ -7,6 +7,23 @@ const cors = require('cors');
 app.use(cors());
 require('dotenv').config();
 
+const pool = new Pool({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
+});
+
+// Serve static files from /app/media at /media route
+app.use('/media', express.static('/app/media'));
+
+app.use(express.json());
+app.use((req, res, next) => {
+  console.log('Raw body:', req.body);
+  next();
+});
+
 // Write file to truenas-media volume
 app.post('/api/write-file', async (req, res) => {
   const { filename, content } = req.body;
@@ -32,29 +49,6 @@ app.get('/api/read-file/:filename', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Failed to read file: ' + error.message });
   }
-});
-
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
-});
-
-// Serve static files from /app/media at /media route
-app.use('/media', express.static('/app/media'));
-
-console.log('Express version:', require('express/package.json').version);
-app.use(express.json());
-app.use((req, res, next) => {
-  console.log('Raw body:', req.body);
-  next();
-});
-
-app.post('/api/test', (req, res) => {
-  console.log('POST /api/test - Body:', req.body);
-  res.json({ body: req.body });
 });
 
 // Get row count
@@ -86,8 +80,8 @@ app.post('/api/testdata', async (req, res) => {
 });
 
 app.get(`/api/test`, async (req, res) => {
-  console.log('CAlled TESTING');
-  res.json('TEST AGAIN');
+  console.log('Called Testing');
+  res.json('TEST AGAIN! Again');
 });
 
 app.get(`/api/ip`, async (req, res) => {
