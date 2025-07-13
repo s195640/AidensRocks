@@ -13,14 +13,11 @@ const BTester = () => {
     console.log(import.meta.env.VITE_API_URL);
 
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/test`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await axios.get(`/api/test`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
       setResponse(response.data);
     } catch (err) {
       setError(err.message);
