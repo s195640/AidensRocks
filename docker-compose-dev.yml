@@ -1,19 +1,17 @@
 services:
   postgres:
     container_name: database
-    env_file:
-      - test.env
     ports:
       - '5431:5432'
     image: postgres
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: $DB_USER
+      POSTGRES_PASSWORD: $DB_PASSWORD
+      POSTGRES_DB: $DB_NAME
     volumes:
       - truenas-sql:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', "sh -c 'pg_isready -U ${DB_USER} -d ${DB_NAME}'"]
+      test: ['CMD-SHELL', "sh -c 'pg_isready -U postgres -d aidensrocks'"]
       interval: 5s
       timeout: 60s
       retries: 5
@@ -22,8 +20,6 @@ services:
       - app-network
   server:
     container_name: server
-    env_file:
-      - test.env
     build:
       context: ./server
       dockerfile: docker/Dockerfile.dev
@@ -42,8 +38,6 @@ services:
       - app-network
   client:
     container_name: client
-    env_file:
-      - test.env
     build:
       context: ./client
       dockerfile: docker/Dockerfile.dev
