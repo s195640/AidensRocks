@@ -37,7 +37,7 @@ services:
     container_name: web
     build:
       context: ./client
-      dockerfile: Dockerfile.prod
+      dockerfile: docker/Dockerfile.prod
     ports:
       - '80:80'
       - '443:443'
