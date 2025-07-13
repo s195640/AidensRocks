@@ -18,6 +18,7 @@ services:
       start_period: 80s
     networks:
       - app-network
+
   server:
     container_name: server
     build:
@@ -31,30 +32,23 @@ services:
         condition: service_healthy
     networks:
       - app-network
-  client:
-    container_name: client
+
+  web:
+    container_name: web
     build:
       context: ./client
-      dockerfile: docker/Dockerfile.prod
-    depends_on:
-      - server
-    networks:
-      - app-network
-  nginx:
-    container_name: nginx
-    image: nginx:latest
+      dockerfile: Dockerfile.prod
     ports:
       - '80:80'
       - '443:443'
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - truenas-certs:/etc/ssl/certs:ro
       - truenas-private:/etc/ssl/private:ro
     depends_on:
-      - client
       - server
     networks:
       - app-network
+
 volumes:
   truenas-media:
     driver: local
@@ -62,24 +56,28 @@ volumes:
       type: none
       o: bind
       device: /mnt/aidensrocks/prod/media
+
   truenas-sql:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: /mnt/aidensrocks/prod/sql
+
   truenas-certs:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: /mnt/aidensrocks/prod/ssl/certs
+
   truenas-private:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: /mnt/aidensrocks/prod/ssl/private
+
 networks:
   app-network:
     driver: bridge
