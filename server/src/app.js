@@ -5,14 +5,14 @@ const app = express();
 const router = express.Router();
 const cors = require('cors');
 app.use(cors());
+require('dotenv').config();
 
-// PostgreSQL connection configuration
 const pool = new Pool({
-  user: 'postgres',
-  host: '192.168.1.50',
-  database: 'aidensrocks',
-  password: 'OmegaA..1154',
-  port: 5431,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
 });
 
 // Serve static files from /app/media at /media route
