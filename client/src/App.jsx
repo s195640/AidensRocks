@@ -4,14 +4,14 @@ import BTester from "./components/btester/BTester.jsx";
 import Footer from "./components/footer/Footer.jsx";
 import NavBar from "./components/navbar/Navbar";
 import QRRedirect from "./components/qrredirect/QRRedirect.jsx";
-import Home from "./pages/Home.jsx";
+import Home from "./pages/home/Home.jsx";
 import Page1 from "./pages/Page1.jsx";
 import Page2 from "./pages/Page2.jsx";
 import Page3 from "./pages/Page3.jsx";
 import ShareYourRock from "./pages/ShareYourRock.jsx";
 
 const navItems = [
-  { path: "/", label: "Aiden's Rocks" },
+  { path: "/", label: "Home" },
   { path: "/share-your-rock", label: "Share Your Rock" },
   { path: "/page1", label: "Page 1" },
   { path: "/page2", label: "Page 2" },
