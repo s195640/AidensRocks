@@ -4,8 +4,9 @@ const BkgImage = ({ backgroundImage, children, scrollTargetSelector }) => {
   const scrollToTarget = () => {
     const targetSection = document.querySelector(scrollTargetSelector);
     if (targetSection) {
-      const topPosition = targetSection.offsetTop;
-      window.scrollTo({ top: topPosition, behavior: "smooth" });
+      // const topPosition = targetSection.offsetTop;
+      // window.scrollTo({ top: topPosition, behavior: "smooth" });
+      targetSection.scrollIntoView({ behavior: "smooth" });
     }
   };
 

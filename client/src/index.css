@@ -17,4 +17,5 @@ html {
 html,
 body {
   -webkit-tap-highlight-color: transparent;
+  font-family: "Lexend", Arial, sans-serif;
 }

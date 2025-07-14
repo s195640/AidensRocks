@@ -1,86 +1,65 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import "./NavbarStyles.css";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import "./Navbar.css";
 
-const Navbar = () => {
+const Navbar = ({ navItems }) => {
   const [clicked, setClicked] = useState(false);
-  const [page, setPage] = useState(0);
-  const handleClick = () => {
-    setClicked((o) => !o);
-  };
+  const location = useLocation();
+  const navRef = useRef();
+  const buttonRef = useRef();
 
-  const pageClass = () => {
-    return "nave-link";
-  };
+  // Close menu when clicking outside nav and toggle button
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        clicked &&
+        navRef.current &&
+        !navRef.current.contains(e.target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target)
+      ) {
+        setClicked(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [clicked]);
+
+  // Lock body scroll when menu is open
+  useEffect(() => {
+    document.body.classList.toggle("nav-open", clicked);
+  }, [clicked]);
+
+  const toggleMenu = () => setClicked((prev) => !prev);
+  const closeMenu = () => setClicked(false);
+
   return (
-    <>
-      <nav>
-        <Link
-          to="/"
-          onClick={() => {
-            setClicked(false);
-            setPage(0);
-          }}
-        >
-          <img src="/Artboard.svg" alt="Logo" width="60" height="60" />
-        </Link>
-        <div>
-          <ul id="navbar" className={clicked ? "#navbar active" : "#navbar"}>
-            <li>
-              <Link
-                to="/"
-                className={page === 0 ? "active" : ""}
-                onClick={() => {
-                  setClicked(false);
-                  setPage(0);
-                }}
-              >
-                Aiden's Rocks
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/page1"
-                className={page === 1 ? "active" : ""}
-                onClick={() => {
-                  setClicked(false);
-                  setPage(1);
-                }}
-              >
-                Page 1
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/page2"
-                className={page === 2 ? "active" : ""}
-                onClick={() => {
-                  setClicked(false);
-                  setPage(2);
-                }}
-              >
-                Page 2
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/page3"
-                className={page === 3 ? "active" : ""}
-                onClick={() => {
-                  setClicked(false);
-                  setPage(3);
-                }}
-              >
-                Page 3
-              </Link>
-            </li>
-          </ul>
-        </div>
-        <div id="mobile" onClick={handleClick}>
-          <i id="bar" className={clicked ? "fas fa-times" : "fas fa-bars"}></i>
-        </div>
-      </nav>
-    </>
+    <nav>
+      <Link to="/" onClick={closeMenu}>
+        <img src="/Artboard.svg" alt="Logo" width="60" height="60" />
+      </Link>
+
+      <ul id="navbar" ref={navRef} className={clicked ? "active" : ""}>
+        {navItems.map(({ path, label }) => (
+          <li key={path}>
+            <Link
+              to={path}
+              className={location.pathname === path ? "active" : ""}
+              onClick={closeMenu}
+            >
+              <span>{label}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      <div id="mobile" ref={buttonRef} onClick={toggleMenu}>
+        <i className={clicked ? "fas fa-times" : "fas fa-bars"}></i>
+      </div>
+    </nav>
   );
 };
 

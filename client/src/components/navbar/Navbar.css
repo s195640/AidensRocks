@@ -1,0 +1,159 @@
+:root {
+  --nav-bg-color: rgba(0, 0, 0, 0.7);
+  --nav-link-color: #fff;
+  --nav-link-hover-color: rgba(110, 183, 216, 1);
+  --nav-link-hover-bg: rgba(255, 255, 255, 0.05);
+}
+
+/* NAVBAR BASE STYLES */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--nav-bg-color);
+  padding: 0rem 3.125rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(8px);
+  z-index: 20;
+}
+
+/* NAVBAR LINKS */
+#navbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  transition: transform 0.3s ease-in-out;
+}
+
+#navbar li {
+  list-style: none;
+  position: relative;
+}
+
+#navbar li a {
+  position: relative;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: var(--nav-link-color);
+  padding: 0 0.2rem;
+  display: inline-block;
+  cursor: pointer;
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+/* Underline only on the span on hover and active with animation */
+#navbar li a span {
+  display: inline-block;
+  position: relative;
+}
+
+#navbar li a span::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 0;
+  height: 4px;
+  border-radius: 5px;
+  background: var(--nav-link-hover-color);
+  transition: width 0.3s ease;
+}
+
+#navbar li a span::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 0;
+  height: 4px;
+  border-radius: 5px;
+  background: var(--nav-link-hover-color);
+  transition: width 0.3s ease;
+}
+
+/* On hover, animate the underline */
+#navbar li a span:hover::after {
+  width: 100%;
+}
+
+/* When active, always show full underline immediately */
+#navbar li a.active span::after {
+  width: 100%;
+  transition: none; /* no animation for active */
+}
+
+/* Hover and active states */
+#navbar li a:hover,
+#navbar li a.active {
+  color: var(--nav-link-hover-color);
+  background-color: var(--nav-link-hover-bg);
+  border-radius: 6px;
+}
+
+/* MOBILE MENU ICON */
+#mobile {
+  display: none;
+  cursor: pointer;
+  z-index: 30;
+  position: relative;
+}
+
+#mobile i {
+  color: var(--nav-link-color);
+  font-size: 1.5rem;
+}
+
+/* MOBILE MENU STYLES */
+@media screen and (max-width: 769px) {
+  nav {
+    height: 50px;
+  }
+
+  #navbar {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    position: fixed;
+    top: 50px;
+    right: 0;
+    width: 80vw;
+    max-width: 300px;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 40px 60px rgba(0, 0, 0, 0.7);
+    padding: 1.5rem 0 0 0.625rem;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+    z-index: 20;
+  }
+
+  #navbar.active {
+    transform: translateX(0);
+  }
+
+  #navbar li {
+    margin-bottom: 1.5rem;
+  }
+
+  #mobile {
+    display: block;
+  }
+
+  #mobile i {
+    font-size: 24px;
+  }
+
+  body.nav-open {
+    overflow: hidden;
+  }
+
+  #navbar li a span::after {
+    transition: none;
+  }
+}

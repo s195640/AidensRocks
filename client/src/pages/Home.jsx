@@ -1,7 +1,7 @@
 import BkgImage from "../components/bkgimage/BkgImage";
 import "./Home.css";
 
-function Home() {
+const Home = () => {
   const backgroundImage = `/media/background2.jpeg`;
 
   return (
@@ -35,6 +35,6 @@ function Home() {
       </div>
     </div>
   );
-}
+};
 
 export default Home;
