@@ -2,7 +2,7 @@ import BkgImage from "../../components/bkgimage/BkgImage";
 import "./Home.css";
 
 const Home = () => {
-  const backgroundImage = `/media/background2.jpeg`;
+  const backgroundImage = `/media/bkg/homebkg1.jpg`;
 
   return (
     <div className="home-container">

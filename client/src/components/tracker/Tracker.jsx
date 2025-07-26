@@ -1,13 +1,12 @@
-import { useEffect, useState } from "react";
+import axios from "axios";
+import { useEffect } from "react";
+import { useARContext } from "../../context/ARContext";
 
 const Tracker = () => {
-  const [geoData, setGeoData] = useState(null);
-  const [ipAddress, setIpAddress] = useState("Unknown");
+  const { setTrackerData } = useARContext();
 
-  // Function to collect and log client data
   useEffect(() => {
-    // Basic browser and device info
-    const clientData = {
+    const baseClientData = {
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent,
       platform: navigator.platform,
@@ -25,49 +24,52 @@ const Tracker = () => {
       cookiesEnabled: navigator.cookieEnabled,
       onlineStatus: navigator.onLine,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      ipAddress: "Unknown",
+      geo: null,
     };
 
-    // Fetch IP address from backend
-    fetch(`${import.meta.env.VITE_API_URL}/api/ip`)
-      .then((res) => res.json())
-      .then((data) => {
-        setIpAddress(data.ip);
-        clientData.ipAddress = data.ip; // Update clientData with IP
-        console.log("Client Data:", clientData);
-      })
-      .catch((error) => {
+    const finalizeAndStore = (clientData) => {
+      setTrackerData(clientData);
+      console.log("Tracker data stored in ARContext:", clientData);
+    };
+
+    const fetchIpAndGeo = async () => {
+      const clientData = { ...baseClientData };
+
+      try {
+        const response = await axios.get("/api/ip");
+        clientData.ipAddress = response.data.ip || "Unknown";
+      } catch (error) {
         console.error("Error fetching IP:", error);
-        console.log("Client Data:", clientData);
-      });
+      }
 
-    // Log basic data
-    // console.log("Client Data:", clientData);
+      const handleFinalLog = () => finalizeAndStore(clientData);
 
-    // Geolocation (requires user permission)
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const geo = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-          };
-          setGeoData(geo);
-          console.log("Geolocation:", geo);
-        },
-        (error) => {
-          console.error("Geolocation Error:", error.message);
-        }
-      );
-    } else {
-      console.log("Geolocation not supported by this browser.");
-    }
-    // Track page load event
-    console.log("Page Loaded:", window.location.pathname);
-    return () => {};
-  }, []); // Runs once on mount
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            clientData.geo = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+            };
+            handleFinalLog();
+          },
+          (error) => {
+            console.error("Geolocation error:", error.message);
+            handleFinalLog();
+          }
+        );
+      } else {
+        console.warn("Geolocation not supported");
+        handleFinalLog();
+      }
+    };
 
-  return <></>;
+    fetchIpAndGeo();
+  }, [setTrackerData]);
+
+  return null;
 };
 
 export default Tracker;

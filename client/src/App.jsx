@@ -8,7 +8,7 @@ import Home from "./pages/home/Home.jsx";
 import Page1 from "./pages/Page1.jsx";
 import Page2 from "./pages/Page2.jsx";
 import Page3 from "./pages/Page3.jsx";
-import ShareYourRock from "./pages/ShareYourRock.jsx";
+import ShareYourRock from "./pages/share-your-rock/ShareYourRock.jsx";
 
 const navItems = [
   { path: "/", label: "Home" },
@@ -31,7 +31,6 @@ function App() {
         <Route path="/share-your-rock" element={<ShareYourRock />} />
       </Routes>
       <Footer />
-      {/* <Tracker /> */}
       <BTester />
     </div>
   );

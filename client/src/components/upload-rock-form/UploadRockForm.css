@@ -1,0 +1,165 @@
+.upload-rock {
+  padding: 1rem;
+  position: relative;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+/* Dialog-style form */
+.rock-form {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 2rem;
+  z-index: 1000;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Mobile full-screen override */
+@media (max-width: 600px) {
+  .rock-form {
+    top: 0;
+    left: 0;
+    transform: none;
+    width: 100vw;
+    height: 100vh;
+    max-height: none;
+    border-radius: 0;
+    padding: 1rem 1rem 4.5rem; /* extra bottom padding for mobile */
+    box-sizing: border-box;
+  }
+
+  .rock-form h2 {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 2;
+    padding: 0.5rem 0;
+    margin: 0;
+  }
+}
+
+/* Button styling */
+.upload-btn,
+.submit-btn {
+  background-color: #007bff;
+  color: white;
+  padding: 0.6rem 1rem;
+  border: none;
+  cursor: pointer;
+  margin-top: 1rem;
+  border-radius: 6px;
+}
+
+/* Make submit button fixed size matching uploading button */
+.submit-btn {
+  min-width: 120px; /* fixed width */
+  height: 40px; /* fixed height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem; /* spacing between text and spinner */
+  margin-bottom: 1rem;
+}
+
+/* Focus outlines for accessibility */
+.rock-form input:focus,
+.rock-form textarea:focus,
+.rock-form button:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.image-preview {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.image-container {
+  position: relative;
+}
+
+.image-container img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.image-container button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: red;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+}
+
+.rock-form div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Label styling */
+.rock-form label {
+  font-weight: 500;
+  margin-bottom: 0.2rem;
+  text-align: left;
+}
+
+/* Input and textarea styling */
+.rock-form input[type="text"],
+.rock-form input[type="number"],
+.rock-form input[type="date"],
+.rock-form textarea,
+.rock-form input[type="file"] {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+/* Better spacing between sections */
+.rock-form > div {
+  margin-bottom: 1rem;
+}
+
+.spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
