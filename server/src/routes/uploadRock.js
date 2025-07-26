@@ -58,12 +58,18 @@ router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
 --- Tracking Info ---
 IP Address: ${tracker.ipAddress || 'unknown'}
 User Agent: ${tracker.userAgent || 'unknown'}
+Window: ${JSON.stringify(tracker.window) || 'unknown'}
+Screen: ${JSON.stringify(tracker.screen) || 'unknown'}
 Platform: ${tracker.platform || 'unknown'}
 Language: ${tracker.language || 'unknown'}
 Timezone: ${tracker.timezone || 'unknown'}
+Timestamp: ${tracker.timestamp || 'unknown'}
 Page URL: ${tracker.pageUrl || 'unknown'}
 Referrer: ${tracker.referrer || 'unknown'}
-Session ID: ${tracker.sessionId || 'unknown'}`;
+CookiesEnabled: ${tracker.cookiesEnabled || 'unknown'}
+Session ID: ${tracker.sessionId || 'unknown'}
+Geo: ${JSON.stringify(tracker.geo) || 'unknown'}
+`;
     } catch (err) {
       console.warn('Failed to parse trackerData:', err);
     }
