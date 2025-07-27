@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+
 require('dotenv').config();
 
 const app = express();
@@ -19,6 +20,7 @@ app.use('/api', require('./routes/uploadRock'));
 app.use('/api', require('./routes/fileSystem'));
 app.use('/api/testdata', require('./routes/testData'));
 app.use('/api', require('./routes/misc'));
+app.use('/api', require('./routes/rockCount'));
 
 // Health Check
 app.get('/health', (req, res) => res.send('OK'));

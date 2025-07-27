@@ -1,19 +1,16 @@
+// UploadRockForm.jsx
 import axios from "axios";
 import { useEffect, useRef, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { useARContext } from "../../context/ARContext";
 import "./UploadRockForm.css";
 
-const generateUUID = () =>
-  "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0,
-      v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-
-const UploadRockForm = () => {
+const UploadRockForm = ({ onClose }) => {
   const { trackerData, rValue } = useARContext();
 
-  const [showForm, setShowForm] = useState(false);
+  const [rockNumberQr] = useState(() =>
+    rValue && /^\d+$/.test(rValue) ? String(rValue) : ""
+  );
   const [rockNumber, setRockNumber] = useState(() =>
     rValue && /^\d+$/.test(rValue) ? String(rValue) : ""
   );
@@ -24,6 +21,7 @@ const UploadRockForm = () => {
   const [comment, setComment] = useState("");
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
+
   const fileInputRef = useRef(null);
   const firstInputRef = useRef(null);
 
@@ -33,7 +31,7 @@ const UploadRockForm = () => {
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     const filePreviews = files.map((file) => ({
-      id: generateUUID(),
+      id: uuidv4(),
       file,
       preview: URL.createObjectURL(file),
     }));
@@ -43,10 +41,8 @@ const UploadRockForm = () => {
   const removeImage = (idToRemove) => {
     const removed = images.find((img) => img.id === idToRemove);
     if (removed) URL.revokeObjectURL(removed.preview);
-
     const updated = images.filter((img) => img.id !== idToRemove);
     setImages(updated);
-
     if (fileInputRef.current) {
       fileInputRef.current.value = null;
     }
@@ -58,6 +54,7 @@ const UploadRockForm = () => {
 
     const formData = new FormData();
     formData.append("rockNumber", rockNumber);
+    formData.append("rockNumberQr", rockNumberQr);
     formData.append("location", location);
     formData.append("date", date);
     formData.append("comment", comment);
@@ -75,7 +72,7 @@ const UploadRockForm = () => {
       });
 
       alert("Rock submitted!");
-      setShowForm(false);
+      onClose();
       setRockNumber("");
       setLocation("");
       setDate(new Date().toISOString().split("T")[0]);
@@ -90,10 +87,6 @@ const UploadRockForm = () => {
     }
   };
 
-  const handleClose = () => {
-    setShowForm(false);
-  };
-
   useEffect(() => {
     return () => {
       images.forEach((img) => URL.revokeObjectURL(img.preview));
@@ -102,21 +95,19 @@ const UploadRockForm = () => {
 
   useEffect(() => {
     const handleKey = (e) => {
-      if (e.key === "Escape") handleClose();
+      if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (firstInputRef.current) {
+      firstInputRef.current.focus();
+    }
   }, []);
 
   useEffect(() => {
-    if (showForm && firstInputRef.current) {
-      firstInputRef.current.focus();
-    }
-  }, [showForm]);
-
-  useEffect(() => {
-    if (!showForm) return;
-
     const focusable = document.querySelectorAll(
       ".rock-form button, .rock-form input, .rock-form textarea"
     );
@@ -125,196 +116,174 @@ const UploadRockForm = () => {
 
     const trap = (e) => {
       if (e.key === "Tab") {
-        if (e.shiftKey) {
-          if (document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
-          }
-        } else {
-          if (document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-          }
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
         }
       }
     };
 
     document.addEventListener("keydown", trap);
     return () => document.removeEventListener("keydown", trap);
-  }, [showForm]);
+  }, []);
 
   return (
-    <div className="upload-rock">
-      <button
-        onClick={() => setShowForm((prev) => !prev)}
-        className="upload-btn"
+    <>
+      <div className="modal-backdrop" onClick={onClose} />
+      <form
+        onSubmit={handleSubmit}
+        className="rock-form"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="upload-rock-title"
+        onClick={(e) => e.stopPropagation()}
       >
-        Upload Your Rock
-      </button>
+        <h2 id="upload-rock-title" style={{ marginTop: 0 }}>
+          Upload Your Rock
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            top: "1rem",
+            right: "1rem",
+            background: "transparent",
+            border: "none",
+            fontSize: "1.5rem",
+            cursor: "pointer",
+            zIndex: 1100,
+          }}
+          aria-label="Close form"
+          disabled={loading}
+        >
+          ×
+        </button>
 
-      {showForm && (
-        <>
-          <div className="modal-backdrop" onClick={handleClose} />
-          <form
-            onSubmit={handleSubmit}
-            className="rock-form"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="upload-rock-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 id="upload-rock-title" style={{ marginTop: 0 }}>
-              Upload Your Rock
-            </h2>
-            <button
-              type="button"
-              onClick={handleClose}
-              style={{
-                position: "absolute",
-                top: "1rem",
-                right: "1rem",
-                background: "transparent",
-                border: "none",
-                fontSize: "1.5rem",
-                cursor: "pointer",
-                zIndex: 1100,
-              }}
-              aria-label="Close form"
-              disabled={loading}
-            >
-              ×
-            </button>
+        {/* Rock Number */}
+        <div>
+          <label>
+            Rock Number{" "}
+            <span style={{ fontWeight: "normal", color: "#888" }}>
+              (optional)
+            </span>
+          </label>
+          <input
+            type="number"
+            min="1"
+            value={rockNumber}
+            onChange={(e) => {
+              const value = parseInt(e.target.value, 10);
+              if (!isNaN(value) && value >= 1) {
+                setRockNumber(value);
+              } else if (e.target.value === "") {
+                setRockNumber("");
+              }
+            }}
+            ref={firstInputRef}
+            disabled={loading}
+          />
+        </div>
 
-            <div>
-              <label>
-                Rock Number{" "}
-                <span style={{ fontWeight: "normal", color: "#888" }}>
-                  (optional)
-                </span>
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={rockNumber}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value, 10);
-                  if (!isNaN(value) && value >= 1) {
-                    setRockNumber(value);
-                  } else if (e.target.value === "") {
-                    setRockNumber("");
-                  }
-                }}
-                ref={firstInputRef}
-                disabled={loading}
-              />
-            </div>
+        {/* Location */}
+        <div>
+          <label>
+            Location{" "}
+            <span style={{ fontWeight: "normal", color: "#888" }}>
+              (optional)
+            </span>
+          </label>
+          <input
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            disabled={loading}
+          />
+        </div>
 
-            <div>
-              <label>
-                Location{" "}
-                <span style={{ fontWeight: "normal", color: "#888" }}>
-                  (optional)
-                </span>
-              </label>
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                disabled={loading}
-              />
-            </div>
+        {/* Date */}
+        <div>
+          <label>Date</label>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            disabled={loading}
+          />
+        </div>
 
-            <div>
-              <label>Date</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                disabled={loading}
-              />
-            </div>
+        {/* Comment */}
+        <div>
+          <label>
+            Comment{" "}
+            <span style={{ fontWeight: "normal", color: "#888" }}>
+              (optional)
+            </span>
+          </label>
+          <textarea
+            rows={4}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            disabled={loading}
+          />
+        </div>
 
-            <div>
-              <label>
-                Comment{" "}
-                <span style={{ fontWeight: "normal", color: "#888" }}>
-                  (optional)
-                </span>
-              </label>
-              <textarea
-                rows={4}
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label>
-                Images{" "}
-                <span style={{ fontWeight: "normal", color: "#888" }}>
-                  (optional)
-                </span>
-              </label>
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleImageChange}
-                ref={fileInputRef}
-                disabled={loading}
-              />
-
-              <div className="image-preview">
-                {images.map((img) => (
-                  <div key={img.id} className="image-container">
-                    <img src={img.preview} alt="Image preview" />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(img.id)}
-                      disabled={loading}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              {images.length > 0 && (
-                <p
-                  style={{
-                    marginTop: "0.5rem",
-                    color: "#555",
-                    fontSize: "0.9rem",
-                  }}
+        {/* Images */}
+        <div>
+          <label>
+            Images{" "}
+            <span style={{ fontWeight: "normal", color: "#888" }}>
+              (optional)
+            </span>
+          </label>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleImageChange}
+            ref={fileInputRef}
+            disabled={loading}
+          />
+          <div className="image-preview">
+            {images.map((img) => (
+              <div key={img.id} className="image-container">
+                <img src={img.preview} alt="Preview" />
+                <button
+                  type="button"
+                  onClick={() => removeImage(img.id)}
+                  disabled={loading}
                 >
-                  {images.length} image{images.length !== 1 ? "s" : ""} selected
-                </p>
-              )}
-            </div>
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
 
-            <button
-              type="submit"
-              className="submit-btn"
-              disabled={!isSubmitEnabled}
-              style={{
-                opacity: isSubmitEnabled ? 1 : 0.5,
-                cursor: isSubmitEnabled ? "pointer" : "not-allowed",
-              }}
-            >
-              {loading ? (
-                <>
-                  Uploading
-                  <span className="spinner" />
-                </>
-              ) : (
-                "Submit"
-              )}
-            </button>
-          </form>
-        </>
-      )}
-    </div>
+        {/* Submit */}
+        <button
+          type="submit"
+          className="submit-btn"
+          disabled={!isSubmitEnabled}
+          style={{
+            opacity: isSubmitEnabled ? 1 : 0.5,
+            cursor: isSubmitEnabled ? "pointer" : "not-allowed",
+          }}
+        >
+          {loading ? (
+            <>
+              Uploading
+              <span className="spinner" />
+            </>
+          ) : (
+            "Submit"
+          )}
+        </button>
+      </form>
+    </>
   );
 };
 

@@ -1,9 +1,7 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useARContext } from "../../context/ARContext";
 
 export default function QRRedirect() {
-  const { rValue, setRValue } = useARContext();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -12,8 +10,9 @@ export default function QRRedirect() {
     const r = params.get("r");
 
     if (r) {
-      setRValue(r);
+      sessionStorage.setItem("rock_num_qr", r);
     }
+
     navigate("/");
   }, []);
 

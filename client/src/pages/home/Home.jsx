@@ -1,4 +1,5 @@
 import BkgImage from "../../components/bkgimage/BkgImage";
+import Counter from "../../components/counter/Counter";
 import "./Home.css";
 
 const Home = () => {
@@ -6,6 +7,7 @@ const Home = () => {
 
   return (
     <div className="home-container">
+      <Counter />
       <BkgImage
         backgroundImage={backgroundImage}
         scrollTargetSelector=".additional-content"

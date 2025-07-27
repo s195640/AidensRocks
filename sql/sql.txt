@@ -1,0 +1,78 @@
+CREATE TABLE Rock_Post_Summary (
+    rps_key SERIAL PRIMARY KEY,
+    rock_qr_number VARCHAR(50) NOT NULL,
+    rock_number VARCHAR(50) NOT NULL,
+    create_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    update_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    location VARCHAR(255),
+    date DATE,
+    comment TEXT,
+    upload_timestamp TIMESTAMP WITH TIME ZONE
+);
+
+CREATE TABLE Rock_Post_Image (
+    rpi_key SERIAL PRIMARY KEY,
+    rps_key INTEGER NOT NULL,
+    create_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    update_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    original_name VARCHAR(255) NOT NULL,
+    current_name VARCHAR(255) NOT NULL,
+    path VARCHAR(512) NOT NULL,
+    size BIGINT,
+    CONSTRAINT fk_rps_key FOREIGN KEY (rps_key) 
+        REFERENCES Rock_Post_Summary (rps_key) 
+        ON DELETE CASCADE
+);
+
+CREATE TABLE Rock_Post_Tracking (
+    rpt_key SERIAL PRIMARY KEY,
+    rps_key INTEGER NOT NULL,
+    create_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    update_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    "window" VARCHAR(100),
+    screen VARCHAR(100),
+    platform VARCHAR(100),
+    language VARCHAR(50),
+    timezone VARCHAR(100),
+    timestamp TIMESTAMP WITH TIME ZONE,
+    page_url TEXT,
+    referrer TEXT,
+    cookies_enabled BOOLEAN,
+    session_id VARCHAR(100),
+    geo JSONB,
+    CONSTRAINT fk_rps_key FOREIGN KEY (rps_key) 
+        REFERENCES Rock_Post_Summary (rps_key) 
+        ON DELETE CASCADE
+);
+
+CREATE TABLE Rock_Count_Summary (
+    rcs_key SERIAL PRIMARY KEY,
+    rock_qr_number VARCHAR(50) NOT NULL,
+    create_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    update_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Rock_Count_Tracking (
+    rct_key SERIAL PRIMARY KEY,
+    rcs_key INTEGER NOT NULL,
+    create_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    update_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    "window" VARCHAR(100),
+    screen VARCHAR(100),
+    platform VARCHAR(100),
+    language VARCHAR(50),
+    timezone VARCHAR(100),
+    timestamp TIMESTAMP WITH TIME ZONE,
+    page_url TEXT,
+    referrer TEXT,
+    cookies_enabled BOOLEAN,
+    session_id VARCHAR(100),
+    geo JSONB,
+    CONSTRAINT fk_rcs_key FOREIGN KEY (rcs_key) 
+        REFERENCES Rock_Count_Summary (rcs_key) 
+        ON DELETE CASCADE
+);

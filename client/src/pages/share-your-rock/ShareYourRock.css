@@ -1,0 +1,22 @@
+/* ShareYourRock.css */
+
+.share-heading {
+  cursor: pointer;
+  transition: transform 0.2s ease, color 0.2s ease;
+  color: #ffffff;
+}
+
+.share-heading:hover,
+.share-heading:focus {
+  transform: scale(1.05);
+  color: rgba(110, 183, 216, 1);
+}
+
+.share-heading:active {
+  transform: scale(0.98);
+}
+
+.share-heading:focus {
+  outline: 2px dashed rgba(110, 183, 216, 1);
+  outline-offset: 4px;
+}

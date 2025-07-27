@@ -30,7 +30,6 @@ const Tracker = () => {
 
     const finalizeAndStore = (clientData) => {
       setTrackerData(clientData);
-      console.log("Tracker data stored in ARContext:", clientData);
     };
 
     const fetchIpAndGeo = async () => {
@@ -40,7 +39,7 @@ const Tracker = () => {
         const response = await axios.get("/api/ip");
         clientData.ipAddress = response.data.ip || "Unknown";
       } catch (error) {
-        console.error("Error fetching IP:", error);
+        // console.error("Error fetching IP:", error);
       }
 
       const handleFinalLog = () => finalizeAndStore(clientData);
@@ -56,12 +55,12 @@ const Tracker = () => {
             handleFinalLog();
           },
           (error) => {
-            console.error("Geolocation error:", error.message);
+            // console.error("Geolocation error:", error.message);
             handleFinalLog();
           }
         );
       } else {
-        console.warn("Geolocation not supported");
+        // console.warn("Geolocation not supported");
         handleFinalLog();
       }
     };

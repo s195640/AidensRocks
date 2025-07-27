@@ -3,8 +3,11 @@ import { createContext, useContext, useState } from "react";
 const ARContext = createContext(null);
 
 export const ARProvider = ({ children }) => {
-  const [rValue, setRValue] = useState(null);
-  const [trackerData, setTrackerData] = useState(null); // add this
+  const [rValue, setRValue] = useState(() => {
+    return sessionStorage.getItem("rock_num_qr") || null;
+  });
+
+  const [trackerData, setTrackerData] = useState(null);
 
   return (
     <ARContext.Provider
