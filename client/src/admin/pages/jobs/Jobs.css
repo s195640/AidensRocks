@@ -1,0 +1,20 @@
+.jobs-container {
+  padding: 80px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.jobs-container {
+  padding: 80px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.jobs-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 40px; /* space between each job component */
+  width: 100%;
+  align-items: center;
+}

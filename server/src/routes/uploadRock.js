@@ -36,8 +36,10 @@ router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
     const hasImages = files && files.length > 0;
     const timestamp = new Date().toISOString();
 
-    const baseDir = path.resolve('media', 'rocks', safeRockNumber, date, uuid);
-    await ensureDir(baseDir);
+    // Set up base paths
+    const rootDir = path.resolve('media', 'rocks', safeRockNumber, date, uuid);
+    const imageDir = path.join(rootDir, 'o_images');
+    await ensureDir(imageDir);
 
     const renamedImageNames = [];
     const imageMetadataLines = [];
@@ -76,7 +78,7 @@ router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
         const file = files[i];
         const ext = path.extname(file.originalname);
         const newName = `[${safeRockNumber}][${date}][${uuid}][${i + 1}]${ext}`;
-        const imagePath = path.join(baseDir, newName);
+        const imagePath = path.join(imageDir, newName);
         await fs.writeFile(imagePath, file.buffer);
         renamedImageNames.push(newName);
 
@@ -179,13 +181,13 @@ ${hasImages ? 'Images:\n' + imageMetadataLines.join('\n') : 'Images: none'}
 
 ${trackerInfo}`;
 
-    await fs.writeFile(path.join(baseDir, 'metadata.txt'), metadata, 'utf8');
+    await fs.writeFile(path.join(rootDir, 'metadata.txt'), metadata, 'utf8');
 
     await client.query('COMMIT');
 
     res.status(200).json({
       message: 'Rock uploaded and saved',
-      savedTo: baseDir,
+      savedTo: imageDir,
       images: renamedImageNames,
       rpsKey,
     });

@@ -3,7 +3,7 @@ import Counter from "../../components/counter/Counter";
 import "./Home.css";
 
 const Home = () => {
-  const backgroundImage = `/media/bkg/homebkg1.jpg`;
+  const backgroundImage = `/media/bkg/home_bkg.webp`;
 
   return (
     <div className="home-container">

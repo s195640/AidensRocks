@@ -1,0 +1,52 @@
+.create-images-box {
+  width: 80vw;
+  border: 2px solid #6eb7d8;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+  background-color: #f9f9f9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.create-images-box h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.create-images-box label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #444;
+  text-align: left;
+}
+
+.create-images-box input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 20px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.create-images-box button {
+  background-color: rgba(110, 183, 216, 1);
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.create-images-box button:hover {
+  background-color: rgba(90, 160, 190, 1);
+}
+
+.status-message {
+  margin-top: 20px;
+  font-weight: bold;
+}

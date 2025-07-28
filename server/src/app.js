@@ -21,6 +21,7 @@ app.use('/api', require('./routes/fileSystem'));
 app.use('/api/testdata', require('./routes/testData'));
 app.use('/api', require('./routes/misc'));
 app.use('/api', require('./routes/rockCount'));
+app.use('/api', require('./routes/createImages'));
 
 // Health Check
 app.get('/health', (req, res) => res.send('OK'));
