@@ -59,7 +59,7 @@ services:
       - DOMAINS=aidensrocks.com,www.aidensrocks.com
       - PROXIED=false
       - UPDATE_INTERVAL=30
-      - QUIET=0
+      - QUIET=1
       - IP6_PROVIDER=none
 
 volumes:
