@@ -56,7 +56,7 @@ services:
     network_mode: host
     environment:
       - CLOUDFLARE_API_TOKEN=_92Y5n8vMScmf6EArIG7sbiAZfVfpFcSGOpaI24u
-      - DOMAINS=aidensrocks.com
+      - DOMAINS=aidensrocks.com,www.aidensrocks.com
       - PROXIED=false
       - UPDATE_INTERVAL=300
       - QUIET=1
