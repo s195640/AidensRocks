@@ -60,7 +60,7 @@ services:
       - PROXIED=false
       - UPDATE_INTERVAL=30
       - QUIET=0
-      - IPV6=no
+      - IP6_PROVIDER=none
 
 volumes:
   truenas-media:
