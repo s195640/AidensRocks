@@ -58,8 +58,8 @@ services:
       - CLOUDFLARE_API_TOKEN=_92Y5n8vMScmf6EArIG7sbiAZfVfpFcSGOpaI24u
       - DOMAINS=aidensrocks.com,www.aidensrocks.com
       - PROXIED=false
-      - UPDATE_INTERVAL=300
-      - QUIET=1
+      - UPDATE_INTERVAL=30
+      - QUIET=0
       - IPV6=no
 
 volumes:
