@@ -41,7 +41,7 @@
     height: 100vh;
     max-height: none;
     border-radius: 0;
-    padding: 1rem 1rem 4.5rem; /* extra bottom padding for mobile */
+    padding: 1rem 1rem 7rem; /* extra bottom padding for mobile */
     box-sizing: border-box;
   }
 
@@ -134,17 +134,18 @@
 .rock-form input[type="text"],
 .rock-form input[type="number"],
 .rock-form input[type="date"],
+.rock-form input[type="email"],
 .rock-form textarea,
 .rock-form input[type="file"] {
-  padding: 0.5rem;
+  padding: 0.25rem;
   border: 1px solid #ccc;
   border-radius: 6px;
-  font-size: 1rem;
+  font-size: 0.8rem;
 }
 
 /* Better spacing between sections */
 .rock-form > div {
-  margin-bottom: 1rem;
+  margin-bottom: 0.1rem;
 }
 
 .spinner {

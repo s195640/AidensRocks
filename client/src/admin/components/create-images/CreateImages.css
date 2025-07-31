@@ -1,11 +1,12 @@
 .create-images-box {
-  width: 80vw;
+  width: 80vw; /* preserved */
   border: 2px solid #6eb7d8;
   padding: 30px;
   border-radius: 12px;
-  text-align: center;
+  text-align: center; /* keep this so the container and heading stay centered */
   background-color: #f9f9f9;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 0 auto;
 }
 
 .create-images-box h2 {
@@ -13,22 +14,49 @@
   color: #333;
 }
 
-.create-images-box label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: bold;
-  color: #444;
-  text-align: left;
+.form-container {
+  text-align: left; /* just this section is left-aligned inside the box */
+  max-width: 500px;
+  margin: 0 auto;
 }
 
-.create-images-box input {
+.form-group {
+  margin-bottom: 20px;
+}
+
+.create-images-box label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: bold;
+  color: #444;
+}
+
+.create-images-box input[type="text"] {
   width: 100%;
   padding: 10px;
-  margin-bottom: 20px;
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 6px;
   box-sizing: border-box;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.checkbox-row input[type="checkbox"] {
+  transform: scale(1.2);
+  cursor: pointer;
+}
+
+.checkbox-row label {
+  font-weight: 500;
+  color: #444;
+  cursor: pointer;
+  margin: 0;
 }
 
 .create-images-box button {
@@ -40,6 +68,7 @@
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  margin-top: 10px;
 }
 
 .create-images-box button:hover {
@@ -49,4 +78,5 @@
 .status-message {
   margin-top: 20px;
   font-weight: bold;
+  color: #333;
 }

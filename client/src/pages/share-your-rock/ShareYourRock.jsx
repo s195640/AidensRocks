@@ -16,9 +16,7 @@ const ShareYourRock = () => {
         backgroundImage={backgroundImage}
         scrollTargetSelector=".additional-content"
       >
-        <h1 className="share-heading" onClick={() => setShowForm(true)}>
-          Share Your Rock
-        </h1>
+        <h1 style={{ height: "50vh" }}>Share Your Rock</h1>
       </BkgImage>
 
       {showForm && <UploadRockForm onClose={() => setShowForm(false)} />}

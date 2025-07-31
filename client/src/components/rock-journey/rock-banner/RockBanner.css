@@ -1,0 +1,87 @@
+.rock-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 5px 9px;
+  background-color: #f9f9f9;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+.rock-image {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.rock-info {
+  flex: 1; /* take up the remaining horizontal space */
+  text-align: left; /* align text to the left */
+  font-size: 14px;
+  color: #333;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.rock-dialog {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dialog-header {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.dialog-rock-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.dialog-details {
+  width: 100%;
+  text-align: center;
+}
+
+.dialog-details button {
+  margin-top: 10px;
+  padding: 6px 12px;
+  border: none;
+  background-color: #444;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.date-text {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #666;
+  user-select: none;
+}

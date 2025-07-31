@@ -1,0 +1,98 @@
+.rocks-container {
+  padding: 1rem;
+  padding-top: 100px; /* Account for navbar height */
+}
+
+.rocks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.create-button {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.rocks-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rocks-table th,
+.rocks-table td {
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  text-align: left;
+}
+
+.rocks-table th {
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+
+.rock-thumb {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border: 1px solid #999;
+  border-radius: 4px;
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(80, 80, 80, 0.6);
+  z-index: 900;
+}
+
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  width: 300px;
+}
+
+.dialog label {
+  display: block;
+  margin-top: 1rem;
+  font-weight: bold;
+}
+
+.dialog input,
+.dialog select {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.dialog-buttons {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.dialog-buttons button {
+  padding: 0.5rem 1rem;
+  border: none;
+  background-color: #333;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}

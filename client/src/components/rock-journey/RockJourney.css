@@ -1,0 +1,40 @@
+/* src/components/RockJourney.css */
+
+.rock-journey-outer {
+  border: 2px solid #ccc;
+  border-radius: 12px;
+  padding: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.rock-journey-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+
+.scrolling-row {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.scroll-item {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 8px;
+  margin-bottom: 5px;
+}
+
+.rock-banner-wrapper {
+  width: 100%;
+}
+
+.rock-banner-wrapper > * {
+  width: 100%;
+}

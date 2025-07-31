@@ -7,13 +7,13 @@ const sharp = require('sharp');
 const router = express.Router();
 
 router.post('/create-images', async (req, res) => {
-  const { path } = req.body;
+  const { path, regenerate = false } = req.body;
 
   if (!path) {
     return res.status(400).json({ error: 'Missing path' });
   }
 
-  const validExtensions = ['.jpg', '.jpeg', '.png', '.bmp', '.tiff'];
+  const validExtensions = ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp'];
 
   try {
     const rootPath = pathModule.resolve(path);
@@ -24,7 +24,6 @@ router.post('/create-images', async (req, res) => {
         .json({ error: 'Provided path is not a directory.' });
     }
 
-    // Helper: Recursively find all folders named "o_images"
     async function findOImageFolders(dir) {
       const entries = await fs.readdir(dir, { withFileTypes: true });
       let result = [];
@@ -58,29 +57,55 @@ router.post('/create-images', async (req, res) => {
       const webPPath = pathModule.join(parentDir, 'webP_images');
       const smPath = pathModule.join(parentDir, 'sm_images');
 
-      if (fssync.existsSync(webPPath) || fssync.existsSync(smPath)) {
-        console.log(
-          `Skipping ${oImagesPath} (webP_images or sm_images already exist)`
-        );
-        skipped++;
-        continue;
+      const webPExists = fssync.existsSync(webPPath);
+      const smExists = fssync.existsSync(smPath);
+
+      if (webPExists || smExists) {
+        if (regenerate) {
+          if (webPExists)
+            await fs.rm(webPPath, { recursive: true, force: true });
+          if (smExists) await fs.rm(smPath, { recursive: true, force: true });
+          console.log(`Regenerating: ${oImagesPath}`);
+        } else {
+          console.log(`Skipping ${oImagesPath} (folders already exist)`);
+          skipped++;
+          continue;
+        }
       }
 
       await fs.mkdir(webPPath);
       await fs.mkdir(smPath);
 
-      const imageFiles = await fs.readdir(oImagesPath);
+      const imageFiles = (await fs.readdir(oImagesPath)).filter((file) => {
+        const ext = pathModule.extname(file).toLowerCase();
+        return validExtensions.includes(ext);
+      });
+
+      const isSingleImage = imageFiles.length === 1;
+      const targetSize = isSingleImage ? 300 : 150;
+
       const webPTasks = imageFiles.map(async (file) => {
         const ext = pathModule.extname(file).toLowerCase();
-        if (!validExtensions.includes(ext)) return;
-
         const inputPath = pathModule.join(oImagesPath, file);
-        const outputFilename = pathModule.parse(file).name + '.webp';
-        const webPOutput = pathModule.join(webPPath, outputFilename);
-        const smOutput = pathModule.join(smPath, outputFilename);
+        const baseName = pathModule.parse(file).name;
+        const webPFilename = baseName + '.webp';
+        const webPOutput = pathModule.join(webPPath, webPFilename);
+        const smOutput = pathModule.join(smPath, webPFilename);
 
-        await sharp(inputPath).toFormat('webp').toFile(webPOutput);
-        await sharp(webPOutput).resize({ width: 300 }).toFile(smOutput);
+        // Convert to webp (or copy if already .webp)
+        if (ext === '.webp') {
+          await fs.copyFile(inputPath, webPOutput);
+        } else {
+          await sharp(inputPath).rotate().toFormat('webp').toFile(webPOutput);
+        }
+
+        // Create square centered thumbnail
+        await sharp(webPOutput)
+          .resize(targetSize, targetSize, {
+            fit: 'cover',
+            position: 'center',
+          })
+          .toFile(smOutput);
       });
 
       await Promise.all(webPTasks);

@@ -22,6 +22,9 @@ app.use('/api/testdata', require('./routes/testData'));
 app.use('/api', require('./routes/misc'));
 app.use('/api', require('./routes/rockCount'));
 app.use('/api', require('./routes/createImages'));
+app.use('/api/users', require('./routes/users'));
+app.use('/api/rocks', require('./routes/rocks'));
+app.use('/api/rock-posts', require('./routes/rockPosts'));
 
 // Health Check
 app.get('/health', (req, res) => res.send('OK'));

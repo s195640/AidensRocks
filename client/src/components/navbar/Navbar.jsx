@@ -39,7 +39,7 @@ const Navbar = ({ navItems }) => {
   return (
     <nav>
       <Link to="/" onClick={closeMenu}>
-        <img src="/Artboard.svg" alt="Logo" width="60" height="60" />
+        <img src="/logo.webp" alt="Logo" width="60" height="60" />
       </Link>
 
       <ul id="navbar" ref={navRef} className={clicked ? "active" : ""}>

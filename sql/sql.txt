@@ -1,13 +1,56 @@
+/* Rock/Artist Details*/
+
+drop table Rock_Artist_Link;
+drop table Rock_Artist;
+drop table Rock_Catalog;
+
+CREATE TABLE Rock_Catalog (
+    rc_key SERIAL PRIMARY KEY,
+    rock_number INTEGER NOT NULL,
+    create_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    update_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT rock_number_unique UNIQUE (rock_number) -- Optional: Ensure rock_number is unique
+);
+
+CREATE TABLE Rock_Artist (
+    ra_key SERIAL PRIMARY KEY,
+    display_name VARCHAR(255) NOT NULL,
+    create_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    update_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT display_name_unique UNIQUE (display_name) -- Optional: Ensure display_name is unique
+);
+
+CREATE TABLE Rock_Artist_Link (
+    ral_key SERIAL PRIMARY KEY,
+    ra_key INTEGER NOT NULL,
+    rc_key INTEGER NOT NULL,
+    create_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    update_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_ra_key FOREIGN KEY (ra_key) REFERENCES Rock_Artist(ra_key) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_rc_key FOREIGN KEY (rc_key) REFERENCES Rock_Catalog(rc_key) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT unique_ra_rc UNIQUE (ra_key, rc_key) -- Optional: Prevent duplicate artist-catalog links
+);
+
+/* Rock Posts */
+
+drop table Rock_Post_Tracking;
+drop table Rock_Post_Image;
+drop table Rock_Post_Summary;
+
 CREATE TABLE Rock_Post_Summary (
     rps_key SERIAL PRIMARY KEY,
-    rock_qr_number VARCHAR(50) NOT NULL,
-    rock_number VARCHAR(50) NOT NULL,
+    rock_qr_number INTEGER NOT NULL,
+    rock_number INTEGER NOT NULL,
     create_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     update_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     location VARCHAR(255),
     date DATE,
     comment TEXT,
-    upload_timestamp TIMESTAMP WITH TIME ZONE
+    name VARCHAR(255),
+    email VARCHAR(255),
+    upload_timestamp TIMESTAMP WITH TIME ZONE,
+    uuid VARCHAR(50),
+    show BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE Rock_Post_Image (
@@ -17,8 +60,8 @@ CREATE TABLE Rock_Post_Image (
     update_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     original_name VARCHAR(255) NOT NULL,
     current_name VARCHAR(255) NOT NULL,
-    path VARCHAR(512) NOT NULL,
-    size BIGINT,
+    upload_order INTEGER,
+    show BOOLEAN DEFAULT FALSE,
     CONSTRAINT fk_rps_key FOREIGN KEY (rps_key) 
         REFERENCES Rock_Post_Summary (rps_key) 
         ON DELETE CASCADE
@@ -46,6 +89,12 @@ CREATE TABLE Rock_Post_Tracking (
         REFERENCES Rock_Post_Summary (rps_key) 
         ON DELETE CASCADE
 );
+
+
+/* COUNTER */
+drop table Rock_Count_Tracking;
+drop table Rock_Count_Summary;
+
 
 CREATE TABLE Rock_Count_Summary (
     rcs_key SERIAL PRIMARY KEY,

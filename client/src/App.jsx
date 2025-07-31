@@ -14,18 +14,21 @@ import { AuthProvider } from "./admin/context/AuthContext";
 import Admin from "./admin/pages/admin/Admin";
 import Jobs from "./admin/pages/jobs/Jobs.jsx";
 import Login from "./admin/pages/login/Login";
+import Rocks from "./admin/pages/rocks/Rocks.jsx";
+import Users from "./admin/pages/users/Users.jsx";
+import TrackTheRocks from "./pages/track-the-rocks/TrackTheRocks.jsx";
 
 const publicNavItems = [
   { path: "/", label: "Home" },
   { path: "/share-your-rock", label: "Share Your Rock" },
-  { path: "/page1", label: "Page 1" },
-  { path: "/page2", label: "Page 2" },
-  { path: "/page3", label: "Page 3" },
+  { path: "/track-the-rocks", label: "Track The Rocks" },
 ];
 
 const adminNavItems = [
   { path: "/admin", label: "Dashboard" },
   { path: "/admin/jobs", label: "Jobs" },
+  { path: "/admin/users", label: "Users" },
+  { path: "/admin/rocks", label: "Rocks" },
   { path: "/", label: "Exit Admin" },
 ];
 
@@ -44,6 +47,7 @@ function AppContent() {
         <Route path="/page3" element={<Page3 />} />
         <Route path="/qr" element={<QRRedirect />} />
         <Route path="/share-your-rock" element={<ShareYourRock />} />
+        <Route path="/track-the-rocks" element={<TrackTheRocks />} />
         <Route path="/login" element={<Login />} />
 
         {/* Admin Routes */}
@@ -60,6 +64,22 @@ function AppContent() {
           element={
             <PrivateRoute>
               <Jobs />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <PrivateRoute>
+              <Users />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/rocks"
+          element={
+            <PrivateRoute>
+              <Rocks />
             </PrivateRoute>
           }
         />

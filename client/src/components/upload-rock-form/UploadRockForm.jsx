@@ -21,6 +21,8 @@ const UploadRockForm = ({ onClose }) => {
   const [comment, setComment] = useState("");
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
 
   const fileInputRef = useRef(null);
   const firstInputRef = useRef(null);
@@ -55,6 +57,8 @@ const UploadRockForm = ({ onClose }) => {
     const formData = new FormData();
     formData.append("rockNumber", rockNumber);
     formData.append("rockNumberQr", rockNumberQr);
+    formData.append("name", name);
+    formData.append("email", email);
     formData.append("location", location);
     formData.append("date", date);
     formData.append("comment", comment);
@@ -187,7 +191,37 @@ const UploadRockForm = ({ onClose }) => {
             disabled={loading}
           />
         </div>
+        {/* Name */}
+        <div>
+          <label>
+            Name{" "}
+            <span style={{ fontWeight: "normal", color: "#888" }}>
+              (optional)
+            </span>
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={loading}
+          />
+        </div>
 
+        {/* Email */}
+        <div>
+          <label>
+            Email{" "}
+            <span style={{ fontWeight: "normal", color: "#888" }}>
+              (optional)
+            </span>
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
+          />
+        </div>
         {/* Location */}
         <div>
           <label>
@@ -220,7 +254,7 @@ const UploadRockForm = ({ onClose }) => {
           <label>
             Comment{" "}
             <span style={{ fontWeight: "normal", color: "#888" }}>
-              (optional)
+              (required)
             </span>
           </label>
           <textarea

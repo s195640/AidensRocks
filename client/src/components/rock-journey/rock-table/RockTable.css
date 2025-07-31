@@ -1,0 +1,10 @@
+/* src/components/RockTable.css */
+
+.rock-table {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 8px;
+  background-color: #f4f4f4;
+}

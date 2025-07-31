@@ -1,0 +1,60 @@
+.users-container {
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.new-user-button {
+  margin-bottom: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: auto;
+}
+
+.users-table th,
+.users-table td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: center;
+}
+
+.user-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.user-dialog-content {
+  background: white;
+  width: 400px;
+  margin: 100px auto;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.user-dialog-content label {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.user-dialog-content input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+}
+
+.dialog-buttons {
+  margin-top: 20px;
+}
+
+.dialog-buttons button {
+  margin-right: 10px;
+  padding: 8px 16px;
+}

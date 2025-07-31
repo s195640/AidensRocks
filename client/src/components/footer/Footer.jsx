@@ -6,14 +6,26 @@ const Footer = () => {
       <div className="footer-content-inner">
         <ul>
           <li>
-            <div className="icon-circle">
-              <i className="fa-brands fa-facebook"></i>
-            </div>
+            <a
+              href="https://www.facebook.com/AidensRocks"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <div className="icon-circle">
+                <i className="fa-brands fa-facebook"></i>
+              </div>
+            </a>
           </li>
           <li>
-            <div className="icon-circle">
-              <i className="fa-brands fa-instagram"></i>
-            </div>
+            <a
+              href="https://www.instagram.com/AidensRocks"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <div className="icon-circle">
+                <i className="fa-brands fa-instagram"></i>
+              </div>
+            </a>
           </li>
         </ul>
       </div>
