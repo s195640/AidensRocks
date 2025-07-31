@@ -49,17 +49,17 @@ services:
     networks:
       - app-network
 
-cloudflare-ddns:
-  image: favonia/cloudflare-ddns:1
-  container_name: cloudflare-ddns
-  restart: always
-  network_mode: host
-  environment:
-    - CLOUDFLARE_API_TOKEN=_92Y5n8vMScmf6EArIG7sbiAZfVfpFcSGOpaI24u
-    - DOMAINS=aidensrocks.com
-    - PROXIED=false
-    - UPDATE_INTERVAL=300
-    - QUIET=1
+  cloudflare-ddns:
+    image: favonia/cloudflare-ddns:1
+    container_name: cloudflare-ddns
+    restart: always
+    network_mode: host
+    environment:
+      - CLOUDFLARE_API_TOKEN=_92Y5n8vMScmf6EArIG7sbiAZfVfpFcSGOpaI24u
+      - DOMAINS=aidensrocks.com
+      - PROXIED=false
+      - UPDATE_INTERVAL=300
+      - QUIET=1
 
 volumes:
   truenas-media:
