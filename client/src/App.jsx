@@ -16,12 +16,14 @@ import Jobs from "./admin/pages/jobs/Jobs.jsx";
 import Login from "./admin/pages/login/Login";
 import Rocks from "./admin/pages/rocks/Rocks.jsx";
 import Users from "./admin/pages/users/Users.jsx";
+import Sudc from "./pages/sudc/Sudc.jsx";
 import TrackTheRocks from "./pages/track-the-rocks/TrackTheRocks.jsx";
 
 const publicNavItems = [
   { path: "/", label: "Home" },
   { path: "/share-your-rock", label: "Share Your Rock" },
   { path: "/track-the-rocks", label: "Track The Rocks" },
+  { path: "/sudc", label: "SUDC" },
 ];
 
 const adminNavItems = [
@@ -48,6 +50,7 @@ function AppContent() {
         <Route path="/qr" element={<QRRedirect />} />
         <Route path="/share-your-rock" element={<ShareYourRock />} />
         <Route path="/track-the-rocks" element={<TrackTheRocks />} />
+        <Route path="/sudc" element={<Sudc />} />
         <Route path="/login" element={<Login />} />
 
         {/* Admin Routes */}

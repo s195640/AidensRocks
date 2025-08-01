@@ -1,0 +1,57 @@
+.sudc-page {
+  min-height: 100vh;
+  background-color: #0a1a3c; /* Dark blue */
+  color: white;
+}
+
+.sudc-banner-wrapper {
+  margin-top: 65px;
+  display: flex;
+  justify-content: center;
+  background-color: white; /* Ensures white margins outside image */
+}
+
+@media (max-width: 768px) {
+  .sudc-banner-wrapper {
+    margin-top: 45px; /* For mobile */
+  }
+}
+
+.sudc-banner {
+  max-height: 200px;
+  width: auto;
+  aspect-ratio: 3 / 1; /* Adjust to your image's real aspect ratio */
+  background-image: url("/media/bkg/sudc_banner.webp");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 100%;
+  max-width: 1000px; /* Optional: cap the width so it doesn’t stretch indefinitely */
+}
+
+.sudc-container {
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+  margin-top: 20px;
+}
+
+.sudc-link {
+  color: #ffd700;
+  text-decoration: underline;
+}
+
+.sudc-link:hover {
+  color: #fff;
+  text-decoration: none;
+}
+
+/* Outer <ul> list */
+.sudc-container > ul {
+  padding-left: 2em; /* Tabbed in once */
+}
+
+/* Nested <ul> inside a list item */
+.sudc-container ul ul {
+  padding-left: 2em; /* Tabbed in again */
+}

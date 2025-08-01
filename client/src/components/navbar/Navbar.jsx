@@ -39,7 +39,7 @@ const Navbar = ({ navItems }) => {
   return (
     <nav>
       <Link to="/" onClick={closeMenu}>
-        <img src="/logo.webp" alt="Logo" width="60" height="60" />
+        <img src="/logo.webp" alt="Logo" className="nav-logo" />
       </Link>
 
       <ul id="navbar" ref={navRef} className={clicked ? "active" : ""}>
