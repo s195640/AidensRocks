@@ -34,8 +34,8 @@ const ShareYourRock = () => {
           </p>
           <p>
             Honoring him will be honoring all those loves. So here we are,
-            asking more adventurous people in all walks of life, in all parts of
-            the world to share Aiden’s spirit with us.{" "}
+            asking other adventurous people in all walks of life, in all parts
+            of the world to share Aiden’s spirit with us.{" "}
           </p>
           <p>
             Picturing Aiden’s smile, imaging his soul grabbing laugh as these
