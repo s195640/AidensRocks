@@ -22,7 +22,7 @@ const Home = () => {
         <div className="additional-content-inner">
           <h2>Journey Through the World With Aiden’s Rocks</h2>
           <p>
-            On September 14, 2022 at a mere 5lbs 4oz at 3:02 pm, Aiden Asher
+            On September 14, 2022 at a mere 5lbs4oz at 3:02 pm, Aiden Asher
             Armitage was born into the world, our little AAA. This birthday was
             shared with his mommy; making her a first time mom on her 32nd
             birthday. He was loved deeply and utterly by mommy (Ashley) and
@@ -35,7 +35,7 @@ const Home = () => {
             this day, he did not wake up. Our anchor to this world, our purpose,
             swiftly disintegrated as we will forever grief the loss of our
             perfect little boy; “the greatest baby of all the babies in all the
-            lands in all the world’s”
+            lands in all the world’s.”
           </p>
           <p>
             Aiden was a lover of all life. He was a true adventurer, a traveler,
@@ -48,42 +48,40 @@ const Home = () => {
           <p>
             At birth, we promised him a life of adventure, we promised to show
             him the world. Our first promises we whispered in his ear soon after
-            he came out screaming. Mommy promised to have one type of adventure
-            every day placed into his life. During his short 32 months of life
-            he has seen 12 US national parks, 2 international national parks, 3
+            he came out screaming. During his short 32 months of life he has
+            seen 12 US national parks, 2 international national parks, 3
             international countries stamped on his Passport plus an additional
-            island, and undocumented amount of US states. We did some sort of
+            island, and undocumented amount of US states. He had 8 more national
+            parks planned for him the year he passed. We did some sort of
             activity every single day with him to keep him engaged, nurtured,
-            and exposed to all areas of life. There was already booked vacations
-            for 8 more national parks and another international trip for the
-            remainder of the year before his unexpected, agonizing passing. Not
-            having him here to experience all we had planned for his life is the
-            most unfathomable thought we must now live with each and every day
-            for the rest of our lives. Living FOR Aiden instead of WITH Aiden is
-            something that can not fill the huge void.
+            and exposed to all areas of life.
+          </p>
+          <p>
+            Not having him here to experience all we had planned for his life is
+            the most unfathomable thought we live with every day.
+          </p>
+          <p>
+            Living FOR Aiden instead of WITH Aiden…no parent should have to say
+            those words about their child.
           </p>
           <p>So,</p>
           <p>
             We created this site because even though Aiden’s adventurous
             physical presence is not with us, we want to keep Aiden’s
-            adventurous spirit alive. We want to keep our promise TO him and
-            keep a purpose FOR him. We cannot watch him grow, but we can watch
-            his adventures grow with his rocks. His daily experiences we
-            promised him will be seen through the daily adventures of his rocks.
+            adventurous spirit alive.
+          </p>
+          <p>We want to keep our promise TO him and keep a purpose FOR him.</p>
+          <p>
+            We cannot watch him grow, but we can watch his adventures grow with
+            his rocks.
+          </p>
+          <p>
+            His daily experiences we promised him will be seen through the daily
+            adventures of his rocks.
+          </p>
+          <p>
             This will be something we will look forward to seeing upon each
-            awaking day as we await our reunion through Heaven’s doors.{" "}
-          </p>
-          <p>
-            So we ask for your help. Take a look around this site. Share the
-            rock you found, hey…even ask for another rock. Learn/Read/donate to
-            the SUDC foundation to spread awareness.
-          </p>
-          <p>
-            Looking for more adventures and want to share them with more of
-            Aiden’s rocks? Getting the rocks will be completely free, just tell
-            us how many and where to send them! Please take pictures in the
-            places you may go; please help in keeping his memory alive for the
-            rest of our days.{" "}
+            awaking day as we await our reunion through Heaven’s doors.
           </p>
           <p>
             Aiden Asher Armitage, Mr. A …this is for you….we love you & miss you
