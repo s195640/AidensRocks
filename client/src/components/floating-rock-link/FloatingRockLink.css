@@ -1,0 +1,23 @@
+.floating-rock-link {
+  position: fixed;
+  top: 8%;
+  left: 0;
+  z-index: 999;
+  padding: 0.5rem;
+}
+
+.floating-rock-link button {
+  background-color: #1f2937;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.3s ease;
+}
+
+.floating-rock-link button:hover {
+  background-color: #374151;
+}

@@ -1,4 +1,3 @@
-// src/components/CreateQRCodes.jsx
 import QRCode from "qrcode";
 import { useState } from "react";
 import "./CreateQRCodes.css";
@@ -18,9 +17,11 @@ const CreateQRCodes = () => {
 
       qrHTMLChunks.push(`
         <div class="qr-entry">
-          <div class="qr-top-label">aidensrocks.com</div>
-          <img src="${qrDataUrl}" alt="QR ${i}" />
-          <div class="qr-bottom-label">rock: ${i}</div>
+          <div class="qr-image-wrapper">
+            <div class="qr-top-label">aidensrocks.com</div>
+            <img src="${qrDataUrl}" alt="QR ${i}" />
+            <div class="qr-bottom-label">rock: ${i}</div>
+          </div>
         </div>
       `);
     }
@@ -30,6 +31,7 @@ const CreateQRCodes = () => {
       <html>
       <head>
         <title>QR Code Sheet</title>
+        <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500&display=swap" rel="stylesheet">
         <style>
           body {
             font-family: Verdana, Arial, sans-serif;
@@ -48,23 +50,33 @@ const CreateQRCodes = () => {
             flex-direction: column;
             align-items: center;
           }
-          .qr-top-label,
-          .qr-bottom-label {
-            font-size: 0.5rem;
-            font-weight: 600; /* slightly heavier */
-            line-height: 1;
-            margin: 0;
-          }
-          .qr-top-label {
-            margin-bottom: 0;
-          }
-          .qr-entry img {
+          .qr-image-wrapper {
+            position: relative;
             width: 0.75in;
             height: 0.75in;
+          }
+          .qr-image-wrapper img {
+            width: 100%;
+            height: 100%;
             margin: 0;
           }
+          .qr-top-label,
           .qr-bottom-label {
-            margin-top: 0;
+            font-family: 'Barlow Condensed', Arial, sans-serif;
+            font-size: 0.60rem;
+            font-weight: 400;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1px 2px;
+            line-height: 1;
+            color: black;
+          }
+          .qr-top-label {
+            top: -5px;
+          }
+          .qr-bottom-label {
+            bottom: -4px;
           }
         </style>
       </head>

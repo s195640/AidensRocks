@@ -1,5 +1,6 @@
 import BkgImage from "../../components/bkgimage/BkgImage";
 import Counter from "../../components/counter/Counter";
+import FloatingRockLink from "../../components/floating-rock-link/FloatingRockLink";
 import "./Home.css";
 
 const Home = () => {
@@ -7,6 +8,7 @@ const Home = () => {
 
   return (
     <div className="home-container">
+      <FloatingRockLink />
       <Counter />
       <BkgImage
         backgroundImage={backgroundImage}
