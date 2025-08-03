@@ -7,6 +7,7 @@ drop table Rock_Catalog;
 CREATE TABLE Rock_Catalog (
     rc_key SERIAL PRIMARY KEY,
     rock_number INTEGER NOT NULL,
+    comment TEXT,
     create_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     update_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT rock_number_unique UNIQUE (rock_number) -- Optional: Ensure rock_number is unique

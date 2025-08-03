@@ -35,11 +35,12 @@ const saveImage = async (file, rock_number) => {
   return { baseImagePath, thumbImagePath };
 };
 
-// GET all rocks with linked artists
+// GET all rocks with linked artists, include comment
 router.get('/', async (req, res, next) => {
   try {
     const result = await pool.query(`
       SELECT rc.rc_key, rc.rock_number, rc.create_dt, rc.update_dt,
+             rc.comment,
              json_agg(json_build_object('ra_key', ra.ra_key, 'display_name', ra.display_name)) AS artists
       FROM Rock_Catalog rc
       LEFT JOIN Rock_Artist_Link ral ON rc.rc_key = ral.rc_key
@@ -53,18 +54,18 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// CREATE new rock
+// CREATE new rock with comment
 router.post('/', upload.single('image'), async (req, res, next) => {
   const client = await pool.connect();
   try {
-    const { rock_number, artist_keys = '[]' } = req.body;
+    const { rock_number, artist_keys = '[]', comment = '' } = req.body;
     const artists = JSON.parse(artist_keys);
 
     await client.query('BEGIN');
 
     const insertRock = await client.query(
-      `INSERT INTO Rock_Catalog (rock_number) VALUES ($1) RETURNING rc_key, rock_number`,
-      [rock_number]
+      `INSERT INTO Rock_Catalog (rock_number, comment) VALUES ($1, $2) RETURNING rc_key, rock_number`,
+      [rock_number, comment]
     );
     const rc_key = insertRock.rows[0].rc_key;
 
@@ -89,19 +90,22 @@ router.post('/', upload.single('image'), async (req, res, next) => {
   }
 });
 
-// UPDATE existing rock
+// UPDATE existing rock with comment
 router.put('/:rc_key', upload.single('image'), async (req, res, next) => {
   const { rc_key } = req.params;
   const client = await pool.connect();
   try {
-    const { artist_keys = '[]' } = req.body;
+    const { artist_keys = '[]', comment = '' } = req.body;
     const artists = JSON.parse(artist_keys);
 
     await client.query('BEGIN');
 
     await client.query(
-      `UPDATE Rock_Catalog SET update_dt = CURRENT_TIMESTAMP WHERE rc_key = $1`,
-      [rc_key]
+      `UPDATE Rock_Catalog 
+       SET update_dt = CURRENT_TIMESTAMP,
+           comment = $2
+       WHERE rc_key = $1`,
+      [rc_key, comment]
     );
 
     await client.query(`DELETE FROM Rock_Artist_Link WHERE rc_key = $1`, [

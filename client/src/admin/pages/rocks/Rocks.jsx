@@ -10,6 +10,7 @@ const Rocks = () => {
   const [rockNumber, setRockNumber] = useState("");
   const [selectedArtistKeys, setSelectedArtistKeys] = useState([]);
   const [imageFile, setImageFile] = useState(null);
+  const [comment, setComment] = useState(""); // <-- new state for comment
   const [sortBy, setSortBy] = useState("rock_number");
   const [sortDir, setSortDir] = useState("asc");
 
@@ -38,6 +39,7 @@ const Rocks = () => {
     setRockNumber(rock?.rock_number || "");
     setSelectedArtistKeys(rock?.artists.map((a) => a.ra_key) || []);
     setImageFile(null);
+    setComment(rock?.comment || ""); // <-- set comment on open
     setDialogOpen(true);
   };
 
@@ -52,13 +54,14 @@ const Rocks = () => {
       selectedArtistKeys.length === 0 ||
       (!selectedRock && !imageFile)
     ) {
-      alert("All fields are required.");
+      alert("All fields are required except comment.");
       return;
     }
 
     const formData = new FormData();
     formData.append("rock_number", rockNumber);
     formData.append("artist_keys", JSON.stringify(selectedArtistKeys));
+    formData.append("comment", comment); // <-- append comment to formData
     if (imageFile) formData.append("image", imageFile);
 
     if (selectedRock) {
@@ -182,6 +185,14 @@ const Rocks = () => {
                 onChange={(e) => setImageFile(e.target.files[0])}
                 required={!selectedRock}
               />
+
+              <label>Comment</label>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={4}
+                placeholder="Add optional comment here..."
+              ></textarea>
 
               <div className="dialog-buttons">
                 <button type="submit">Save</button>
