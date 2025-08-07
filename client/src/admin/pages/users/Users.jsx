@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import "./Users.css";
+import styles from "./Users.module.css";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -62,12 +62,12 @@ const Users = () => {
   };
 
   return (
-    <div className="users-container">
+    <div className={styles.usersContainer}>
       <h1>Users Dashboard</h1>
-      <button className="new-user-button" onClick={() => openDialog()}>
+      <button className={styles.newUserButton} onClick={() => openDialog()}>
         + New User
       </button>
-      <table className="users-table">
+      <table className={styles.usersTable}>
         <thead>
           <tr>
             <th>RA_KEY</th>
@@ -96,8 +96,8 @@ const Users = () => {
       </table>
 
       {dialogOpen && (
-        <div className="user-dialog">
-          <div className="user-dialog-content">
+        <div className={styles.userDialog}>
+          <div className={styles.userDialogContent}>
             <h2>{editingUser ? "Edit User" : "Create User"}</h2>
             {editingUser && <p>RA_KEY: {editingUser.ra_key}</p>}
             <label>
@@ -108,7 +108,7 @@ const Users = () => {
                 onChange={(e) => setDisplayName(e.target.value)}
               />
             </label>
-            <div className="dialog-buttons">
+            <div className={styles.dialogButtons}>
               <button onClick={handleSave}>Save</button>
               <button onClick={closeDialog}>Cancel</button>
             </div>

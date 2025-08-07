@@ -1,3 +1,39 @@
+/* PhotoAlbums*/
+
+drop table Photos;
+drop table PhotoAlbums;
+
+CREATE TABLE PhotoAlbums (
+    pa_key SERIAL PRIMARY KEY,
+    create_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    update_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    name VARCHAR(255),
+    display_name VARCHAR(255),
+    "desc" TEXT,
+    order_num INTEGER,
+    show BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE Photos (
+    p_key SERIAL PRIMARY KEY,
+    pa_key INTEGER NOT NULL,
+    create_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    update_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    name VARCHAR(255),
+    display_name VARCHAR(255),
+    "desc" TEXT,
+    date DATE,
+    order_num INTEGER,
+    show BOOLEAN DEFAULT TRUE,
+    width INTEGER,
+    height INTEGER,
+    CONSTRAINT fk_photo_album
+        FOREIGN KEY (pa_key)
+        REFERENCES PhotoAlbums(pa_key)
+        ON DELETE CASCADE
+);
+
+
 /* Rock/Artist Details*/
 
 drop table Rock_Artist_Link;

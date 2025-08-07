@@ -1,16 +1,18 @@
-.rocks-container {
+/* Rocks.module.css */
+
+.rocksContainer {
   padding: 1rem;
-  padding-top: 100px; /* Account for navbar height */
+  padding-top: 100px;
 }
 
-.rocks-header {
+.rocksHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
 }
 
-.create-button {
+.createButton {
   background-color: #4caf50;
   color: white;
   border: none;
@@ -20,24 +22,24 @@
   font-size: 1rem;
 }
 
-.rocks-table {
+.rocksTable {
   width: 100%;
   border-collapse: collapse;
 }
 
-.rocks-table th,
-.rocks-table td {
+.rocksTable th,
+.rocksTable td {
   padding: 0.75rem;
   border: 1px solid #ccc;
   text-align: left;
 }
 
-.rocks-table th {
+.rocksTable th {
   background-color: #f0f0f0;
   cursor: pointer;
 }
 
-.rock-thumb {
+.rockThumb {
   width: 50px;
   height: 50px;
   object-fit: cover;
@@ -45,7 +47,7 @@
   border-radius: 4px;
 }
 
-.dialog-overlay {
+.dialogOverlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -81,18 +83,18 @@
   margin-top: 0.5rem;
   padding: 0.5rem;
   font-size: 1rem;
-  font-family: inherit; /* optional, for consistency */
-  resize: vertical; /* optional, allow vertical resize only */
-  box-sizing: border-box; /* ensure padding included in width */
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
 }
 
-.dialog-buttons {
+.dialogButtons {
   margin-top: 1.5rem;
   display: flex;
   justify-content: space-between;
 }
 
-.dialog-buttons button {
+.dialogButtons button {
   padding: 0.5rem 1rem;
   border: none;
   background-color: #333;

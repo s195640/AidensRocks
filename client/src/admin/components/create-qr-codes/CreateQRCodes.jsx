@@ -1,10 +1,11 @@
 import QRCode from "qrcode";
 import { useState } from "react";
-import "./CreateQRCodes.css";
+import Job from "../../components/job/Job";
+import styles from "./CreateQRCodes.module.css";
 
 const CreateQRCodes = () => {
   const [rangeStart, setRangeStart] = useState(1);
-  const [rangeEnd, setRangeEnd] = useState(100);
+  const [rangeEnd, setRangeEnd] = useState(28);
 
   const handlePreview = async () => {
     if (rangeEnd < rangeStart) return alert("End must be >= Start");
@@ -102,11 +103,10 @@ const CreateQRCodes = () => {
   };
 
   return (
-    <div className="qr-box">
-      <h2>Create QR Codes</h2>
-      <div className="qr-inputs">
+    <Job title="Create QR Codes">
+      <div className={styles.qrInputs}>
         <label>Rock Range:</label>
-        <div className="range-inputs">
+        <div className={styles.rangeInputs}>
           <input
             type="number"
             min="1"
@@ -114,7 +114,7 @@ const CreateQRCodes = () => {
             value={rangeStart}
             onChange={(e) => setRangeStart(Number(e.target.value))}
           />
-          <span className="to-separator">to</span>
+          <span className={styles.toSeparator}>to</span>
           <input
             type="number"
             min="1"
@@ -124,8 +124,10 @@ const CreateQRCodes = () => {
           />
         </div>
       </div>
-      <button onClick={handlePreview}>Print Preview</button>
-    </div>
+      <button onClick={handlePreview} className={styles.button}>
+        Print Preview
+      </button>
+    </Job>
   );
 };
 

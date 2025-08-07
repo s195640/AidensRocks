@@ -1,6 +1,4 @@
-/* src/pages/Login.css */
-
-.login-container {
+.loginContainer {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -8,7 +6,7 @@
   background: linear-gradient(to right, #6eb7d8, #4a90e2);
 }
 
-.login-form {
+.loginForm {
   background-color: white;
   padding: 2rem 2.5rem;
   border-radius: 12px;
@@ -18,12 +16,12 @@
   text-align: center;
 }
 
-.login-form h2 {
+.loginForm h2 {
   margin-bottom: 1.5rem;
   color: #333;
 }
 
-.login-input {
+.loginInput {
   width: 100%;
   padding: 0.75rem;
   margin: 0.5rem 0;
@@ -32,7 +30,7 @@
   font-size: 1rem;
 }
 
-.login-button {
+.loginButton {
   width: 100%;
   padding: 0.75rem;
   margin-top: 1rem;
@@ -45,6 +43,6 @@
   transition: background 0.3s ease;
 }
 
-.login-button:hover {
+.loginButton:hover {
   background-color: #589fbe;
 }

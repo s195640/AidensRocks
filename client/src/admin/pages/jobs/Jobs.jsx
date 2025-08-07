@@ -1,16 +1,18 @@
-// src/pages/Jobs.jsx
 import CreateImages from "../../components/create-images/CreateImages";
 import CreateQRCodes from "../../components/create-qr-codes/CreateQRCodes";
-import "./Jobs.css";
+import PrintMultiImages from "../../components/print-multi-images/PrintMultiImages";
+import styles from "./Jobs.module.css";
 
 const Jobs = () => {
   return (
-    <div className="jobs-container">
-      <div className="jobs-stack">
+    <div className={styles.jobsContainer}>
+      <div className={styles.jobsStack}>
         <CreateImages />
         <CreateQRCodes />
+        <PrintMultiImages />
       </div>
     </div>
   );
 };
+
 export default Jobs;

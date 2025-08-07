@@ -1,8 +1,7 @@
-// src/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import "./Login.css";
+import styles from "./Login.module.css";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -20,11 +19,11 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-      <form className="login-form" onSubmit={handleSubmit}>
+    <div className={styles.loginContainer}>
+      <form className={styles.loginForm} onSubmit={handleSubmit}>
         <h2>Admin Login</h2>
         <input
-          className="login-input"
+          className={styles.loginInput}
           type="text"
           placeholder="Username"
           value={username}
@@ -32,14 +31,14 @@ const Login = () => {
           required
         />
         <input
-          className="login-input"
+          className={styles.loginInput}
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <button className="login-button" type="submit">
+        <button className={styles.loginButton} type="submit">
           Login
         </button>
       </form>

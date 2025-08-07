@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import "./Navbar.css";
+import styles from "./Navbar.module.css";
 
 const Navbar = ({ navItems }) => {
   const [clicked, setClicked] = useState(false);
@@ -8,7 +8,6 @@ const Navbar = ({ navItems }) => {
   const navRef = useRef();
   const buttonRef = useRef();
 
-  // Close menu when clicking outside nav and toggle button
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -21,34 +20,38 @@ const Navbar = ({ navItems }) => {
         setClicked(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [clicked]);
 
-  // Lock body scroll when menu is open
   useEffect(() => {
-    document.body.classList.toggle("nav-open", clicked);
+    document.body.style.overflow = clicked ? "hidden" : "auto";
   }, [clicked]);
 
   const toggleMenu = () => setClicked((prev) => !prev);
-  const closeMenu = () => setClicked(false);
+  const handleLinkClick = () => {
+    setClicked(false);
+    window.scrollTo(0, 0);
+  };
 
   return (
-    <nav>
-      <Link to="/" onClick={closeMenu}>
-        <img src="/logo.webp" alt="Logo" className="nav-logo" />
+    <nav className={styles.navbar}>
+      <Link to="/" onClick={handleLinkClick}>
+        <img src="/logo.webp" alt="Logo" className={styles.logo} />
       </Link>
 
-      <ul id="navbar" ref={navRef} className={clicked ? "active" : ""}>
+      <ul
+        ref={navRef}
+        className={`${styles.navList} ${clicked ? styles.showMenu : ""}`}
+      >
         {navItems.map(({ path, label }) => (
-          <li key={path}>
+          <li key={path} className={styles.navItem}>
             <Link
               to={path}
-              className={location.pathname === path ? "active" : ""}
-              onClick={closeMenu}
+              className={`${styles.navLink} ${
+                location.pathname === path ? styles.activeLink : ""
+              }`}
+              onClick={handleLinkClick}
             >
               <span>{label}</span>
             </Link>
@@ -56,7 +59,7 @@ const Navbar = ({ navItems }) => {
         ))}
       </ul>
 
-      <div id="mobile" ref={buttonRef} onClick={toggleMenu}>
+      <div ref={buttonRef} onClick={toggleMenu} className={styles.mobileToggle}>
         <i className={clicked ? "fas fa-times" : "fas fa-bars"}></i>
       </div>
     </nav>

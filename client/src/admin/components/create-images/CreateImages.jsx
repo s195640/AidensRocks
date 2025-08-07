@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
-import "./CreateImages.css";
+import Job from "../../components/job/Job";
+import styles from "./CreateImages.module.css";
 
 const CreateImages = () => {
   const [path, setPath] = useState(".");
@@ -22,36 +23,42 @@ const CreateImages = () => {
   };
 
   return (
-    <div className="create-images-box">
-      <h2>Create Images</h2>
-
-      <div className="form-container">
-        <div className="form-group">
-          <label htmlFor="path-input">Path:</label>
+    <Job title="Create Images">
+      <div className={styles.formContainer}>
+        <div className={styles.formGroup}>
+          <label htmlFor="path-input" className={styles.label}>
+            Path:
+          </label>
           <input
             id="path-input"
             type="text"
             value={path}
             onChange={(e) => setPath(e.target.value)}
             placeholder="Enter image path"
+            className={styles.textInput}
           />
         </div>
 
-        <div className="form-group checkbox-row">
+        <div className={`${styles.formGroup} ${styles.checkboxRow}`}>
           <input
             type="checkbox"
             id="regenerate-checkbox"
             checked={regenerate}
             onChange={() => setRegenerate(!regenerate)}
+            className={styles.checkboxInput}
           />
-          <label htmlFor="regenerate-checkbox">Regenerate Images</label>
+          <label htmlFor="regenerate-checkbox" className={styles.checkboxLabel}>
+            Regenerate Images
+          </label>
         </div>
 
-        <button onClick={handleStart}>Start</button>
+        <button onClick={handleStart} className={styles.button}>
+          Start
+        </button>
       </div>
 
-      {status && <p className="status-message">{status}</p>}
-    </div>
+      {status && <p className={styles.statusMessage}>{status}</p>}
+    </Job>
   );
 };
 

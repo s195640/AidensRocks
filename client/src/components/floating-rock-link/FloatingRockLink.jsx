@@ -6,7 +6,12 @@ const FloatingRockLink = () => {
 
   return (
     <div className="floating-rock-link">
-      <button onClick={() => navigate("/share-your-rock")}>
+      <button
+        onClick={() => {
+          navigate("/share-your-rock");
+          window.scrollTo(0, 0);
+        }}
+      >
         Share Your Rock
       </button>
     </div>

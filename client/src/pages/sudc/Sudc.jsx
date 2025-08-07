@@ -1,13 +1,13 @@
-import "./Sudc.css";
+import styles from "./Sudc.module.css";
 
 const Sudc = () => {
   return (
-    <div className="sudc-page">
-      <div className="sudc-banner-wrapper">
-        <div className="sudc-banner" />
+    <div className={styles.sudcPage}>
+      <div className={styles.sudcBannerWrapper}>
+        <div className={styles.sudcBanner} />
       </div>
 
-      <div className="sudc-container">
+      <div className={styles.sudcContainer}>
         <p>
           Being a part of the medical community for over 15 years, I have never
           heard of Sudden Unexpected Death in Child. I wasn’t aware it was even
@@ -49,7 +49,7 @@ const Sudc = () => {
             href="https://sudc.org/donate/"
             target="_blank"
             rel="noopener noreferrer"
-            className="sudc-link"
+            className={styles.sudcLink}
           >
             https://sudc.org/donate/
           </a>

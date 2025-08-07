@@ -1,0 +1,15 @@
+.jobBox {
+  width: 80vw;
+  border: 2px solid #6eb7d8;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+  background-color: #f9f9f9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 0 auto;
+}
+
+.jobBox h2 {
+  margin-bottom: 20px;
+  color: #333;
+}

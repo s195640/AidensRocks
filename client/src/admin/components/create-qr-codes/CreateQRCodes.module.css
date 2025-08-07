@@ -1,38 +1,22 @@
-.qr-box {
-  width: 80vw;
-  border: 2px solid #6eb7d8;
-  padding: 30px;
-  border-radius: 12px;
-  text-align: center;
-  background-color: #f9f9f9;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin-top: 40px;
-}
-
-.qr-box h2 {
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.qr-inputs {
+.qrInputs {
   margin-bottom: 20px;
   text-align: left;
 }
 
-.qr-inputs label {
+.qrInputs label {
   display: block;
   font-weight: bold;
   color: #444;
   margin-bottom: 10px;
 }
 
-.range-inputs {
+.rangeInputs {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.range-inputs input {
+.rangeInputs input {
   width: 100px;
   padding: 10px;
   font-size: 1rem;
@@ -40,13 +24,13 @@
   border-radius: 6px;
 }
 
-.to-separator {
+.toSeparator {
   font-weight: bold;
   font-size: 1rem;
   color: #444;
 }
 
-.qr-box button {
+.button {
   background-color: rgba(110, 183, 216, 1);
   border: none;
   color: white;
@@ -58,6 +42,6 @@
   margin-top: 10px;
 }
 
-.qr-box button:hover {
+.button:hover {
   background-color: rgba(90, 160, 190, 1);
 }

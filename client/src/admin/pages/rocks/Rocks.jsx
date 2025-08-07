@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import "./Rocks.css";
+import styles from "./Rocks.module.css";
 
 const Rocks = () => {
   const [rocks, setRocks] = useState([]);
@@ -10,7 +10,7 @@ const Rocks = () => {
   const [rockNumber, setRockNumber] = useState("");
   const [selectedArtistKeys, setSelectedArtistKeys] = useState([]);
   const [imageFile, setImageFile] = useState(null);
-  const [comment, setComment] = useState(""); // <-- new state for comment
+  const [comment, setComment] = useState("");
   const [sortBy, setSortBy] = useState("rock_number");
   const [sortDir, setSortDir] = useState("asc");
 
@@ -39,7 +39,7 @@ const Rocks = () => {
     setRockNumber(rock?.rock_number || "");
     setSelectedArtistKeys(rock?.artists.map((a) => a.ra_key) || []);
     setImageFile(null);
-    setComment(rock?.comment || ""); // <-- set comment on open
+    setComment(rock?.comment || "");
     setDialogOpen(true);
   };
 
@@ -61,7 +61,7 @@ const Rocks = () => {
     const formData = new FormData();
     formData.append("rock_number", rockNumber);
     formData.append("artist_keys", JSON.stringify(selectedArtistKeys));
-    formData.append("comment", comment); // <-- append comment to formData
+    formData.append("comment", comment);
     if (imageFile) formData.append("image", imageFile);
 
     if (selectedRock) {
@@ -102,15 +102,18 @@ const Rocks = () => {
   });
 
   return (
-    <div className="rocks-container">
-      <div className="rocks-header">
+    <div className={styles.rocksContainer}>
+      <div className={styles.rocksHeader}>
         <h2>Rock Catalog</h2>
-        <button className="create-button" onClick={() => openDialog(null)}>
+        <button
+          className={styles.createButton}
+          onClick={() => openDialog(null)}
+        >
           + Create Rock
         </button>
       </div>
 
-      <table className="rocks-table">
+      <table className={styles.rocksTable}>
         <thead>
           <tr>
             <th onClick={() => toggleSort("rock_number")}>Rock Number</th>
@@ -128,7 +131,7 @@ const Rocks = () => {
                 <img
                   src={`/media/catalog/${rock.rock_number}/a_sm.webp`}
                   alt=""
-                  className="rock-thumb"
+                  className={styles.rockThumb}
                   onError={(e) => (e.target.style.display = "none")}
                 />
               </td>
@@ -145,8 +148,8 @@ const Rocks = () => {
 
       {dialogOpen && (
         <>
-          <div className="dialog-overlay"></div>
-          <div className="dialog">
+          <div className={styles.dialogOverlay}></div>
+          <div className={styles.dialog}>
             <h3>{selectedRock ? "Edit Rock" : "Create Rock"}</h3>
             <form onSubmit={handleSubmit}>
               <label>Rock Number*</label>
@@ -194,7 +197,7 @@ const Rocks = () => {
                 placeholder="Add optional comment here..."
               ></textarea>
 
-              <div className="dialog-buttons">
+              <div className={styles.dialogButtons}>
                 <button type="submit">Save</button>
                 <button type="button" onClick={closeDialog}>
                   Cancel
