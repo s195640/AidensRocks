@@ -5,9 +5,9 @@ services:
       - '5431:5432'
     image: postgres
     environment:
-      POSTGRES_USER: $DB_USER
-      POSTGRES_PASSWORD: $DB_PASSWORD
-      POSTGRES_DB: $DB_NAME
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 'OmegaA..1154'
+      POSTGRES_DB: 'aidensrocks'
     volumes:
       - truenas-sql:/var/lib/postgresql/data
     healthcheck:
@@ -57,6 +57,19 @@ services:
       - server
     networks:
       - app-network
+  pg_backup:
+    container_name: pg_backup
+    image: alpine:latest
+    command: sh -c "
+      apk update &&
+      apk add --no-cache postgresql-client && \
+      echo '*/5 * * * * PGPASSWORD=OmegaA..1154 pg_dump -h 192.168.1.50 -p 5431 -U postgres aidensrocks > /backup/aidensrocks_backup_$(date +\%F_\%H-\%M).sql' > /etc/crontabs/root && \
+      crond -f -l 2
+      "
+    volumes:
+      - truenas-sql-backup:/backup
+    networks:
+      - app-network
 volumes:
   truenas-media:
     driver: local
@@ -70,6 +83,12 @@ volumes:
       type: none
       o: bind
       device: /mnt/aidensrocks/test/sql
+  truenas-sql-backup:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/aidensrocks/test/sql_backup
 networks:
   app-network:
     driver: bridge
