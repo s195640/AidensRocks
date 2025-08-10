@@ -1,4 +1,4 @@
-// src/components/RockBanner.jsx
+// RockBanner.jsx
 import { useState } from "react";
 import "./RockBanner.css";
 
@@ -17,12 +17,9 @@ const RockBanner = ({ rockNumber, totalTrips, startDate, latestDate }) => {
 
   return (
     <div className="rock-banner">
-      <img
-        src={rockImagePath}
-        alt="Rock"
-        className="rock-image"
-        onClick={handleImageClick}
-      />
+      <div className="rock-image-container" onClick={handleImageClick}>
+        <img src={rockImagePath} alt="Rock" className="rock-image" />
+      </div>
       <div className="rock-info">
         <div>Aiden's Rock: {rockNumber}</div>
         <div>

@@ -16,6 +16,7 @@ const AlbumCreate = ({
   const [editingPhoto, setEditingPhoto] = useState(null);
   const fileInputRef = useRef(null);
   const [fullImage, setFullImage] = useState(null);
+  const [nameError, setNameError] = useState("");
 
   const openFullImageDialog = (photo) => {
     setFullImage(photo);
@@ -26,7 +27,13 @@ const AlbumCreate = ({
   };
 
   useEffect(() => {
-    setIsValid(album.name.trim() !== "");
+    const valid = /^[a-z0-9]+$/.test(album.name) && album.name.trim() !== "";
+    setIsValid(valid);
+    setNameError(
+      valid
+        ? ""
+        : "Name can only contain lowercase letters and numbers, no spaces or special characters."
+    );
   }, [album.name]);
 
   const handleFullRefresh = async () => {
@@ -130,23 +137,20 @@ const AlbumCreate = ({
     input.multiple = true;
     input.accept = "image/*";
 
-    // ✅ The file picker is triggered directly on click
     input.onchange = async () => {
       const files = input.files;
       if (!files.length) return;
 
       const formData = new FormData();
       for (const file of files) {
-        formData.append("files", file); // field name must match multer config
+        formData.append("files", file);
       }
 
       try {
         await axios.post(
           `/api/albums/${albumData.name}/upload-images`,
           formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
+          { headers: { "Content-Type": "multipart/form-data" } }
         );
 
         alert("Upload complete. Please run the SYNC tool.");
@@ -157,10 +161,9 @@ const AlbumCreate = ({
       }
     };
 
-    input.click(); // ✅ Must be called in this synchronous user event
+    input.click();
   };
 
-  // Add Images: upload handler
   const handleAddImages = async () => {
     const input = document.createElement("input");
     input.type = "file";
@@ -173,18 +176,14 @@ const AlbumCreate = ({
 
       const formData = new FormData();
       for (const file of files) {
-        formData.append("files", file); // ✅ field name must be 'files'
+        formData.append("files", file);
       }
 
       try {
         await axios.post(
           `/api/albums/${albumData.name}/upload-images`,
           formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
+          { headers: { "Content-Type": "multipart/form-data" } }
         );
 
         alert("Upload complete. Please run the SYNC tool.");
@@ -244,11 +243,19 @@ const AlbumCreate = ({
             Name:
             <input
               value={album.name}
-              onChange={(e) => setAlbum({ ...album, name: e.target.value })}
+              onChange={(e) => {
+                const sanitized = e.target.value
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]/g, "");
+                setAlbum({ ...album, name: sanitized });
+              }}
               readOnly={isEdit}
               className={isEdit ? styles.readOnly : ""}
             />
           </label>
+          {nameError && (
+            <div style={{ color: "red", fontSize: "0.9em" }}>{nameError}</div>
+          )}
 
           <label>
             Display Name:
@@ -281,7 +288,7 @@ const AlbumCreate = ({
         <table className={styles.albumTable}>
           <thead>
             <tr>
-              <th>Image</th> {/* new image header */}
+              <th>Image</th>
               <th>Name</th>
               <th>Display Name</th>
               <th>Description</th>
@@ -294,71 +301,69 @@ const AlbumCreate = ({
             </tr>
           </thead>
           <tbody>
-            {photos.map((photo, idx) => {
-              return (
-                <tr key={photo.p_key || idx}>
-                  <td>
-                    <img
-                      src={`/media/albums/${album.name}/webp300x300/${photo.name}`}
-                      alt={photo.display_name || photo.name}
-                      style={{
-                        width: 50,
-                        height: 50,
-                        objectFit: "cover",
-                        borderRadius: 4,
-                        cursor: "pointer",
-                      }}
-                      onClick={() => openFullImageDialog(photo)}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "/media/placeholder.png";
-                      }}
-                    />
-                  </td>
-                  <td>{photo.name}</td>
-                  <td>{photo.display_name}</td>
-                  <td>{photo.desc}</td>
-                  <td>{photo.date}</td>
-                  <td>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                      }}
-                    >
-                      <div>{photo.order_num}</div>
-                      <div>
-                        <button
-                          onClick={() => movePhoto(idx, "up")}
-                          disabled={idx === 0}
-                          style={{ fontSize: "10px", marginBottom: "2px" }}
-                        >
-                          ▲
-                        </button>
-                        <button
-                          onClick={() => movePhoto(idx, "down")}
-                          disabled={idx === photos.length - 1}
-                          style={{ fontSize: "10px" }}
-                        >
-                          ▼
-                        </button>
-                      </div>
+            {photos.map((photo, idx) => (
+              <tr key={photo.p_key || idx}>
+                <td>
+                  <img
+                    src={`/media/albums/${album.name}/webp300x300/${photo.name}`}
+                    alt={photo.display_name || photo.name}
+                    style={{
+                      width: 50,
+                      height: 50,
+                      objectFit: "cover",
+                      borderRadius: 4,
+                      cursor: "pointer",
+                    }}
+                    onClick={() => openFullImageDialog(photo)}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/media/placeholder.png";
+                    }}
+                  />
+                </td>
+                <td>{photo.name}</td>
+                <td>{photo.display_name}</td>
+                <td>{photo.desc}</td>
+                <td>{photo.date}</td>
+                <td>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div>{photo.order_num}</div>
+                    <div>
+                      <button
+                        onClick={() => movePhoto(idx, "up")}
+                        disabled={idx === 0}
+                        style={{ fontSize: "10px", marginBottom: "2px" }}
+                      >
+                        ▲
+                      </button>
+                      <button
+                        onClick={() => movePhoto(idx, "down")}
+                        disabled={idx === photos.length - 1}
+                        style={{ fontSize: "10px" }}
+                      >
+                        ▼
+                      </button>
                     </div>
-                  </td>
-                  <td>{photo.show ? "Yes" : "No"}</td>
-                  <td>{photo.width}</td>
-                  <td>{photo.height}</td>
-                  <td className={styles.actionsCol}>
-                    <button onClick={() => togglePhotoShow(idx)}>
-                      {photo.show ? "Disable" : "Enable"}
-                    </button>
-                    <button onClick={() => editPhoto(idx)}>Edit</button>
-                    <button onClick={() => deletePhoto(idx)}>Delete</button>
-                  </td>
-                </tr>
-              );
-            })}
+                  </div>
+                </td>
+                <td>{photo.show ? "Yes" : "No"}</td>
+                <td>{photo.width}</td>
+                <td>{photo.height}</td>
+                <td className={styles.actionsCol}>
+                  <button onClick={() => togglePhotoShow(idx)}>
+                    {photo.show ? "Disable" : "Enable"}
+                  </button>
+                  <button onClick={() => editPhoto(idx)}>Edit</button>
+                  <button onClick={() => deletePhoto(idx)}>Delete</button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -396,7 +401,7 @@ const AlbumCreate = ({
               maxWidth: "90vw",
               maxHeight: "90vh",
             }}
-            onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside modal
+            onClick={(e) => e.stopPropagation()}
           >
             <img
               src={`/media/albums/${album.name}/webp/${fullImage.name}`}
