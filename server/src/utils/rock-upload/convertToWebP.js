@@ -7,7 +7,11 @@ async function convertToWebP(inputDir, outputDir) {
   for (const file of files) {
     const inputPath = path.join(inputDir, file);
     const outputPath = path.join(outputDir, path.parse(file).name + '.webp');
-    await sharp(inputPath).toFormat('webp').toFile(outputPath);
+
+    await sharp(inputPath)
+      .rotate()
+      .toFormat('webp')
+      .toFile(outputPath);
   }
 }
 

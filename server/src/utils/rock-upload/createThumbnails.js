@@ -8,6 +8,7 @@ async function createThumbnails(inputDir, outputDir) {
     const inputPath = path.join(inputDir, file);
     const outputPath = path.join(outputDir, file);
     await sharp(inputPath)
+      .rotate()
       .resize(125, 125, {
         fit: sharp.fit.cover,
         position: sharp.strategy.entropy,
