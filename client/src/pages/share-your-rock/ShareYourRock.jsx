@@ -4,11 +4,19 @@ import { FaFacebookSquare, FaInstagram } from "react-icons/fa";
 import BkgImage from "../../components/bkgimage/BkgImage";
 import ContentBody from "../../components/content-body/ContentBody";
 import UploadRockForm from "../../components/upload-rock-form/UploadRockForm";
+import ComingSoonPopup from "../../components/coming-soon/ComingSoonPopup";
 import styles from "./ShareYourRock.module.css";
 
 const ShareYourRock = () => {
   const backgroundImage = `/media/bkg/rock_bkg.webp`;
   const [showForm, setShowForm] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+
+  // Handler for FB/IG links
+  const handleSocialClick = (e) => {
+    e.preventDefault();
+    setShowPopup(true);
+  };
 
   return (
     <div>
@@ -20,6 +28,7 @@ const ShareYourRock = () => {
       </BkgImage>
 
       {showForm && <UploadRockForm onClose={() => setShowForm(false)} />}
+      {showPopup && <ComingSoonPopup onClose={() => setShowPopup(false)} />}
 
       <ContentBody>
         <h2>Aiden's Rocks</h2>
@@ -78,10 +87,10 @@ const ShareYourRock = () => {
             <li>
               Share and follow our Facebook:{" "}
               <a
-                href="https://www.facebook.com/AidensRocks"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="#"
+                onClick={handleSocialClick}
                 className={styles.socialLink}
+                aria-label="Facebook coming soon"
               >
                 <FaFacebookSquare size={20} className={styles.socialIcon} />
                 Aidens Rocks
@@ -90,10 +99,10 @@ const ShareYourRock = () => {
             <li>
               Share and follow our Instagram:{" "}
               <a
-                href="https://www.instagram.com/AidensRocks"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="#"
+                onClick={handleSocialClick}
                 className={styles.socialLink}
+                aria-label="Instagram coming soon"
               >
                 <FaInstagram size={20} className={styles.socialIcon} />
                 @Aidens Rocks
