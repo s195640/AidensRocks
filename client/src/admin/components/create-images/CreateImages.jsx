@@ -4,7 +4,7 @@ import Job from "../../components/job/Job";
 import styles from "./CreateImages.module.css";
 
 const CreateImages = () => {
-  const [path, setPath] = useState(".");
+  const [path, setPath] = useState("media/rocks");
   const [regenerate, setRegenerate] = useState(false);
   const [status, setStatus] = useState("");
 

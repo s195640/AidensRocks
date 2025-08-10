@@ -31,7 +31,7 @@ router.post('/create-images', async (req, res) => {
       for (const entry of entries) {
         const fullPath = pathModule.join(dir, entry.name);
         if (entry.isDirectory()) {
-          if (entry.name === 'o_images') {
+          if (entry.name === 'o') {
             result.push(fullPath);
           } else {
             const nested = await findOImageFolders(fullPath);
@@ -46,7 +46,7 @@ router.post('/create-images', async (req, res) => {
     const oImageFolders = await findOImageFolders(rootPath);
 
     if (oImageFolders.length === 0) {
-      return res.status(404).json({ error: 'No o_images folders found.' });
+      return res.status(404).json({ error: 'No o folders found.' });
     }
 
     let skipped = 0;
@@ -54,8 +54,8 @@ router.post('/create-images', async (req, res) => {
 
     for (const oImagesPath of oImageFolders) {
       const parentDir = pathModule.dirname(oImagesPath);
-      const webPPath = pathModule.join(parentDir, 'webP_images');
-      const smPath = pathModule.join(parentDir, 'sm_images');
+      const webPPath = pathModule.join(parentDir, 'webp');
+      const smPath = pathModule.join(parentDir, 'sm');
 
       const webPExists = fssync.existsSync(webPPath);
       const smExists = fssync.existsSync(smPath);
