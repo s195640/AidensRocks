@@ -142,7 +142,7 @@ const RockCollection = ({
 
             <div className="dialog-inner">
               <img
-                src={`${path}/webP/${imageNames[currentIndex]}.webp`}
+                src={`${path}/webp/${imageNames[currentIndex]}.webp`}
                 alt={`Full rock image ${currentIndex + 1}`}
                 className="full-image"
               />
