@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import styles from "./JourneyAdmin.module.css";
+import EditJourneyDialog from "./EditJourneyDialog";
 
 const JourneyAdmin = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState("rock_number");
-  const [sortOrder, setSortOrder] = useState("asc"); // "asc" or "desc"
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [editingPost, setEditingPost] = useState(null);
+  const [popupRockNumber, setPopupRockNumber] = useState(null);
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -25,10 +28,8 @@ const JourneyAdmin = () => {
     fetchPosts();
   }, []);
 
-  // Called when header clicked to set sorting
   const handleSort = (field) => {
     if (sortField === field) {
-      // toggle order
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
@@ -36,33 +37,27 @@ const JourneyAdmin = () => {
     }
   };
 
-  // Compare function for sorting by field
   const comparePosts = (a, b) => {
     let valA = a[sortField];
     let valB = b[sortField];
 
-    // Normalize for undefined/null
     if (valA === null || valA === undefined) valA = "";
     if (valB === null || valB === undefined) valB = "";
 
-    // Special case for date (string to Date)
     if (sortField === "date") {
       valA = valA ? new Date(valA) : new Date(0);
       valB = valB ? new Date(valB) : new Date(0);
     }
 
-    // Special case for show (boolean)
     if (sortField === "show") {
       valA = valA ? 1 : 0;
       valB = valB ? 1 : 0;
     }
 
-    // Compare numbers
     if (typeof valA === "number" && typeof valB === "number") {
       return sortOrder === "asc" ? valA - valB : valB - valA;
     }
 
-    // Compare strings case-insensitive
     valA = valA.toString().toLowerCase();
     valB = valB.toString().toLowerCase();
 
@@ -73,13 +68,53 @@ const JourneyAdmin = () => {
 
   const sortedPosts = [...posts].sort(comparePosts);
 
-  // Render sort arrow next to header
   const renderSortArrow = (field) => {
     if (sortField !== field) return null;
     return sortOrder === "asc" ? " ▲" : " ▼";
   };
 
-  // your handleToggleShow, handleDelete, handleEdit...
+  const handleToggleShow = async (rps_key, currentShow) => {
+    try {
+      const res = await fetch(`/api/journey-admin/${rps_key}/toggle-show`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ show: !currentShow }),
+      });
+      if (!res.ok) throw new Error("Toggle show failed");
+      setPosts((posts) =>
+        posts.map((post) =>
+          post.rps_key === rps_key ? { ...post, show: !currentShow } : post
+        )
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleDelete = async (rps_key) => {
+    if (!window.confirm("Are you sure you want to delete this post?")) return;
+    try {
+      const res = await fetch(`/api/journey-admin/${rps_key}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      setPosts((posts) => posts.filter((post) => post.rps_key !== rps_key));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleEdit = (post) => {
+    setEditingPost(post);
+  };
+
+  const openImagePopup = (rock_number) => {
+    setPopupRockNumber(rock_number);
+  };
+
+  const closeImagePopup = () => {
+    setPopupRockNumber(null);
+  };
 
   return (
     <div className={styles.container}>
@@ -90,6 +125,7 @@ const JourneyAdmin = () => {
         <table className={styles.albumTable}>
           <thead>
             <tr>
+              <th>Image</th>
               <th onClick={() => handleSort("rock_number")} style={{ cursor: "pointer" }}>
                 Rock Number{renderSortArrow("rock_number")}
               </th>
@@ -121,13 +157,21 @@ const JourneyAdmin = () => {
           <tbody>
             {sortedPosts.length === 0 ? (
               <tr>
-                <td colSpan={10} style={{ textAlign: "center" }}>
+                <td colSpan={11} style={{ textAlign: "center" }}>
                   No posts found
                 </td>
               </tr>
             ) : (
               sortedPosts.map((post) => (
                 <tr key={post.rps_key}>
+                  <td>
+                    <img
+                      src={`/media/catalog/${post.rock_number}/a_sm.webp`}
+                      alt={`Rock ${post.rock_number}`}
+                      className={styles.thumbnail}
+                      onClick={() => openImagePopup(post.rock_number)}
+                    />
+                  </td>
                   <td>{post.rock_number}</td>
                   <td>{post.location || "-"}</td>
                   <td>{post.date ? new Date(post.date).toLocaleDateString() : "-"}</td>
@@ -149,6 +193,31 @@ const JourneyAdmin = () => {
             )}
           </tbody>
         </table>
+      )}
+
+      {editingPost && (
+        <EditJourneyDialog
+          post={editingPost}
+          onClose={() => setEditingPost(null)}
+          onSave={() => {
+            fetchPosts();
+            setEditingPost(null);
+          }}
+        />
+      )}
+
+      {popupRockNumber && (
+        <div className={styles.imagePopupOverlay} onClick={closeImagePopup}>
+          <div className={styles.imagePopup} onClick={(e) => e.stopPropagation()}>
+            <img
+              src={`/media/catalog/${popupRockNumber}/a.webp`}
+              alt={`Rock ${popupRockNumber}`}
+            />
+            <button className={styles.closeBtn} onClick={closeImagePopup}>
+              Close
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
