@@ -1,0 +1,108 @@
+/* JourneyAdmin.module.css */
+
+.container {
+  padding: 20px;
+  padding-top: 100px;
+  font-family: Arial, sans-serif;
+}
+
+h2 {
+  margin-bottom: 20px;
+}
+
+.albumTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.albumTable th,
+.albumTable td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.albumTable th {
+  background-color: #f0f0f0;
+  font-weight: 600;
+}
+
+.actionsCol button {
+  margin-right: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+/* Toggle Show Button: yellow */
+.actionsCol button:nth-child(1) {
+  background-color: #f0ad4e;
+  color: white;
+}
+
+.actionsCol button:nth-child(1):hover {
+  background-color: #ec971f;
+}
+
+/* Edit Button: blue */
+.actionsCol button:nth-child(2) {
+  background-color: #5bc0de;
+  color: white;
+}
+
+.actionsCol button:nth-child(2):hover {
+  background-color: #31b0d5;
+}
+
+/* Delete Button: red */
+.actionsCol button:nth-child(3) {
+  background-color: #d9534f;
+  color: white;
+}
+
+.actionsCol button:nth-child(3):hover {
+  background-color: #c9302c;
+}
+
+p {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+button {
+  font-family: Arial, sans-serif;
+}
+
+/* You can add a header area with actions if you want */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* Optional if you want to add top buttons */
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.actions button {
+  background-color: #0077cc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.actions button:hover {
+  background-color: #005fa3;
+}

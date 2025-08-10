@@ -1,0 +1,135 @@
+.dialogOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.dialogContent {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90vw;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dialogButtons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.dialogButtons button {
+  padding: 8px 16px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #0077cc;
+  color: white;
+  transition: background-color 0.2s;
+}
+
+.dialogButtons button:hover:not(:disabled) {
+  background-color: #005fa3;
+}
+
+.dialogButtons button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.editForm {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  row-gap: 10px;
+  column-gap: 10px;
+  align-items: center;
+}
+
+.editForm label {
+  font-weight: 600;
+}
+
+.editForm input[type="text"],
+.editForm input[type="number"],
+.editForm input[type="email"],
+.editForm input[type="date"],
+.editForm textarea {
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.editForm textarea {
+  min-height: 60px;
+}
+
+.editForm input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.imagesTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.imagesTable th,
+.imagesTable td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: left;
+}
+
+.imagesTable th {
+  background-color: #f0f0f0;
+  font-weight: 600;
+}
+
+.actionsCol button {
+  margin-right: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.actionsCol button:nth-child(1) {
+  background-color: #f0ad4e;
+  /* Toggle: yellow */
+  color: #fff;
+}
+
+.actionsCol button:nth-child(1):hover {
+  background-color: #ec971f;
+}
+
+.actionsCol button:nth-child(2) {
+  background-color: #d9534f;
+  /* Delete: red */
+  color: #fff;
+}
+
+.actionsCol button:nth-child(2):hover {
+  background-color: #c9302c;
+}
