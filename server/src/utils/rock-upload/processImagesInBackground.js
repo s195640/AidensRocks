@@ -1,8 +1,8 @@
 // utils/rock-upload/processImagesInBackground.js
 const path = require('path');
 const ensureDir = require('../ensureDir');
-const convertToWebP = require('./convertToWebP');
-const createThumbnails = require('./createThumbnails');
+const convertToWebP = require('../convert-to-webp/convertToWebP');
+const createThumbnails = require('../convert-to-webp/createThumbnails');
 
 async function processImagesInBackground(baseDir) {
   try {
@@ -11,10 +11,12 @@ async function processImagesInBackground(baseDir) {
     const smDir = path.join(baseDir, 'sm');
 
     await ensureDir(webpDir);
+
     await convertToWebP(originalDir, webpDir);
 
     await ensureDir(smDir);
-    await createThumbnails(webpDir, smDir);
+    // Create 300x300 thumbnails from webp images
+    await createThumbnails(webpDir, smDir, 300, 300);
 
     console.log(`✅ Finished background processing for ${baseDir}`);
   } catch (err) {

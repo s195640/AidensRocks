@@ -99,6 +99,8 @@ CREATE TABLE Rock_Post_Image (
     current_name VARCHAR(255) NOT NULL,
     upload_order INTEGER,
     show BOOLEAN DEFAULT FALSE,
+    width INTEGER,
+    height INTEGER,
     CONSTRAINT fk_rps_key FOREIGN KEY (rps_key) 
         REFERENCES Rock_Post_Summary (rps_key) 
         ON DELETE CASCADE

@@ -1,37 +1,29 @@
+//routes/rocks.js
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
 const pool = require('../db/pool');
 const ensureDir = require('../utils/ensureDir');
+const convertToWebP = require('../utils/convert-to-webp/convertToWebP');
+const createThumbnails = require('../utils/convert-to-webp/createThumbnails');
 
 // Multer setup
 const upload = multer({ dest: 'temp_uploads/' });
 
 const saveImage = async (file, rock_number) => {
   const outDir = path.join('media', 'catalog', String(rock_number));
-  ensureDir(outDir);
+  await ensureDir(outDir);
 
   const baseImagePath = path.join(outDir, 'a.webp');
   const thumbImagePath = path.join(outDir, 'a_sm.webp');
 
-  const image = sharp(file.path).rotate(); // Fix EXIF orientation
+  await convertToWebP(file.path, baseImagePath, { width: 512, height: 512 });
+  await createThumbnails(baseImagePath, thumbImagePath, 50, 50);
 
-  // Save full-size image
-  await image
-    .resize(512, 512, { fit: 'cover' }) // square crop
-    .toFormat('webp')
-    .toFile(baseImagePath);
+  await fs.promises.unlink(file.path);
 
-  // Save 50x50 thumbnail
-  await image
-    .resize(50, 50, { fit: 'cover' })
-    .toFormat('webp')
-    .toFile(thumbImagePath);
-
-  fs.unlinkSync(file.path); // cleanup temp
   return { baseImagePath, thumbImagePath };
 };
 

@@ -1,7 +1,10 @@
 const fs = require('fs-extra');
 const path = require('path');
-const sharp = require('sharp');
 const db = require('../../db/pool');
+
+const ensureDir = require('../ensureDir');
+const convertToWebP = require('../convert-to-webp/convertToWebP');
+const createThumbnails = require('../convert-to-webp/createThumbnails');
 
 const baseDir = path.resolve('media', 'albums');
 
@@ -26,8 +29,8 @@ async function syncAlbums() {
       continue;
     }
 
-    await fs.ensureDir(webpPath);
-    await fs.ensureDir(webp300Path);
+    await ensureDir(webpPath);
+    await ensureDir(webp300Path);
 
     const files = (await fs.readdir(oPath)).filter((f) =>
       /\.(jpg|jpeg|png)$/i.test(f)
@@ -79,20 +82,15 @@ async function syncAlbums() {
 
       if (!webpExists) {
         console.log(`🖼️ Converting to webp: ${file}`);
-        await sharp(inputPath)
-          .rotate() // <-- this fixes EXIF orientation
-          .webp()
-          .toFile(webpOutputPath);
+        await convertToWebP(inputPath, webpOutputPath);
       } else {
         console.log(`✅ Webp exists: ${webpFile}`);
       }
 
       if (!webp300Exists) {
         console.log(`🔧 Creating 300x300 version of ${webpFile}`);
-        await sharp(webpOutputPath)
-          .rotate()
-          .resize(300, 300, { fit: 'cover' })
-          .toFile(webp300OutputPath);
+        // Create 300x300 thumbnail
+        await createThumbnails(webpOutputPath, webp300OutputPath, 300, 300);
       } else {
         console.log(`✅ 300x300 exists: ${webpFile}`);
       }
@@ -104,13 +102,14 @@ async function syncAlbums() {
       );
 
       if (existingPhoto.rows.length === 0) {
+        const sharp = require('sharp');
         const { width, height } = await sharp(webpOutputPath).metadata();
         photoOrder += 1;
         console.log(`📸 Adding photo to DB: ${webpFile} (order ${photoOrder})`);
 
         await db.query(
           `INSERT INTO Photos (pa_key, name, display_name, "desc", order_num, show, width, height)
-   VALUES ($1, $2, '', '', $3, true, $4, $5)`,
+           VALUES ($1, $2, '', '', $3, true, $4, $5)`,
           [pa_key, webpFile, photoOrder, width, height]
         );
       } else {

@@ -1,52 +1,38 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+
 import "./RockCollection.css";
 
-const RockCollection = ({
-  path,
-  imageNames,
-  date,
-  location,
-  comment,
-  journeyNumber,
-}) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+import Lightbox from "yet-another-react-lightbox";
+import Captions from "yet-another-react-lightbox/plugins/captions";
+import Counter from "yet-another-react-lightbox/plugins/counter";
+import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
+import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
+import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+
+
+import "yet-another-react-lightbox/plugins/captions.css";
+import "yet-another-react-lightbox/plugins/counter.css";
+import "yet-another-react-lightbox/plugins/thumbnails.css";
+import "yet-another-react-lightbox/styles.css";
+
+const RockCollection = ({ path, imageNames, date, location, comment, journeyNumber }) => {
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const [isLocationOpen, setIsLocationOpen] = useState(false);
 
-  const openDialog = (index) => {
+  // Prepare images for Lightbox
+  // Lightbox expects array of objects with `src` property (full image URL)
+  const images = imageNames.map((name) => ({
+    src: `${path}/webp/${name}.webp`,
+    alt: `Rock image`,
+  }));
+
+  const openLightbox = (index) => {
     setCurrentIndex(index);
-    setIsDialogOpen(true);
+    setIsLightboxOpen(true);
   };
-
-  const closeDialog = () => setIsDialogOpen(false);
-
-  const nextImage = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % imageNames.length);
-  }, [imageNames.length]);
-
-  const prevImage = useCallback(() => {
-    setCurrentIndex(
-      (prev) => (prev - 1 + imageNames.length) % imageNames.length
-    );
-  }, [imageNames.length]);
-
-  useEffect(() => {
-    if (!isDialogOpen) return;
-
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
-        closeDialog();
-      } else if (e.key === "ArrowRight") {
-        nextImage();
-      } else if (e.key === "ArrowLeft") {
-        prevImage();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isDialogOpen, nextImage, prevImage]);
 
   return (
     <div className="rock-collection">
@@ -65,32 +51,25 @@ const RockCollection = ({
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              setIsLocationOpen(true);
-            }
+            if (e.key === "Enter" || e.key === " ") setIsLocationOpen(true);
           }}
         >
           {location}
         </div>
-        <div
-          className={`image-grid ${
-            imageNames.length === 1 ? "single-image" : ""
-          }`}
-        >
+
+        <div className={`image-grid ${imageNames.length === 1 ? "single-image" : ""}`}>
           {imageNames.slice(0, 2).map((img, index) => (
             <div className="thumbnail-wrapper" key={img}>
               <img
                 src={`${path}/sm/${img}.webp`}
                 alt={`Rock image ${index + 1}`}
                 className="thumbnail"
-                onClick={() => openDialog(index)}
+                onClick={() => openLightbox(index)}
                 aria-label={`Open full image ${index + 1}`}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    openDialog(index);
-                  }
+                  if (e.key === "Enter" || e.key === " ") openLightbox(index);
                 }}
               />
             </div>
@@ -104,9 +83,7 @@ const RockCollection = ({
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              setIsCommentOpen(true);
-            }
+            if (e.key === "Enter" || e.key === " ") setIsCommentOpen(true);
           }}
           style={{ cursor: "pointer" }}
         >
@@ -114,55 +91,33 @@ const RockCollection = ({
         </div>
       </div>
 
-      {/* Image dialog */}
-      {isDialogOpen && (
-        <div
-          className="dialog-overlay"
-          onClick={closeDialog}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Image viewer dialog"
-        >
-          <div
-            className="dialog-content"
-            onClick={(e) => e.stopPropagation()}
-            tabIndex={-1}
-          >
-            <div className="image-counter top">
-              Image {currentIndex + 1} of {imageNames.length}
-            </div>
-
-            <button
-              className="nav-button left"
-              onClick={prevImage}
-              aria-label="Previous image"
-            >
-              ‹
-            </button>
-
-            <div className="dialog-inner">
-              <img
-                src={`${path}/webp/${imageNames[currentIndex]}.webp`}
-                alt={`Full rock image ${currentIndex + 1}`}
-                className="full-image"
-              />
-            </div>
-
-            <button
-              className="nav-button right"
-              onClick={nextImage}
-              aria-label="Next image"
-            >
-              ›
-            </button>
-
-            <button className="dialog-close-button" onClick={closeDialog}>
-              Close
-            </button>
-          </div>
-        </div>
+      {/* Lightbox for images */}
+      {isLightboxOpen && (
+        <Lightbox
+        slides={images}
+          open={isLightboxOpen}
+          index={currentIndex}
+          close={() => setIsLightboxOpen(false)}
+        plugins={[Thumbnails, Fullscreen, Zoom, Counter, Slideshow, Captions]}
+        thumbnails={{
+          position: "bottom",
+          width: 100,
+          height: 60,
+          borderRadius: 4,
+        }}
+        slideshow={{ autoplay: false, delay: 3000 }}
+        captions={{
+          descriptionTextAlign: "center",
+          descriptionMaxLines: 2,
+        }}
+        styles={{
+          container: { backgroundColor: "rgba(0, 0, 0, 0.9)" },
+          slide: { padding: "10px" },
+        }}
+      />
       )}
 
+      {/* Comment dialog */}
       {isCommentOpen && (
         <div
           className="dialog-overlay"
@@ -180,16 +135,14 @@ const RockCollection = ({
               <h3>Comment</h3>
               <p>{comment}</p>
             </div>
-            <button
-              className="dialog-close-button"
-              onClick={() => setIsCommentOpen(false)}
-            >
+            <button className="dialog-close-button" onClick={() => setIsCommentOpen(false)}>
               Close
             </button>
           </div>
         </div>
       )}
 
+      {/* Location dialog */}
       {isLocationOpen && (
         <div
           className="dialog-overlay"
@@ -207,10 +160,7 @@ const RockCollection = ({
               <h3>Location</h3>
               <p>{location}</p>
             </div>
-            <button
-              className="dialog-close-button"
-              onClick={() => setIsLocationOpen(false)}
-            >
+            <button className="dialog-close-button" onClick={() => setIsLocationOpen(false)}>
               Close
             </button>
           </div>

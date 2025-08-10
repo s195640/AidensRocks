@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
+const sharp = require('sharp');
 
 async function saveOriginalImages(files, destDir, uuid, client, rpsKey) {
   const imageMetadata = [];
@@ -12,10 +13,15 @@ async function saveOriginalImages(files, destDir, uuid, client, rpsKey) {
     const fullName = baseName + ext;
     const fullPath = path.join(destDir, fullName);
 
+    // Use sharp to get metadata from buffer
+    const metadata = await sharp(file.buffer).metadata();
+    const width = metadata.width || null;
+    const height = metadata.height || null;
+
     await fs.writeFile(fullPath, file.buffer);
 
     imageNames.push(fullName);
-    imageMetadata.push(`  [${i + 1}] ${file.originalname} → ${fullName}`);
+    imageMetadata.push(`  [${i + 1}] ${file.originalname} → ${fullName} (${width}x${height})`);
 
     await client.query(
       `
@@ -23,11 +29,13 @@ async function saveOriginalImages(files, destDir, uuid, client, rpsKey) {
         rps_key,
         original_name,
         current_name,
-        upload_order
+        upload_order,
+        width,
+        height
       )
-      VALUES ($1, $2, $3, $4)
+      VALUES ($1, $2, $3, $4, $5, $6)
       `,
-      [rpsKey, file.originalname, baseName, i + 1]
+      [rpsKey, file.originalname, baseName, i + 1, width, height]
     );
   }
 
