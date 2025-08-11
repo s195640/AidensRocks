@@ -28,7 +28,7 @@ const RockTable = () => {
 
         // Sort collections by date ascending
         for (const key in grouped) {
-          grouped[key].sort((a, b) => new Date(a.date) - new Date(b.date));
+          grouped[key].sort((a, b) => new Date(b.date) - new Date(a.date));
         }
 
         setGroupedRocks(grouped);
