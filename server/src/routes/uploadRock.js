@@ -96,7 +96,7 @@ router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
     });
 
     // ✅ Run the image processing in the background
-    setImmediate(() => processImagesInBackground(baseDir, name, safeRockNumber, commentSafe, locationSafe));
+    setImmediate(() => processImagesInBackground(baseDir, name, safeRockNumber, commentSafe, locationSafe, rpsKey));
   } catch (err) {
     await client.query('ROLLBACK');
     console.error(err);

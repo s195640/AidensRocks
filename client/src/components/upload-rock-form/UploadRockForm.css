@@ -1,166 +1,368 @@
-.upload-rock {
-  padding: 1rem;
-  position: relative;
-}
-
-/* Modal backdrop */
-.modal-backdrop {
+/* Overlay for popup dialog */
+.rock-form-overlay {
   position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 999;
-}
-
-/* Dialog-style form */
-.rock-form {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  padding: 2rem;
-  z-index: 1000;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  max-width: 500px;
-  width: 90%;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-/* Mobile full-screen override */
-@media (max-width: 600px) {
-  .rock-form {
-    top: 0;
-    left: 0;
-    transform: none;
-    width: 100vw;
-    height: 100vh;
-    max-height: none;
-    border-radius: 0;
-    padding: 1rem 1rem 7rem; /* extra bottom padding for mobile */
-    box-sizing: border-box;
-  }
-
-  .rock-form h2 {
-    position: sticky;
-    top: 0;
-    background: white;
-    z-index: 2;
-    padding: 0.5rem 0;
-    margin: 0;
-  }
-}
-
-/* Button styling */
-.upload-btn,
-.submit-btn {
-  background-color: #007bff;
-  color: white;
-  padding: 0.6rem 1rem;
-  border: none;
-  cursor: pointer;
-  margin-top: 1rem;
-  border-radius: 6px;
-}
-
-/* Make submit button fixed size matching uploading button */
-.submit-btn {
-  min-width: 120px; /* fixed width */
-  height: 40px; /* fixed height */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem; /* spacing between text and spinner */
-  margin-bottom: 1rem;
+  z-index: 999;
 }
 
-/* Focus outlines for accessibility */
-.rock-form input:focus,
-.rock-form textarea:focus,
-.rock-form button:focus {
-  outline: 2px solid #007bff;
-  outline-offset: 2px;
-}
-
-.image-preview {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 0.5rem;
-}
-
-.image-container {
+/* Dialog box */
+.rock-form {
   position: relative;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.3s ease-out;
+  box-sizing: border-box;
+  min-width: 320px;
 }
 
-.image-container img {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 6px;
+
+/* Title & note */
+.rock-form h2 {
+  margin-top: 0;
+  text-align: center;
 }
 
-.image-container button {
+.rock-form .upload-note {
+  text-align: center;
+  font-size: 0.7rem;
+  color: #cc5500;
+  /* darker orange */
+  margin-top: -1rem;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+  font-weight: bold;
+}
+
+/* Close button */
+.rock-form .close-btn {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  background: red;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 1100;
+}
+
+.rock-form .close-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Form layout */
+.rock-form form {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 0.5rem 1rem;
+  align-items: center;
+}
+
+.rock-form label {
+  text-align: right;
+  font-weight: 500;
+}
+
+.required {
+  color: red;
+}
+
+.rock-form input,
+.rock-form textarea,
+.rock-form select {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+/* Full-width row */
+.rock-form .full-width {
+  grid-column: 1 / -1;
+  text-align: center;
+}
+
+/* Submit button */
+.rock-form .submit-btn {
+  padding: 0.6rem 1.2rem;
+  background-color: #4caf50;
   color: white;
   border: none;
-  cursor: pointer;
-  padding: 0.2rem 0.4rem;
-  font-size: 0.75rem;
   border-radius: 4px;
+  cursor: pointer;
 }
 
-.rock-form div {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+.rock-form .submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-/* Label styling */
-.rock-form label {
-  font-weight: 500;
-  margin-bottom: 0.2rem;
-  text-align: left;
-}
-
-/* Input and textarea styling */
-.rock-form input[type="text"],
-.rock-form input[type="number"],
-.rock-form input[type="date"],
-.rock-form input[type="email"],
-.rock-form textarea,
-.rock-form input[type="file"] {
-  padding: 0.25rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 0.8rem;
-}
-
-/* Better spacing between sections */
-.rock-form > div {
-  margin-bottom: 0.1rem;
-}
-
+/* Spinner */
 .spinner {
   display: inline-block;
-  width: 24px;
-  height: 24px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-top: 2px solid white;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  vertical-align: middle;
+  margin-left: 0.5rem;
+  animation: spin 0.6s linear infinite;
 }
 
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Image previews */
+.image-preview-container {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.image-container {
+  position: relative;
+  display: inline-block;
+}
+
+.image-container img {
+  max-width: 120px;
+  max-height: 120px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.remove-image-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Dialog fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.select-images-btn {
+  background-color: #007BFF;
+  /* Bootstrap-like blue */
+  color: white;
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 6px rgba(0, 123, 255, 0.4);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  user-select: none;
+}
+
+.select-images-btn:hover:not(:disabled) {
+  background-color: #0056b3;
+  box-shadow: 0 5px 12px rgba(0, 86, 179, 0.6);
+}
+
+.select-images-btn:disabled {
+  background-color: #a3c0f9;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Reuse the same button style for Submit */
+.submit-btn {
+  background-color: #007BFF;
+  /* Same blue as Select Images */
+  color: white;
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 6px rgba(0, 123, 255, 0.4);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  user-select: none;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background-color: #0056b3;
+  box-shadow: 0 5px 12px rgba(0, 86, 179, 0.6);
+}
+
+.submit-btn:disabled {
+  background-color: #a3c0f9;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Container holding select images button and count */
+.image-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Container around the whole images input row */
+.images-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Image preview container flex tweaks */
+.image-preview-container {
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Error message below select images button */
+.image-error-message {
+  color: #8B0000;
+  /* dark red */
+  font-size: 0.7rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  width: 100%;
+  /* center text in container */
+}
+
+/* Inner preview images flex container */
+.image-previews-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Hide native file input */
+.hidden-file-input {
+  display: none;
+}
+
+/* ===== Mobile styles ===== */
+@media (max-width: 600px) {
+  .rock-form {
+    width: 95%;
+    padding: 1rem;
+  }
+
+  .rock-form form {
+    grid-template-columns: 110px 1fr;
+  }
+
+  .rock-form label {
+    font-size: 0.85rem;
+  }
+
+  .rock-form input,
+  .rock-form textarea,
+  .rock-form select {
+    font-size: 0.9rem;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    font-size: 0.60rem;
+  }
+}
+
+/* Dialog overlay for success/error */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+}
+
+/* Dialog box */
+.dialog-box {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  animation: fadeIn 0.3s ease-out;
+  text-align: center;
+}
+
+/* Dialog title */
+.dialog-title {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+/* Dialog message */
+.dialog-message {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+
+/* Dialog close button */
+.dialog-close-btn {
+  background-color: #007BFF;
+  color: white;
+  padding: 0.5rem 1.4rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 6px rgba(0, 123, 255, 0.4);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  user-select: none;
+}
+
+.dialog-close-btn:hover {
+  background-color: #0056b3;
+  box-shadow: 0 5px 12px rgba(0, 86, 179, 0.6);
 }

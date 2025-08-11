@@ -1,11 +1,9 @@
-// UploadRockForm.jsx
 import axios from "axios";
-import { useEffect, useRef, useState } from "react";
-import { v4 as uuidv4 } from "uuid";
+import { useState, useRef } from "react";
 import { useARContext } from "../../context/ARContext";
 import "./UploadRockForm.css";
 
-const UploadRockForm = ({ onClose }) => {
+export default function UploadRockForm({ onClose }) {
   const { trackerData, rValue } = useARContext();
 
   const [rockNumberQr] = useState(() =>
@@ -23,32 +21,68 @@ const UploadRockForm = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [imageError, setImageError] = useState("");
+  const [dialog, setDialog] = useState(null);
+
 
   const fileInputRef = useRef(null);
-  const firstInputRef = useRef(null);
 
   const isSubmitEnabled =
-    (comment.trim() !== "" || images.length > 0) && !loading;
+    rockNumber.trim() &&
+    location.trim() &&
+    comment.trim() &&
+    images.length > 0 &&
+    !loading;
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    const filePreviews = files.map((file) => ({
-      id: uuidv4(),
+
+    // Filter only valid image files
+    const invalidFiles = files.filter(file => !file.type.startsWith("image/"));
+    if (invalidFiles.length > 0) {
+      setImageError("Only image files are allowed.");
+      e.target.value = null;
+      return; // Stop processing invalid files
+    }
+
+    if (images.length + files.length > 5) {
+      setImageError("You can only upload up to 5 images.");
+      e.target.value = null;
+      return;
+    } else {
+      setImageError("");
+    }
+
+    const allowedFiles = files.slice(0, 5 - images.length);
+
+    const fileURLs = allowedFiles.map((file) => ({
+      url: URL.createObjectURL(file),
       file,
-      preview: URL.createObjectURL(file),
     }));
-    setImages((prev) => [...prev, ...filePreviews]);
+
+    setImages((prev) => [...prev, ...fileURLs]);
+
+    e.target.value = null;
   };
 
-  const removeImage = (idToRemove) => {
-    const removed = images.find((img) => img.id === idToRemove);
-    if (removed) URL.revokeObjectURL(removed.preview);
-    const updated = images.filter((img) => img.id !== idToRemove);
-    setImages(updated);
+
+
+
+
+  const handleRemoveImage = (index) => {
+    setImages((prev) => {
+      const newImages = prev.filter((_, i) => i !== index);
+      if (newImages.length <= 5) {
+        setImageError("");
+      }
+      return newImages;
+    });
+
     if (fileInputRef.current) {
       fileInputRef.current.value = null;
     }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -75,250 +109,236 @@ const UploadRockForm = ({ onClose }) => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert("Rock submitted!");
-      onClose();
+      setDialog({
+        type: "success",
+        message: (
+          <>
+            Thank you for helping us remember Aiden!<br /><br />
+            <strong>What to do next!</strong>
+            <ol style={{ textAlign: "left", margin: "0.5rem 0 0 1.25rem" }}>
+              <li>Take the rock with you to another new location and post again.</li>
+              <li>Leave the rock behind where it can be found for the next person.</li>
+              <li>
+                Finally, Email us and request a new rock for your next adventure.{" "}
+                <a href="mailto:AidensRocks.AAA@gmail.com">AidensRocks.AAA@gmail.com</a>
+              </li>
+            </ol>
+          </>
+        ),
+      });
+
+      // Reset form fields after success
       setRockNumber("");
       setLocation("");
       setDate(new Date().toISOString().split("T")[0]);
       setComment("");
       setImages([]);
+      setName("");
+      setEmail("");
       if (fileInputRef.current) fileInputRef.current.value = null;
     } catch (err) {
       console.error("Upload failed:", err);
-      alert("Failed to upload rock.");
+      setDialog({
+        type: "error",
+        message:
+          "Sorry, something went wrong. The submit did not work. Please email us instead if it keeps failing: AidensRocks.AAA@gmail.com",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    return () => {
-      images.forEach((img) => URL.revokeObjectURL(img.preview));
-    };
-  }, [images]);
-
-  useEffect(() => {
-    const handleKey = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [onClose]);
-
-  useEffect(() => {
-    if (firstInputRef.current) {
-      firstInputRef.current.focus();
+  // Close dialog handler
+  const closeDialog = () => {
+    setDialog(null);
+    if (dialog?.type === "success") {
+      onClose(); // Close form on success dialog close
     }
-  }, []);
-
-  useEffect(() => {
-    const focusable = document.querySelectorAll(
-      ".rock-form button, .rock-form input, .rock-form textarea"
-    );
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-
-    const trap = (e) => {
-      if (e.key === "Tab") {
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-
-    document.addEventListener("keydown", trap);
-    return () => document.removeEventListener("keydown", trap);
-  }, []);
-
+  };
   return (
     <>
-      <div className="modal-backdrop" onClick={onClose} />
-      <form
-        onSubmit={handleSubmit}
-        className="rock-form"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="upload-rock-title"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 id="upload-rock-title" style={{ marginTop: 0 }}>
-          Upload Your Rock
-        </h2>
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: "1rem",
-            right: "1rem",
-            background: "transparent",
-            border: "none",
-            fontSize: "1.5rem",
-            cursor: "pointer",
-            zIndex: 1100,
-          }}
-          aria-label="Close form"
-          disabled={loading}
-        >
-          ×
-        </button>
+      <div className="rock-form-overlay">
+        <div className="rock-form">
+          <button
+            type="button"
+            onClick={onClose}
+            className="close-btn"
+            aria-label="Close form"
+            disabled={loading}
+          >
+            ×
+          </button>
 
-        {/* Rock Number */}
-        <div>
-          <label>
-            Rock Number{" "}
-            <span style={{ fontWeight: "normal", color: "#888" }}>
-              (optional)
-            </span>
-          </label>
-          <input
-            type="number"
-            min="1"
-            value={rockNumber}
-            onChange={(e) => {
-              const value = parseInt(e.target.value, 10);
-              if (!isNaN(value) && value >= 1) {
-                setRockNumber(value);
-              } else if (e.target.value === "") {
-                setRockNumber("");
-              }
-            }}
-            ref={firstInputRef}
-            disabled={loading}
-          />
-        </div>
-        {/* Name */}
-        <div>
-          <label>
-            Name{" "}
-            <span style={{ fontWeight: "normal", color: "#888" }}>
-              (optional)
-            </span>
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            disabled={loading}
-          />
-        </div>
+          <h2 id="upload-rock-title">Upload Your Rock</h2>
+          <p className="upload-note">
+            <strong>
+              Thank you for helping us remember our baby! Provide the rock number, location, comment, and at least 1 image.  After you submit check the Track the Rocks page for the post.
+            </strong>
+          </p>
 
-        {/* Email */}
-        <div>
-          <label>
-            Email{" "}
-            <span style={{ fontWeight: "normal", color: "#888" }}>
-              (optional)
-            </span>
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-          />
-        </div>
-        {/* Location */}
-        <div>
-          <label>
-            Location{" "}
-            <span style={{ fontWeight: "normal", color: "#888" }}>
-              (optional)
-            </span>
-          </label>
-          <input
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            disabled={loading}
-          />
-        </div>
+          <form onSubmit={handleSubmit}>
+            {/* Rock Number */}
+            <label htmlFor="rockNumber">
+              Rock Number: <span className="required">*</span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              id="rockNumber"
+              placeholder="Enter 0, if the rocknumber is not visable."
+              value={rockNumber}
+              onChange={(e) => setRockNumber(e.target.value)}
+              required
+            />
 
-        {/* Date */}
-        <div>
-          <label>Date</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            disabled={loading}
-          />
-        </div>
+            {/* Name */}
+            <label htmlFor="name">Name:</label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              placeholder="(optional)"
+              onChange={(e) => setName(e.target.value)}
+            />
 
-        {/* Comment */}
-        <div>
-          <label>
-            Comment{" "}
-            <span style={{ fontWeight: "normal", color: "#888" }}>
-              (required)
-            </span>
-          </label>
-          <textarea
-            rows={4}
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            disabled={loading}
-          />
-        </div>
+            {/* Email */}
+            <label htmlFor="email">Email:</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              placeholder="(optional) - If provided, we may contact you!"
+              onChange={(e) => setEmail(e.target.value)}
+            />
 
-        {/* Images */}
-        <div>
-          <label>
-            Images{" "}
-            <span style={{ fontWeight: "normal", color: "#888" }}>
-              (optional)
-            </span>
-          </label>
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleImageChange}
-            ref={fileInputRef}
-            disabled={loading}
-          />
-          <div className="image-preview">
-            {images.map((img) => (
-              <div key={img.id} className="image-container">
-                <img src={img.preview} alt="Preview" />
+            {/* Location */}
+            <label htmlFor="location">
+              Location: <span className="required">*</span>
+            </label>
+            <input
+              id="location"
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              required
+            />
+
+            {/* Date */}
+            <label htmlFor="date">Date:</label>
+            <input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+
+            {/* Comment */}
+            <label htmlFor="comment">
+              Comment: <span className="required">*</span>
+            </label>
+            <textarea
+              id="comment"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              required
+            />
+
+            {/* Images */}
+            <label htmlFor="images">
+              Images: <span className="required">*</span>
+            </label>
+            <div className="images-input-row">
+              {/* Hidden native file input */}
+              <input
+                id="images"
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageChange}
+                ref={fileInputRef}
+                className="hidden-file-input"
+              />
+
+              {/* Button and count */}
+              <div className="image-select-wrapper">
                 <button
                   type="button"
-                  onClick={() => removeImage(img.id)}
+                  className="select-images-btn"
+                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
                   disabled={loading}
                 >
-                  Remove
+                  Select Images
                 </button>
+                <span>{images.length} of 5</span>
               </div>
-            ))}
+            </div>
+
+
+            {/* Image previews container including error message */}
+            <div className="image-preview-container">
+              {/* Error message centered */}
+              {imageError && (
+                <p className="image-error-message">{imageError}</p>
+              )}
+
+              {/* Preview images */}
+              <div className="image-previews-flex">
+                {images.map((img, index) => (
+                  <div className="image-container" key={index}>
+                    <img src={img.url} alt={`Preview ${index}`} />
+                    <button
+                      type="button"
+                      className="remove-image-btn"
+                      onClick={() => handleRemoveImage(index)}
+                      disabled={loading}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+
+            {/* Submit */}
+            <div className="full-width">
+              <button
+                type="submit"
+                className="submit-btn"
+                disabled={!isSubmitEnabled}
+              >
+                {loading ? (
+                  <>
+                    Uploading
+                    <span className="spinner" />
+                  </>
+                ) : (
+                  "Submit"
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      {/* Submit Success/Error Dialog */}
+      {dialog && (
+        <div className="dialog-overlay" role="alertdialog" aria-modal="true">
+          <div className="dialog-box">
+            <h3 className="dialog-title" style={{ textAlign: "center" }}>
+              {dialog.type === "success" ? "Thank You!" : "Submit Failed"}
+            </h3>
+            <div className="dialog-message">{dialog.message}</div>
+            <button
+              type="button"
+              onClick={closeDialog}
+              className="dialog-close-btn"
+              autoFocus
+            >
+              Close
+            </button>
           </div>
         </div>
-
-        {/* Submit */}
-        <button
-          type="submit"
-          className="submit-btn"
-          disabled={!isSubmitEnabled}
-          style={{
-            opacity: isSubmitEnabled ? 1 : 0.5,
-            cursor: isSubmitEnabled ? "pointer" : "not-allowed",
-          }}
-        >
-          {loading ? (
-            <>
-              Uploading
-              <span className="spinner" />
-            </>
-          ) : (
-            "Submit"
-          )}
-        </button>
-      </form>
+      )}
     </>
   );
-};
-
-export default UploadRockForm;
+}

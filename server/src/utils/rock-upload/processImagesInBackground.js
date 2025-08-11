@@ -2,9 +2,10 @@ const path = require('path');
 const ensureDir = require('../ensureDir');
 const convertToWebP = require('../convert-to-webp/convertToWebP');
 const createThumbnails = require('../convert-to-webp/createThumbnails');
-const sendEmail = require('../sendEmail');  // import your email sender
+const sendEmail = require('../sendEmail');
+const db = require('../../db/pool');
 
-async function processImagesInBackground(baseDir, name, safeRockNumber, commentSafe, locationSafe) {
+async function processImagesInBackground(baseDir, name, safeRockNumber, commentSafe, locationSafe, rpsKey) {
   try {
     const originalDir = path.join(baseDir, 'o');
     const webpDir = path.join(baseDir, 'webp');
@@ -16,6 +17,13 @@ async function processImagesInBackground(baseDir, name, safeRockNumber, commentS
 
     await ensureDir(smDir);
     await createThumbnails(webpDir, smDir, 300, 300);
+
+    // Only update DB if safeRockNumber > 0
+    if (safeRockNumber > 0 && rpsKey) {
+      await db.query('UPDATE Rock_Post_Summary SET show = true WHERE rps_key = $1', [rpsKey]);
+      await db.query('UPDATE Rock_Post_Image SET show = true WHERE rps_key = $1', [rpsKey]);
+      console.log(`✅ Updated DB show flags for rps_key ${rpsKey}`);
+    }
 
     console.log(`✅ Finished background processing for ${baseDir}`);
 
