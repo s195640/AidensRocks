@@ -23,7 +23,11 @@ const Footer = () => {
         <div className="footer-content-inner">
           <ul>
             <li>
-              <a href="#" onClick={handleSocialClick} aria-label="Facebook">
+              <a
+                href="https://www.facebook.com/groups/1733974850593785/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <div className="icon-circle">
                   <i className="fa-brands fa-facebook"></i>
                 </div>

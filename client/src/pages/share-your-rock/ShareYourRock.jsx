@@ -87,12 +87,12 @@ const ShareYourRock = () => {
             <li>
               Share and follow our Facebook:{" "}
               <a
-                href="#"
-                onClick={handleSocialClick}
-                className={styles.socialLink}
-                aria-label="Facebook coming soon"
+                href="https://www.facebook.com/groups/1733974850593785/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-link"
               >
-                <FaFacebookSquare size={20} className={styles.socialIcon} />
+                <FaFacebookSquare size={20} className="social-icon" />
                 Aidens Rocks
               </a>
             </li>
