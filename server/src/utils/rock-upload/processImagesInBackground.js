@@ -29,7 +29,7 @@ async function processImagesInBackground(baseDir, name, safeRockNumber, commentS
 
     // Send notification email on success
     await sendEmail({
-      to: "AidensRocks.AAA@gmail.com, 6142868724@vtext.com, 7023389348@tmomail.net",
+      to: "AidensRocks.AAA@gmail.com, 6142868724@vtext.com",
       subject: `New Rock Journey: Rock ${safeRockNumber}`,
       text: `A new Rock Journey has been posted.
 
