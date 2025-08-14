@@ -13,6 +13,8 @@ const Rocks = () => {
   const [comment, setComment] = useState("");
   const [sortBy, setSortBy] = useState("rock_number");
   const [sortDir, setSortDir] = useState("asc");
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [imageSrc, setImageSrc] = useState("");
 
   const loadRocks = async () => {
     const res = await axios.get("/api/rocks");
@@ -45,6 +47,16 @@ const Rocks = () => {
 
   const closeDialog = () => {
     setDialogOpen(false);
+  };
+
+  const openImageDialog = (rock) => {
+    setImageSrc(`/media/catalog/${rock.rock_number}/a.webp`);
+    setImageDialogOpen(true);
+  };
+
+  const closeImageDialog = () => {
+    setImageDialogOpen(false);
+    setImageSrc("");
   };
 
   const handleSubmit = async (e) => {
@@ -92,23 +104,30 @@ const Rocks = () => {
   const sortedRocks = [...rocks].sort((a, b) => {
     let valA = a[sortBy];
     let valB = b[sortBy];
+
     if (sortBy === "artists") {
       valA = a.artists.map((a) => a.display_name).join(", ");
       valB = b.artists.map((a) => a.display_name).join(", ");
     }
+
+    if (valA == null) valA = "";
+    if (valB == null) valB = "";
+
     return sortDir === "asc"
       ? String(valA).localeCompare(String(valB))
       : String(valB).localeCompare(String(valA));
   });
 
+  const renderSortArrow = (field) => {
+    if (sortBy !== field) return null;
+    return sortDir === "asc" ? " ↑" : " ↓";
+  };
+
   return (
     <div className={styles.rocksContainer}>
       <div className={styles.rocksHeader}>
         <h2>Rock Catalog</h2>
-        <button
-          className={styles.createButton}
-          onClick={() => openDialog(null)}
-        >
+        <button className={styles.createButton} onClick={() => openDialog()}>
           + Create Rock
         </button>
       </div>
@@ -116,8 +135,15 @@ const Rocks = () => {
       <table className={styles.rocksTable}>
         <thead>
           <tr>
-            <th onClick={() => toggleSort("rock_number")}>Rock Number</th>
-            <th onClick={() => toggleSort("artists")}>Artists</th>
+            <th onClick={() => toggleSort("rock_number")}>
+              Rock Number{renderSortArrow("rock_number")}
+            </th>
+            <th onClick={() => toggleSort("artists")}>
+              Artists{renderSortArrow("artists")}
+            </th>
+            <th onClick={() => toggleSort("comment")}>
+              Comment{renderSortArrow("comment")}
+            </th>
             <th>Image</th>
             <th>Actions</th>
           </tr>
@@ -127,25 +153,27 @@ const Rocks = () => {
             <tr key={rock.rc_key}>
               <td>{rock.rock_number}</td>
               <td>{rock.artists.map((a) => a.display_name).join(", ")}</td>
+              <td>{rock.comment}</td>
               <td>
                 <img
                   src={`/media/catalog/${rock.rock_number}/a_sm.webp`}
                   alt=""
                   className={styles.rockThumb}
+                  onClick={() => openImageDialog(rock)}
                   onError={(e) => (e.target.style.display = "none")}
+                  style={{ cursor: "pointer" }}
                 />
               </td>
               <td>
                 <button onClick={() => openDialog(rock)}>Edit</button>
-                <button onClick={() => handleDelete(rock.rc_key)}>
-                  Delete
-                </button>
+                <button onClick={() => handleDelete(rock.rc_key)}>Delete</button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
 
+      {/* Rock create/edit dialog */}
       {dialogOpen && (
         <>
           <div className={styles.dialogOverlay}></div>
@@ -167,9 +195,7 @@ const Rocks = () => {
                 value={selectedArtistKeys}
                 onChange={(e) =>
                   setSelectedArtistKeys(
-                    Array.from(e.target.selectedOptions, (o) =>
-                      parseInt(o.value)
-                    )
+                    Array.from(e.target.selectedOptions, (o) => parseInt(o.value))
                   )
                 }
                 required
@@ -204,6 +230,19 @@ const Rocks = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </>
+      )}
+
+      {/* Full image dialog */}
+      {imageDialogOpen && (
+        <>
+          <div className={styles.dialogOverlay} onClick={closeImageDialog}></div>
+          <div className={styles.dialog}>
+            <img src={imageSrc} alt="" style={{ width: "100%" }} />
+            <div className={styles.dialogButtons}>
+              <button onClick={closeImageDialog}>Close</button>
+            </div>
           </div>
         </>
       )}
