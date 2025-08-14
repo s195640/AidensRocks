@@ -4,11 +4,10 @@ import Job from "../../components/job/Job";
 import styles from "./CreateQRCodes.module.css";
 
 const CreateQRCodes = () => {
-  const [rangeStart, setRangeStart] = useState(1);
-  const [rangeEnd, setRangeEnd] = useState(28);
+  const [rangeStart, setRangeStart] = useState(101); // default value 101
 
   const handlePreview = async () => {
-    if (rangeEnd < rangeStart) return alert("End must be >= Start");
+    const rangeEnd = rangeStart + 109; // automatically +109
 
     const qrHTMLChunks = [];
 
@@ -36,16 +35,16 @@ const CreateQRCodes = () => {
         <style>
           body {
             font-family: Verdana, Arial, sans-serif;
-            margin: 1in;
+            margin: .1in;
           }
           .qr-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.5in;
+            gap: 0.2in;
             justify-content: center;
           }
           .qr-entry {
-            width: 1in;
+            width: .5in;
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -105,7 +104,7 @@ const CreateQRCodes = () => {
   return (
     <Job title="Create QR Codes">
       <div className={styles.qrInputs}>
-        <label>Rock Range:</label>
+        <label>Rock Range ({rangeStart} to {rangeStart + 109}):</label>
         <div className={styles.rangeInputs}>
           <input
             type="number"
@@ -113,14 +112,6 @@ const CreateQRCodes = () => {
             max="100000"
             value={rangeStart}
             onChange={(e) => setRangeStart(Number(e.target.value))}
-          />
-          <span className={styles.toSeparator}>to</span>
-          <input
-            type="number"
-            min="1"
-            max="100000"
-            value={rangeEnd}
-            onChange={(e) => setRangeEnd(Number(e.target.value))}
           />
         </div>
       </div>
