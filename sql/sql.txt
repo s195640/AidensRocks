@@ -52,6 +52,8 @@ CREATE TABLE Rock_Catalog (
 CREATE TABLE Rock_Artist (
     ra_key SERIAL PRIMARY KEY,
     display_name VARCHAR(255) NOT NULL,
+    relation VARCHAR(255),
+    dob DATE,
     create_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     update_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT display_name_unique UNIQUE (display_name) -- Optional: Ensure display_name is unique

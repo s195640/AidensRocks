@@ -17,15 +17,15 @@ router.get('/', async (req, res, next) => {
 // Create a new user
 router.post('/', async (req, res, next) => {
   try {
-    const { display_name } = req.body;
+    const { display_name, relation, dob } = req.body;
     if (!display_name)
       return res.status(400).json({ error: 'Display name required' });
 
     const result = await pool.query(
-      `INSERT INTO Rock_Artist (display_name)
-       VALUES ($1)
+      `INSERT INTO Rock_Artist (display_name, relation, dob)
+       VALUES ($1, $2, $3)
        RETURNING *`,
-      [display_name]
+      [display_name, relation || null, dob || null]
     );
 
     res.status(201).json(result.rows[0]);
@@ -42,17 +42,19 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { display_name } = req.body;
+    const { display_name, relation, dob } = req.body;
     if (!display_name)
       return res.status(400).json({ error: 'Display name required' });
 
     const result = await pool.query(
       `UPDATE Rock_Artist
        SET display_name = $1,
+           relation = $2,
+           dob = $3,
            update_dt = CURRENT_TIMESTAMP
-       WHERE ra_key = $2
+       WHERE ra_key = $4
        RETURNING *`,
-      [display_name, id]
+      [display_name, relation || null, dob || null, id]
     );
 
     if (result.rows.length === 0) {
