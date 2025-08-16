@@ -16,7 +16,7 @@ import "yet-another-react-lightbox/plugins/counter.css";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
 import "yet-another-react-lightbox/styles.css";
 
-const RockCollection = ({ path, imageNames, date, location, comment, journeyNumber }) => {
+const RockCollection = ({ path, imagenames, date, location, comment, journeyNumber }) => {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isCommentOpen, setIsCommentOpen] = useState(false);
@@ -24,7 +24,7 @@ const RockCollection = ({ path, imageNames, date, location, comment, journeyNumb
 
   // Prepare images for Lightbox
   // Lightbox expects array of objects with `src` property (full image URL)
-  const images = imageNames.map((name) => ({
+  const images = imagenames.map((name) => ({
     src: `${path}/webp/${name}.webp`,
     alt: `Rock image`,
   }));
@@ -57,8 +57,8 @@ const RockCollection = ({ path, imageNames, date, location, comment, journeyNumb
           {location}
         </div>
 
-        <div className={`image-grid ${imageNames.length === 1 ? "single-image" : ""}`}>
-          {imageNames.slice(0, 2).map((img, index) => (
+        <div className={`image-grid ${imagenames.length === 1 ? "single-image" : ""}`}>
+          {imagenames.slice(0, 2).map((img, index) => (
             <div className="thumbnail-wrapper" key={img}>
               <img
                 src={`${path}/sm/${img}.webp`}
@@ -94,27 +94,27 @@ const RockCollection = ({ path, imageNames, date, location, comment, journeyNumb
       {/* Lightbox for images */}
       {isLightboxOpen && (
         <Lightbox
-        slides={images}
+          slides={images}
           open={isLightboxOpen}
           index={currentIndex}
           close={() => setIsLightboxOpen(false)}
-        plugins={[Thumbnails, Fullscreen, Zoom, Counter, Slideshow, Captions]}
-        thumbnails={{
-          position: "bottom",
-          width: 100,
-          height: 60,
-          borderRadius: 4,
-        }}
-        slideshow={{ autoplay: false, delay: 3000 }}
-        captions={{
-          descriptionTextAlign: "center",
-          descriptionMaxLines: 2,
-        }}
-        styles={{
-          container: { backgroundColor: "rgba(0, 0, 0, 0.9)" },
-          slide: { padding: "10px" },
-        }}
-      />
+          plugins={[Thumbnails, Fullscreen, Zoom, Counter, Slideshow, Captions]}
+          thumbnails={{
+            position: "bottom",
+            width: 100,
+            height: 60,
+            borderRadius: 4,
+          }}
+          slideshow={{ autoplay: false, delay: 3000 }}
+          captions={{
+            descriptionTextAlign: "center",
+            descriptionMaxLines: 2,
+          }}
+          styles={{
+            container: { backgroundColor: "rgba(0, 0, 0, 0.9)" },
+            slide: { padding: "10px" },
+          }}
+        />
       )}
 
       {/* Comment dialog */}

@@ -15,10 +15,10 @@ const RockTable = () => {
 
         const grouped = {};
         data.forEach((entry) => {
-          const { rock_number, uuid, imageNames, location, date, comment } =
+          const { rock_number, uuid, imagenames, location, date, comment, artists } =
             entry;
           const path = `/media/rocks/${rock_number}/${uuid}`;
-          const collection = { path, imageNames, location, date, comment };
+          const collection = { path, imagenames, location, date, comment, artists };
 
           if (!grouped[rock_number]) {
             grouped[rock_number] = [];
@@ -26,7 +26,8 @@ const RockTable = () => {
           grouped[rock_number].push(collection);
         });
 
-        // Sort collections by date ascending
+
+        // Sort collections by date descending
         for (const key in grouped) {
           grouped[key].sort((a, b) => new Date(b.date) - new Date(a.date));
         }

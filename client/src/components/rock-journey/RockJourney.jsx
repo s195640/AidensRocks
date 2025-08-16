@@ -16,6 +16,7 @@ const RockJourney = ({ rockNumber, collections }) => {
           totalTrips={totalTrips}
           startDate={startDate}
           latestDate={latestDate}
+          artists={collections[0].artists}
         />
       </div>
 
@@ -25,7 +26,7 @@ const RockJourney = ({ rockNumber, collections }) => {
             <div className="scroll-item" key={index}>
               <RockCollection
                 path={collection.path}
-                imageNames={collection.imageNames}
+                imagenames={collection.imagenames}
                 date={collection.date}
                 location={collection.location}
                 comment={collection.comment}
