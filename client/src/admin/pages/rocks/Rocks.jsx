@@ -15,6 +15,8 @@ const Rocks = () => {
   const [sortDir, setSortDir] = useState("asc");
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [imageSrc, setImageSrc] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const loadRocks = async () => {
     const res = await axios.get("/api/rocks");
@@ -45,15 +47,11 @@ const Rocks = () => {
     setDialogOpen(true);
   };
 
-  const closeDialog = () => {
-    setDialogOpen(false);
-  };
-
+  const closeDialog = () => setDialogOpen(false);
   const openImageDialog = (rock) => {
     setImageSrc(`/media/catalog/${rock.rock_number}/a.webp`);
     setImageDialogOpen(true);
   };
-
   const closeImageDialog = () => {
     setImageDialogOpen(false);
     setImageSrc("");
@@ -61,11 +59,7 @@ const Rocks = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (
-      !rockNumber ||
-      selectedArtistKeys.length === 0 ||
-      (!selectedRock && !imageFile)
-    ) {
+    if (!rockNumber || selectedArtistKeys.length === 0 || (!selectedRock && !imageFile)) {
       alert("All fields are required except comment.");
       return;
     }
@@ -76,20 +70,38 @@ const Rocks = () => {
     formData.append("comment", comment);
     if (imageFile) formData.append("image", imageFile);
 
-    if (selectedRock) {
-      await axios.put(`/api/rocks/${selectedRock.rc_key}`, formData);
-    } else {
-      await axios.post("/api/rocks", formData);
+    try {
+      setIsSaving(true);
+      if (selectedRock) {
+        await axios.put(`/api/rocks/${selectedRock.rc_key}`, formData);
+      } else {
+        await axios.post("/api/rocks", formData);
+      }
+      await loadRocks();
+      closeDialog();
+      setSuccessMessage(`Rock ${rockNumber} was successful`);
+      setTimeout(() => setSuccessMessage(""), 10000);
+    } catch (err) {
+      console.error(err);
+      alert("Error saving rock");
+    } finally {
+      setIsSaving(false);
     }
-
-    loadRocks();
-    closeDialog();
   };
 
   const handleDelete = async (rc_key) => {
     if (!window.confirm("Are you sure?")) return;
     await axios.delete(`/api/rocks/${rc_key}`);
     loadRocks();
+  };
+
+  const handleEditByNumber = () => {
+    const rock = rocks.find((r) => r.rock_number === parseInt(rockNumber));
+    if (rock) {
+      openDialog(rock);
+    } else {
+      alert(`Rock number ${rockNumber} not found`);
+    }
   };
 
   const toggleSort = (field) => {
@@ -104,15 +116,12 @@ const Rocks = () => {
   const sortedRocks = [...rocks].sort((a, b) => {
     let valA = a[sortBy];
     let valB = b[sortBy];
-
     if (sortBy === "artists") {
       valA = a.artists.map((a) => a.display_name).join(", ");
       valB = b.artists.map((a) => a.display_name).join(", ");
     }
-
     if (valA == null) valA = "";
     if (valB == null) valB = "";
-
     return sortDir === "asc"
       ? String(valA).localeCompare(String(valB))
       : String(valB).localeCompare(String(valA));
@@ -123,26 +132,51 @@ const Rocks = () => {
     return sortDir === "asc" ? " ↑" : " ↓";
   };
 
+  const totalRocks = rocks.length;
+  const totalRocks24h = rocks.filter(
+    (r) => new Date(r.create_dt) > Date.now() - 24 * 60 * 60 * 1000
+  ).length;
+
   return (
     <div className={styles.rocksContainer}>
-      <div className={styles.rocksHeader}>
-        <h2>Rock Catalog</h2>
-        <button className={styles.createButton} onClick={() => openDialog()}>
-          + Create Rock
-        </button>
+      <div className={styles.headerTop}>
+        <div className={styles.headerLeft}>
+          <h2>Rock Catalog</h2>
+          <div className={styles.totals}>
+            <div>Total Rocks: {totalRocks}</div>
+            <div>Total Rocks (last 24h): {totalRocks24h}</div>
+          </div>
+        </div>
+        <div className={styles.headerRight}>
+          <button className={styles.createButton} onClick={() => openDialog()}>
+            + Create Rock
+          </button>
+          <div className={styles.editRock}>
+            <input
+              type="number"
+              placeholder="Rock Number"
+              value={rockNumber}
+              onChange={(e) => setRockNumber(e.target.value)}
+            />
+            <button onClick={handleEditByNumber}>Edit</button>
+          </div>
+        </div>
       </div>
 
       <table className={styles.rocksTable}>
         <thead>
           <tr>
             <th onClick={() => toggleSort("rock_number")}>
-              Rock Number{renderSortArrow("rock_number")}
+              Rock{renderSortArrow("rock_number")}
             </th>
             <th onClick={() => toggleSort("artists")}>
               Artists{renderSortArrow("artists")}
             </th>
             <th onClick={() => toggleSort("comment")}>
               Comment{renderSortArrow("comment")}
+            </th>
+            <th onClick={() => toggleSort("create_dt")}>
+              Created{renderSortArrow("create_dt")}
             </th>
             <th>Image</th>
             <th>Actions</th>
@@ -154,6 +188,7 @@ const Rocks = () => {
               <td>{rock.rock_number}</td>
               <td>{rock.artists.map((a) => a.display_name).join(", ")}</td>
               <td>{rock.comment}</td>
+              <td>{new Date(rock.create_dt).toLocaleDateString()}</td>
               <td>
                 <img
                   src={`/media/catalog/${rock.rock_number}/a_sm.webp`}
@@ -173,13 +208,18 @@ const Rocks = () => {
         </tbody>
       </table>
 
-      {/* Rock create/edit dialog */}
+      {/* dialogs remain unchanged */}
       {dialogOpen && (
         <>
           <div className={styles.dialogOverlay}></div>
           <div className={styles.dialog}>
-            <h3>{selectedRock ? "Edit Rock" : "Create Rock"}</h3>
-            <form onSubmit={handleSubmit}>
+            <div className={styles.dialogHeader}>
+              <h3>{selectedRock ? "Edit Rock" : "Create Rock"}</h3>
+              <button className={styles.closeButton} onClick={closeDialog}>
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className={styles.dialogForm}>
               <label>Rock Number*</label>
               <input
                 type="number"
@@ -188,7 +228,6 @@ const Rocks = () => {
                 required
                 disabled={selectedRock !== null}
               />
-
               <label>Artists*</label>
               <select
                 multiple
@@ -206,7 +245,6 @@ const Rocks = () => {
                   </option>
                 ))}
               </select>
-
               <label>{selectedRock ? "Replace Image" : "Image*"}</label>
               <input
                 type="file"
@@ -214,7 +252,15 @@ const Rocks = () => {
                 onChange={(e) => setImageFile(e.target.files[0])}
                 required={!selectedRock}
               />
-
+              {imageFile && (
+                <div className={styles.previewContainer}>
+                  <img
+                    src={URL.createObjectURL(imageFile)}
+                    alt="preview"
+                    className={styles.previewImage}
+                  />
+                </div>
+              )}
               <label>Comment</label>
               <textarea
                 value={comment}
@@ -222,11 +268,17 @@ const Rocks = () => {
                 rows={4}
                 placeholder="Add optional comment here..."
               ></textarea>
-
-              <div className={styles.dialogButtons}>
-                <button type="submit">Save</button>
-                <button type="button" onClick={closeDialog}>
+              <div className={styles.dialogFooter}>
+                <button
+                  type="button"
+                  className={styles.cancelButton}
+                  onClick={closeDialog}
+                  disabled={isSaving}
+                >
                   Cancel
+                </button>
+                <button type="submit" className={styles.saveButton} disabled={isSaving}>
+                  {isSaving ? <div className={styles.spinner}></div> : "Save"}
                 </button>
               </div>
             </form>
@@ -234,7 +286,6 @@ const Rocks = () => {
         </>
       )}
 
-      {/* Full image dialog */}
       {imageDialogOpen && (
         <>
           <div className={styles.dialogOverlay} onClick={closeImageDialog}></div>
@@ -246,6 +297,8 @@ const Rocks = () => {
           </div>
         </>
       )}
+
+      {successMessage && <div className={styles.successToast}>{successMessage}</div>}
     </div>
   );
 };
