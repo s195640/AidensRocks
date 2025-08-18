@@ -90,9 +90,9 @@ const ShareYourRock = () => {
                 href="https://www.facebook.com/groups/1733974850593785/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="social-link"
+                className={styles.socialLink}
               >
-                <FaFacebookSquare size={20} className="social-icon" />
+                <FaFacebookSquare size={20} className={styles.socialIcon} />
                 Aidens Rocks
               </a>
             </li>

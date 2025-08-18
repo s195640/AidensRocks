@@ -366,3 +366,26 @@
   background-color: #0056b3;
   box-shadow: 0 5px 12px rgba(0, 86, 179, 0.6);
 }
+
+.social-link {
+  color: rgba(110, 183, 216, 1);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.social-link:hover,
+.social-link:focus {
+  color: rgba(90, 163, 196, 1);
+  text-decoration: underline;
+}
+
+.social-icon {
+  vertical-align: middle;
+  position: relative;
+  top: 2px;
+  flex-shrink: 0;
+}

@@ -2,6 +2,7 @@ import axios from "axios";
 import { useState, useRef } from "react";
 import { useARContext } from "../../context/ARContext";
 import "./UploadRockForm.css";
+import { FaFacebookSquare } from "react-icons/fa";
 
 export default function UploadRockForm({ onClose }) {
   const { trackerData, rValue } = useARContext();
@@ -118,6 +119,18 @@ export default function UploadRockForm({ onClose }) {
             <ol style={{ textAlign: "left", margin: "0.5rem 0 0 1.25rem" }}>
               <li>Take the rock with you to another new location and post again.</li>
               <li>Leave the rock behind where it can be found for the next person.</li>
+              <li>
+                Follow our Facebook:{" "}
+                <a
+                  href="https://www.facebook.com/groups/1733974850593785/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-link"
+                >
+                  <FaFacebookSquare size={20} className="social-icon" />
+                  Aidens Rocks
+                </a>
+              </li>
               <li>
                 Finally, Email us and request a new rock for your next adventure.{" "}
                 <a href="mailto:AidensRocks.AAA@gmail.com">AidensRocks.AAA@gmail.com</a>
