@@ -33,7 +33,7 @@ FROM Rock_Post_Summary rps
 JOIN images img ON img.rps_key = rps.rps_key
 LEFT JOIN artists a ON a.rock_number = rps.rock_number
 WHERE rps.show = TRUE
-ORDER BY rps.date DESC;
+ORDER BY rps.date DESC, rps.create_dt DESC;
     `);
 
     res.json(result.rows);
