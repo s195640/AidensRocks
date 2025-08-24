@@ -1,0 +1,11 @@
+.totalRocks {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .totalRocks {
+    font-size: 0.5rem;
+  }
+}

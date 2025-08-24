@@ -27,3 +27,11 @@
   background: linear-gradient(90deg, #4caf50, #81c784);
   transition: width 0.3s ease;
 }
+
+.notFound {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #555;
+  padding: 40px 20px;
+}

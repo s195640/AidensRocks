@@ -19,6 +19,7 @@ import Users from "./admin/pages/users/Users.jsx";
 import Sudc from "./pages/sudc/Sudc.jsx";
 import TrackTheRocks from "./pages/track-the-rocks/TrackTheRocks.jsx";
 import JourneyAdmin from "./admin/pages/journey/JourneyAdmin.jsx";
+import AllRocks from "./pages/all-rocks/AllRocks.jsx";
 
 const publicNavItems = [
   { path: "/", label: "Home" },
@@ -53,6 +54,7 @@ function AppContent() {
         <Route path="/share-your-rock" element={<ShareYourRock />} />
         <Route path="/photos" element={<Photos />} />
         <Route path="/track-the-rocks" element={<TrackTheRocks />} />
+        <Route path="/all-rocks" element={<AllRocks />} />
         <Route path="/map" element={<Map />} />
         <Route path="/sudc" element={<Sudc />} />
         <Route path="/login" element={<Login />} />

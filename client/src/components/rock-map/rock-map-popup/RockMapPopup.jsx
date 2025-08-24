@@ -1,4 +1,3 @@
-// src/components/RockMapPopup.jsx
 import { useEffect, useState } from "react";
 import axios from "axios";
 import styles from "./RockMapPopup.module.css";
@@ -31,9 +30,16 @@ export default function RockMapPopup({ rockNumber }) {
           if (!grouped.get(entry.rock_number)) {
             grouped.set(entry.rock_number, []);
           }
-          grouped.get(entry.rock_number).push({ ...entry, path: `/media/rocks/${entry.rock_number}/${entry.uuid}` });
+          grouped
+            .get(entry.rock_number)
+            .push({
+              ...entry,
+              path: `/media/rocks/${entry.rock_number}/${entry.uuid}`,
+            });
         });
-        setGroupedRocks(Array.from(grouped).map(([key, value]) => ({ key, value })));
+        setGroupedRocks(
+          Array.from(grouped).map(([key, value]) => ({ key, value }))
+        );
       } catch (err) {
         console.error("Error fetching rock data:", err);
       } finally {
@@ -62,16 +68,18 @@ export default function RockMapPopup({ rockNumber }) {
             />
           </div>
         </>
+      ) : groupedRocks.length === 0 ? (
+        <div className={styles.notFound}>
+          Rock Number {rockNumber} was not found
+        </div>
       ) : (
-        <h3 className={styles.title}>
-          {
-            groupedRocks.map(i => <RockJourney
-              key={i.key}
-              rockNumber={i.key}
-              collections={i.value}
-            />)
-          }
-        </h3>
+        groupedRocks.map((i) => (
+          <RockJourney
+            key={i.key}
+            rockNumber={i.key}
+            collections={i.value}
+          />
+        ))
       )}
     </div>
   );
