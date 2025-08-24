@@ -1,0 +1,47 @@
+.mapContainer {
+  height: 100vh;
+  width: 100%;
+  position: relative;
+  padding: 50px 0;
+  z-index: 0;
+}
+
+.map {
+  height: 100%;
+  width: 100%;
+}
+
+/* Centered modal styles */
+.modalBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  position: relative;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.closeBtn {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #333;
+}

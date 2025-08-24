@@ -89,7 +89,9 @@ CREATE TABLE Rock_Post_Summary (
     email VARCHAR(255),
     upload_timestamp TIMESTAMP WITH TIME ZONE,
     uuid VARCHAR(50),
-    show BOOLEAN DEFAULT FALSE
+    show BOOLEAN DEFAULT FALSE,
+    latitude NUMERIC(18,15),
+    longitude NUMERIC(18,15)
 );
 
 CREATE TABLE Rock_Post_Image (

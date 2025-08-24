@@ -6,6 +6,7 @@ import QRRedirect from "./components/qrredirect/QRRedirect.jsx";
 import Home from "./pages/home/Home.jsx";
 import Photos from "./pages/photos/Photos.jsx";
 import ShareYourRock from "./pages/share-your-rock/ShareYourRock.jsx";
+import Map from "./pages/map/Map.jsx";
 
 import PrivateRoute from "./admin/components/PrivateRoute.jsx";
 import { AuthProvider } from "./admin/context/AuthContext.jsx";
@@ -24,6 +25,7 @@ const publicNavItems = [
   { path: "/share-your-rock", label: "Share Your Rock" },
   { path: "/photos", label: "Photos" },
   { path: "/track-the-rocks", label: "Track The Rocks" },
+  { path: "/map", label: "Map" },
   { path: "/sudc", label: "SUDC" },
 ];
 
@@ -51,6 +53,7 @@ function AppContent() {
         <Route path="/share-your-rock" element={<ShareYourRock />} />
         <Route path="/photos" element={<Photos />} />
         <Route path="/track-the-rocks" element={<TrackTheRocks />} />
+        <Route path="/map" element={<Map />} />
         <Route path="/sudc" element={<Sudc />} />
         <Route path="/login" element={<Login />} />
 

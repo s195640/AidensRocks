@@ -16,7 +16,7 @@ const RockPopup = ({ rockNumber, totalTrips, startDate, latestDate, artists = []
           <div className="dialog-artists">
             {artists.map((artist, index) => (
               <p key={index}>
-                Artist: {artist})
+                Artist: {artist}
               </p>
             ))}
           </div>
