@@ -50,11 +50,8 @@ export default function AllRocks() {
   return (
     <div>
       <ContentBody>
-
-
         <div className={styles.galleryContainer}>
           <h1 className={styles.galleryTitle}>All Rocks</h1>
-
           <RowsPhotoAlbum
             photos={photos}
             targetRowHeight={300}
@@ -86,8 +83,7 @@ export default function AllRocks() {
               src: p.src,
               width: p.width,
               height: p.height,
-              description: `Rock: ${p.key} (${p.artists || "UNKNOWN"})`, // bottom-centered
-              // remove `title` field entirely so nothing appears at the top
+              description: p.title,
             }))}
             open={index >= 0}
             index={index}
