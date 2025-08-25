@@ -41,37 +41,43 @@ const JourneyAdmin = () => {
     let valA = a[sortField];
     let valB = b[sortField];
 
+    // Fallback for null/undefined
     if (valA === null || valA === undefined) valA = "";
     if (valB === null || valB === undefined) valB = "";
 
+    // --- DATE SORT (timestamp) ---
     if (sortField === "date") {
       valA = valA ? new Date(valA) : new Date(0);
       valB = valB ? new Date(valB) : new Date(0);
+      return sortOrder === "asc" ? valA - valB : valB - valA;
     }
 
+    // --- SHOW FIELD ---
     if (sortField === "show") {
       valA = valA ? 1 : 0;
       valB = valB ? 1 : 0;
     }
 
+    // --- COORDINATES ---
     if (sortField === "coordinates") {
-      const coordsA = a.latitude && a.longitude ? `${a.latitude},${a.longitude}` : "";
-      const coordsB = b.latitude && b.longitude ? `${b.latitude},${b.longitude}` : "";
-      valA = coordsA;
-      valB = coordsB;
+      valA = a.latitude && a.longitude ? `${a.latitude},${a.longitude}` : "";
+      valB = b.latitude && b.longitude ? `${b.latitude},${b.longitude}` : "";
     }
 
+    // --- NUMBERS ---
     if (typeof valA === "number" && typeof valB === "number") {
       return sortOrder === "asc" ? valA - valB : valB - valA;
     }
 
+    // --- STRINGS (case-insensitive) ---
     valA = valA.toString().toLowerCase();
     valB = valB.toString().toLowerCase();
-
     if (valA < valB) return sortOrder === "asc" ? -1 : 1;
     if (valA > valB) return sortOrder === "asc" ? 1 : -1;
     return 0;
   };
+
+
 
 
   const sortedPosts = [...posts].sort(comparePosts);
