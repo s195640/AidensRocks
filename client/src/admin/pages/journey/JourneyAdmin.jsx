@@ -54,6 +54,13 @@ const JourneyAdmin = () => {
       valB = valB ? 1 : 0;
     }
 
+    if (sortField === "coordinates") {
+      const coordsA = a.latitude && a.longitude ? `${a.latitude},${a.longitude}` : "";
+      const coordsB = b.latitude && b.longitude ? `${b.latitude},${b.longitude}` : "";
+      valA = coordsA;
+      valB = coordsB;
+    }
+
     if (typeof valA === "number" && typeof valB === "number") {
       return sortOrder === "asc" ? valA - valB : valB - valA;
     }
@@ -65,6 +72,7 @@ const JourneyAdmin = () => {
     if (valA > valB) return sortOrder === "asc" ? 1 : -1;
     return 0;
   };
+
 
   const sortedPosts = [...posts].sort(comparePosts);
 
@@ -132,6 +140,9 @@ const JourneyAdmin = () => {
               <th onClick={() => handleSort("location")} style={{ cursor: "pointer" }}>
                 Location{renderSortArrow("location")}
               </th>
+              <th onClick={() => handleSort("coordinates")} style={{ cursor: "pointer" }}>
+                Coordinates{renderSortArrow("coordinates")}
+              </th>
               <th onClick={() => handleSort("date")} style={{ cursor: "pointer" }}>
                 Date{renderSortArrow("date")}
               </th>
@@ -157,7 +168,7 @@ const JourneyAdmin = () => {
           <tbody>
             {sortedPosts.length === 0 ? (
               <tr>
-                <td colSpan={11} style={{ textAlign: "center" }}>
+                <td colSpan={12} style={{ textAlign: "center" }}>
                   No posts found
                 </td>
               </tr>
@@ -174,6 +185,11 @@ const JourneyAdmin = () => {
                   </td>
                   <td>{post.rock_number}</td>
                   <td>{post.location || "-"}</td>
+                  <td>
+                    {post.latitude && post.longitude
+                      ? `${post.latitude}, ${post.longitude}`
+                      : "-"}
+                  </td> {/* NEW COMBINED COORDS */}
                   <td>{post.date ? new Date(post.date).toLocaleDateString() : "-"}</td>
                   <td>{post.comment || "-"}</td>
                   <td>{post.name || "-"}</td>

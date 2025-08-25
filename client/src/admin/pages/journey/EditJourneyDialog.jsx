@@ -5,11 +5,14 @@ const EditJourneyDialog = ({ post, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     rock_number: post.rock_number || "",
     location: post.location || "",
-    date: post.date ? post.date.slice(0, 10) : "", // yyyy-mm-dd format
+    date: post.date ? post.date.slice(0, 10) : "",
     comment: post.comment || "",
     name: post.name || "",
     email: post.email || "",
     show: post.show || false,
+    coordinates: post.latitude && post.longitude
+      ? `${post.latitude}, ${post.longitude}`
+      : "", // NEW FIELD
   });
 
   const [images, setImages] = useState([]);
@@ -82,16 +85,33 @@ const EditJourneyDialog = ({ post, onClose, onSave }) => {
   const handleSave = async () => {
     setSaving(true);
     try {
+      let latitude = null;
+      let longitude = null;
+
+      if (formData.coordinates) {
+        const parts = formData.coordinates.split(",").map((p) => p.trim());
+        if (parts.length === 2) {
+          latitude = parts[0];
+          longitude = parts[1];
+        }
+      }
+
+      const payload = {
+        ...formData,
+        latitude,
+        longitude,
+      };
+
       const res = await fetch(`/api/journey-admin/${post.rps_key}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(errorText || "Failed to save post");
       }
-      onSave(); // notify parent to refresh and close dialog
+      onSave();
     } catch (err) {
       console.error(err);
       alert("Failed to save changes: " + err.message);
@@ -99,6 +119,7 @@ const EditJourneyDialog = ({ post, onClose, onSave }) => {
       setSaving(false);
     }
   };
+
 
 
   // Build image URLs
@@ -142,7 +163,15 @@ const EditJourneyDialog = ({ post, onClose, onSave }) => {
             value={formData.location}
             onChange={handleChange}
           />
-
+          <label htmlFor="coordinates">Coordinates</label>
+          <input
+            type="text"
+            id="coordinates"
+            name="coordinates"
+            placeholder="123.456, -78.901"
+            value={formData.coordinates}
+            onChange={handleChange}
+          />
           <label htmlFor="date">Date</label>
           <input
             type="date"

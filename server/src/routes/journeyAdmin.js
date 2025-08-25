@@ -17,6 +17,8 @@ router.get("/", async (req, res) => {
         rps.email,
         rps.uuid,
         rps.show,
+        rps.latitude,
+		    rps.longitude,
         COUNT(rpi.rpi_key) AS total_images
       FROM Rock_Post_Summary rps
       LEFT JOIN Rock_Post_Image rpi ON rps.rps_key = rpi.rps_key
@@ -142,7 +144,17 @@ router.delete("/images/:rpi_key", async (req, res) => {
 // PUT /api/journey-admin/:rps_key
 router.put("/:rps_key", async (req, res) => {
   const { rps_key } = req.params;
-  const { rock_number, location, date, comment, name, email, show } = req.body;
+  const {
+    rock_number,
+    location,
+    date,
+    comment,
+    name,
+    email,
+    show,
+    latitude,
+    longitude, // ✅ new fields
+  } = req.body;
 
   try {
     const result = await pool.query(
@@ -154,13 +166,28 @@ router.put("/:rps_key", async (req, res) => {
            name = $5,
            email = $6,
            show = $7,
+           latitude = $8,
+           longitude = $9,
            update_dt = CURRENT_TIMESTAMP
-       WHERE rps_key = $8
+       WHERE rps_key = $10
        RETURNING *`,
-      [rock_number, location, date, comment, name, email, show, rps_key]
+      [
+        rock_number,
+        location,
+        date,
+        comment,
+        name,
+        email,
+        show,
+        latitude,
+        longitude,
+        rps_key,
+      ]
     );
 
-    if (result.rowCount === 0) return res.status(404).json({ error: "Post not found" });
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Post not found" });
+    }
 
     res.json(result.rows[0]);
   } catch (err) {
@@ -168,6 +195,7 @@ router.put("/:rps_key", async (req, res) => {
     res.status(500).json({ error: "Failed to update post" });
   }
 });
+
 
 
 module.exports = router;

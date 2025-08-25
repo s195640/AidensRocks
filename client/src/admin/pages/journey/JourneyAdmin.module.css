@@ -13,13 +13,14 @@ h2 {
 .albumTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 12px;
 }
+
 
 .albumTable th,
 .albumTable td {
   border: 1px solid #ccc;
-  padding: 10px;
+  padding: 6px 8px;
   text-align: left;
   vertical-align: middle;
 }
