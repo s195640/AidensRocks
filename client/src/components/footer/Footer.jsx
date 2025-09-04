@@ -34,13 +34,6 @@ const Footer = () => {
               </a>
             </li>
             <li>
-              <a href="#" onClick={handleSocialClick} aria-label="Instagram">
-                <div className="icon-circle">
-                  <i className="fa-brands fa-instagram"></i>
-                </div>
-              </a>
-            </li>
-            <li>
               <a href="#" onClick={handleContactClick} aria-label="Contact Me">
                 <div className="icon-circle">
                   <i className="fa-solid fa-envelope"></i> {/* envelope icon */}

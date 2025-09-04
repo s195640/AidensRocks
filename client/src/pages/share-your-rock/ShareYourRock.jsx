@@ -96,18 +96,6 @@ const ShareYourRock = () => {
                 Aidens Rocks
               </a>
             </li>
-            <li>
-              Share and follow our Instagram:{" "}
-              <a
-                href="#"
-                onClick={handleSocialClick}
-                className={styles.socialLink}
-                aria-label="Instagram coming soon"
-              >
-                <FaInstagram size={20} className={styles.socialIcon} />
-                @Aidens Rocks
-              </a>
-            </li>
           </ul>
         </ol>
         <br />
