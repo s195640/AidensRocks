@@ -67,6 +67,7 @@
 .editForm input[type="number"],
 .editForm input[type="email"],
 .editForm input[type="date"],
+.editForm input[type="datetime-local"],
 .editForm textarea {
   padding: 8px;
   font-size: 14px;

@@ -1,120 +1,95 @@
-/* JourneyAdmin.module.css */
-
 .container {
-  padding: 20px;
-  padding-top: 100px;
+  padding: 10px;
+  padding-top: 80px;
   font-family: Arial, sans-serif;
 }
 
 h2 {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
+  font-size: 16px;
 }
 
 .albumTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 11px;
+  margin: 0;
 }
-
 
 .albumTable th,
 .albumTable td {
   border: 1px solid #ccc;
-  padding: 6px 8px;
+  padding: 4px 6px;
   text-align: left;
   vertical-align: middle;
 }
 
 .albumTable th {
-  background-color: #f0f0f0;
+  background-color: #e8e8e8;
   font-weight: 600;
-}
-
-.actionsCol button {
-  margin-right: 6px;
-  padding: 6px 12px;
-  font-size: 13px;
-  border: none;
-  border-radius: 3px;
+  font-size: 12px;
   cursor: pointer;
-  transition: background-color 0.2s;
 }
 
-/* Toggle Show Button: yellow */
-.actionsCol button:nth-child(1) {
-  background-color: #f0ad4e;
-  color: white;
+/* alternating row colors */
+.albumTable tbody tr:nth-child(odd) {
+  background-color: #fafafa;
 }
 
-.actionsCol button:nth-child(1):hover {
-  background-color: #ec971f;
+.albumTable tbody tr:nth-child(even) {
+  background-color: #f5f5f5;
 }
 
-/* Edit Button: blue */
-.actionsCol button:nth-child(2) {
-  background-color: #5bc0de;
-  color: white;
-}
-
-.actionsCol button:nth-child(2):hover {
-  background-color: #31b0d5;
-}
-
-/* Delete Button: red */
-.actionsCol button:nth-child(3) {
-  background-color: #d9534f;
-  color: white;
-}
-
-.actionsCol button:nth-child(3):hover {
-  background-color: #c9302c;
-}
-
-p {
-  font-size: 16px;
-  font-weight: 500;
-}
-
-button {
-  font-family: Arial, sans-serif;
-}
-
-/* You can add a header area with actions if you want */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-/* Optional if you want to add top buttons */
-.actions {
-  display: flex;
-  gap: 10px;
-}
-
-.actions button {
-  background-color: #0077cc;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 16px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.actions button:hover {
-  background-color: #005fa3;
-}
-
+/* Thumbnail */
 .thumbnail {
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   object-fit: cover;
   cursor: pointer;
 }
 
+/* Checkbox cell - centered */
+.checkboxCell {
+  text-align: center;
+}
+
+.actionsWrapper {
+  display: flex;
+  /* keep icons inline */
+  gap: 6px;
+  /* space between icons */
+  justify-content: center;
+  /* center inside the cell */
+}
+
+.actionsWrapper button {
+  padding: 3px;
+  font-size: 16px;
+  border: none;
+  background: none;
+  outline: none;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.2s;
+}
+
+.actionsWrapper button:hover {
+  transform: scale(1.2);
+}
+
+/* colors */
+.actionsWrapper button:nth-child(1) {
+  /* Edit */
+  color: #007bff;
+}
+
+.actionsWrapper button:nth-child(2) {
+  /* Delete */
+  color: #d9534f;
+}
+
+
+
+/* Image popup */
 .imagePopupOverlay {
   position: fixed;
   top: 0;
@@ -143,7 +118,7 @@ button {
 
 .closeBtn {
   margin-top: 10px;
-  padding: 6px 12px;
+  padding: 4px 10px;
   background: #d9534f;
   color: white;
   border: none;

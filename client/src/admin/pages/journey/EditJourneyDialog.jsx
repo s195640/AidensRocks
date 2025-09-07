@@ -5,15 +5,16 @@ const EditJourneyDialog = ({ post, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     rock_number: post.rock_number || "",
     location: post.location || "",
-    date: post.date ? post.date.slice(0, 10) : "",
+    date: post.date ? post.date.slice(0, 16) : "", // keep YYYY-MM-DDTHH:mm
     comment: post.comment || "",
     name: post.name || "",
     email: post.email || "",
     show: post.show || false,
     coordinates: post.latitude && post.longitude
       ? `${post.latitude}, ${post.longitude}`
-      : "", // NEW FIELD
+      : "",
   });
+
 
   const [images, setImages] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -168,13 +169,12 @@ const EditJourneyDialog = ({ post, onClose, onSave }) => {
             type="text"
             id="coordinates"
             name="coordinates"
-            placeholder="123.456, -78.901"
             value={formData.coordinates}
             onChange={handleChange}
           />
           <label htmlFor="date">Date</label>
           <input
-            type="date"
+            type="datetime-local"
             id="date"
             name="date"
             value={formData.date}

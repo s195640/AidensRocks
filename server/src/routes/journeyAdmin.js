@@ -23,7 +23,7 @@ router.get("/", async (req, res) => {
       FROM Rock_Post_Summary rps
       LEFT JOIN Rock_Post_Image rpi ON rps.rps_key = rpi.rps_key
       GROUP BY rps.rps_key
-      ORDER BY rps.rock_number, rps.date
+      ORDER BY rps.latitude desc, rps.date desc
     `;
 
     const { rows } = await pool.query(query);
