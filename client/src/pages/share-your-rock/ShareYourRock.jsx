@@ -64,7 +64,7 @@ const ShareYourRock = () => {
             the world.
           </li>
           <li>
-            Take a picture of the rock in the new location. Love to see where
+            Take a picture of the rock in the new location BEFORE you leave it for the next person to find. Love to see where
             these rocks travel, show their whereabouts if possible in whatever
             creative way you can come up with :)
           </li>
