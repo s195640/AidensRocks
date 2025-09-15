@@ -38,12 +38,17 @@ export default function UploadRockForm({ onClose }) {
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
 
-    // Filter only valid image files
-    const invalidFiles = files.filter(file => !file.type.startsWith("image/"));
+    // Allow image/* AND .heic/.heif even if type is blank or weird
+    const invalidFiles = files.filter(file => {
+      const isImageMime = file.type.startsWith("image/");
+      const isHeicExt = file.name.toLowerCase().endsWith(".heic") || file.name.toLowerCase().endsWith(".heif");
+      return !(isImageMime || isHeicExt);
+    });
+
     if (invalidFiles.length > 0) {
-      setImageError("Only image files are allowed.");
+      setImageError("Only image files are allowed (.jpg, .png, .heic, etc).");
       e.target.value = null;
-      return; // Stop processing invalid files
+      return;
     }
 
     if (images.length + files.length > 5) {
@@ -65,6 +70,7 @@ export default function UploadRockForm({ onClose }) {
 
     e.target.value = null;
   };
+
 
 
 
