@@ -38,8 +38,8 @@ services:
     networks:
       - app-network
 
-  web:
-    container_name: web
+  client:
+    container_name: client
     build:
       context: ../../
       dockerfile: ./data/docker/docker-client-prod
@@ -54,27 +54,6 @@ services:
     networks:
       - app-network
 
-  cloudflare-ddns:
-    image: favonia/cloudflare-ddns:1
-    container_name: cloudflare-ddns
-    restart: always
-    network_mode: host
-    environment:
-      - CLOUDFLARE_API_TOKEN=_92Y5n8vMScmf6EArIG7sbiAZfVfpFcSGOpaI24u
-      - DOMAINS=aidensrocks.com,www.aidensrocks.com
-      - PROXIED=false
-      - UPDATE_INTERVAL=30
-      - QUIET=1
-      - IP6_PROVIDER=none
-  pg_backup:
-    container_name: pg_backup
-    image: alpine:latest
-    command: sh -c " apk update && apk add --no-cache postgresql-client && \ echo '0 * * * * PGPASSWORD=OmegaA..1154 pg_dump -h 192.168.1.40 -p 5431 -U postgres aidensrocks > /backup/aidensrocks_backup_$(date +\%F_\%H-\%M).sql' > /etc/crontabs/root && \ crond -f -l 2 "
-    volumes:
-      - truenas-sql-backup:/backup
-    networks:
-      - app-network
-
 volumes:
   truenas-media:
     driver: local
@@ -82,13 +61,6 @@ volumes:
       type: none
       o: bind
       device: /mnt/aidensrocks/prod/media
-
-  truenas-sql:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /mnt/aidensrocks/prod/sql
 
   truenas-certs:
     driver: local
@@ -103,13 +75,6 @@ volumes:
       type: none
       o: bind
       device: /mnt/aidensrocks/prod/ssl/private
-
-  truenas-sql-backup:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /mnt/aidensrocks/prod/sql_backup
 
 networks:
   app-network:
