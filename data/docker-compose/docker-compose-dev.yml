@@ -22,10 +22,10 @@ services:
   server:
     container_name: server
     build:
-      context: ./server
+      context: ../../server
       dockerfile: docker/Dockerfile.dev
     volumes:
-      - ./server:/app
+      - ../../server:/app
       - /app/node_modules
       - truenas-media:/app/media
     depends_on:
@@ -36,10 +36,10 @@ services:
   client:
     container_name: client
     build:
-      context: ./client
+      context: ../../client
       dockerfile: docker/Dockerfile.dev
     volumes:
-      - ./client:/app
+      - ../../client:/app
       - /app/node_modules
     depends_on:
       - server
@@ -52,7 +52,7 @@ services:
       - '80:80'
       - '443:443'
     volumes:
-      - ./nginxTEST.conf:/etc/nginx/nginx.conf
+      - ../nginx/nginxTEST.conf:/etc/nginx/nginx.conf
     depends_on:
       - client
       - server

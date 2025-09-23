@@ -11,7 +11,7 @@ services:
     volumes:
       - truenas-sql:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', "sh -c 'pg_isready -U postgres -d aidensrocks'"]
+      test: [ 'CMD-SHELL', "sh -c 'pg_isready -U postgres -d aidensrocks'" ]
       interval: 5s
       timeout: 60s
       retries: 5
@@ -22,7 +22,7 @@ services:
   server:
     container_name: server
     build:
-      context: ./server
+      context: ../../server
       dockerfile: docker/Dockerfile.prod
     command: bash -c "npm start"
     volumes:
@@ -36,7 +36,7 @@ services:
   web:
     container_name: web
     build:
-      context: ./client
+      context: ../../client
       dockerfile: docker/Dockerfile.prod
     ports:
       - '80:80'
@@ -64,12 +64,7 @@ services:
   pg_backup:
     container_name: pg_backup
     image: alpine:latest
-    command: sh -c "
-      apk update &&
-      apk add --no-cache postgresql-client && \
-      echo '0 * * * * PGPASSWORD=OmegaA..1154 pg_dump -h 192.168.1.40 -p 5431 -U postgres aidensrocks > /backup/aidensrocks_backup_$(date +\%F_\%H-\%M).sql' > /etc/crontabs/root && \
-      crond -f -l 2
-      "
+    command: sh -c " apk update && apk add --no-cache postgresql-client && \ echo '0 * * * * PGPASSWORD=OmegaA..1154 pg_dump -h 192.168.1.40 -p 5431 -U postgres aidensrocks > /backup/aidensrocks_backup_$(date +\%F_\%H-\%M).sql' > /etc/crontabs/root && \ crond -f -l 2 "
     volumes:
       - truenas-sql-backup:/backup
     networks:
@@ -110,7 +105,7 @@ volumes:
       type: none
       o: bind
       device: /mnt/aidensrocks/prod/sql_backup
-      
+
 networks:
   app-network:
     driver: bridge

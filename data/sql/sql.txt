@@ -1,8 +1,5 @@
 /* PhotoAlbums*/
 
-drop table Photos;
-drop table PhotoAlbums;
-
 CREATE TABLE PhotoAlbums (
     pa_key SERIAL PRIMARY KEY,
     create_dt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -33,12 +30,7 @@ CREATE TABLE Photos (
         ON DELETE CASCADE
 );
 
-
 /* Rock/Artist Details*/
-
-drop table Rock_Artist_Link;
-drop table Rock_Artist;
-drop table Rock_Catalog;
 
 CREATE TABLE Rock_Catalog (
     rc_key SERIAL PRIMARY KEY,
@@ -71,10 +63,6 @@ CREATE TABLE Rock_Artist_Link (
 );
 
 /* Rock Posts */
-
-drop table Rock_Post_Tracking;
-drop table Rock_Post_Image;
-drop table Rock_Post_Summary;
 
 CREATE TABLE Rock_Post_Summary (
     rps_key SERIAL PRIMARY KEY,
@@ -135,9 +123,6 @@ CREATE TABLE Rock_Post_Tracking (
 
 
 /* COUNTER */
-drop table Rock_Count_Tracking;
-drop table Rock_Count_Summary;
-
 
 CREATE TABLE Rock_Count_Summary (
     rcs_key SERIAL PRIMARY KEY,

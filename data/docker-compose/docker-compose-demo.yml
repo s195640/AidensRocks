@@ -1,0 +1,89 @@
+services:
+  postgres:
+    container_name: database
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: testdb
+    ports:
+      - '5431:5432'
+    volumes:
+      - ./data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf
+    command: [ "postgres", "-c", "config_file=/etc/postgresql/postgresql.conf" ]
+    healthcheck:
+      test: [ 'CMD-SHELL', "sh -c 'pg_isready -U postgres -d testdb'" ]
+      interval: 5s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+    networks:
+      - app-network
+
+  server:
+    container_name: server
+    build:
+      context: ./server
+      dockerfile: docker/Dockerfile.prod
+    command: bash -c "npm start"
+    volumes:
+      - truenas-media:/app/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  web:
+    container_name: web
+    build:
+      context: ./client
+      dockerfile: docker/Dockerfile.prod
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - truenas-certs:/etc/ssl/certs:ro
+      - truenas-private:/etc/ssl/private:ro
+    depends_on:
+      - server
+    networks:
+      - app-network
+
+volumes:
+  truenas-media:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/aidensrocks/prod/media
+
+  truenas-sql:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/aidensrocks/prod/sql
+
+  truenas-certs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/aidensrocks/prod/ssl/certs
+
+  truenas-private:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/aidensrocks/prod/ssl/private
+
+networks:
+  app-network:
+    driver: bridge
