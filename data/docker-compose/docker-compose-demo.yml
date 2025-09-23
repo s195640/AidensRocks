@@ -4,7 +4,7 @@ services:
     restart: always
     build:
       context: ../../
-      dockerfile: ./data/docker/docker-db-prod
+      dockerfile: ./data/docker/docker-db-demo
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: OmegaA..1154
@@ -28,7 +28,7 @@ services:
     container_name: server
     build:
       context: ../../
-      dockerfile: ./data/docker/docker-server-prod
+      dockerfile: ./data/docker/docker-server-demo
     command: bash -c "npm start"
     volumes:
       - truenas-media:/app/media
@@ -42,7 +42,7 @@ services:
     container_name: client
     build:
       context: ../../
-      dockerfile: ./data/docker/docker-client-prod
+      dockerfile: ./data/docker/docker-client-demo
     ports:
       - '80:80'
       - '443:443'
