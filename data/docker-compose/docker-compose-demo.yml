@@ -7,17 +7,16 @@ services:
       dockerfile: Dockerfile.dev
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: testdb
+      POSTGRES_PASSWORD: OmegaA..1154
+      POSTGRES_DB: aidensrocks
     ports:
       - '5431:5432'
     volumes:
       - ./data:/var/lib/postgresql/data
-      - ./init:/docker-entrypoint-initdb.d
       - ./postgresql.conf:/etc/postgresql/postgresql.conf
     command: [ "postgres", "-c", "config_file=/etc/postgresql/postgresql.conf" ]
     healthcheck:
-      test: [ 'CMD-SHELL', "sh -c 'pg_isready -U postgres -d testdb'" ]
+      test: [ 'CMD-SHELL', "sh -c 'pg_isready -U postgres -d aidensrocks'" ]
       interval: 5s
       timeout: 60s
       retries: 5

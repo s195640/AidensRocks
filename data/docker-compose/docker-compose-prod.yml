@@ -23,7 +23,7 @@ services:
     container_name: server
     build:
       context: ../../
-      dockerfile: ./data/docker/docker-server.prod
+      dockerfile: ./data/docker/docker-server-prod
     command: bash -c "npm start"
     volumes:
       - truenas-media:/app/media
@@ -37,7 +37,7 @@ services:
     container_name: web
     build:
       context: ../../
-      dockerfile: ./data/docker/docker-client.prod
+      dockerfile: ./data/docker/docker-client-prod
     ports:
       - '80:80'
       - '443:443'

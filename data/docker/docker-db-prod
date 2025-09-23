@@ -1,0 +1,15 @@
+FROM postgres:17
+
+# Install dependencies & pglogical
+RUN apt-get update \
+    && apt-get install -y wget gnupg curl ca-certificates \
+    && mkdir -p /etc/apt/sources.list.d \
+    && echo "deb http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+       > /etc/apt/sources.list.d/pgdg.list \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg \
+    && apt-get update \
+    && apt-get install -y postgresql-17-pglogical \
+    && rm -rf /var/lib/apt/lists/*
+
+# Ensure pglogical loads on startup
+RUN echo "shared_preload_libraries = 'pglogical'" >> /usr/share/postgresql/postgresql.conf.sample
