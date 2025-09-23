@@ -3,7 +3,7 @@ FROM node:18 AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
-COPY . .
+COPY client .
 RUN npm run build
 
 # Production stage (static file server)
