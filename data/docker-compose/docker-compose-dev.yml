@@ -23,7 +23,7 @@ services:
     container_name: server
     build:
       context: ../../server
-      dockerfile: docker/Dockerfile.dev
+      dockerfile: ../data/docker/docker-server.dev
     volumes:
       - ../../server:/app
       - /app/node_modules
@@ -37,7 +37,7 @@ services:
     container_name: client
     build:
       context: ../../client
-      dockerfile: docker/Dockerfile.dev
+      dockerfile: ../data/docker/docker-client.dev
     volumes:
       - ../../client:/app
       - /app/node_modules
