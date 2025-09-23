@@ -19,7 +19,7 @@ async function convertToWebP(input, output, options = {}) {
     }
   } else {
     // Single file mode
-    await sharp(input)
+    await sharp(input, { failOnError: false })
       .rotate()
       .resize(options.width, options.height, { fit: options.fit || 'cover' })
       .toFormat('webp')
