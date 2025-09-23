@@ -12,6 +12,6 @@ ENV DB_PASSWORD=$DB_PASSWORD
 ENV DB_NAME=$DB_NAME
 
 WORKDIR /app
-COPY src/ /app/src
-COPY package.json /app
+COPY server/src/ /app/src
+COPY server/package.json /app
 RUN npm install
