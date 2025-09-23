@@ -12,8 +12,8 @@ services:
     ports:
       - '5431:5432'
     volumes:
-      - ./data:/var/lib/postgresql/data
-      - ./data/postgresql/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ../../db:/var/lib/postgresql/data
+      - ../postgresql/postgresql.conf:/etc/postgresql/postgresql.conf
     command: [ "postgres", "-c", "config_file=/etc/postgresql/postgresql.conf" ]
     healthcheck:
       test: [ 'CMD-SHELL', "sh -c 'pg_isready -U postgres -d aidensrocks'" ]
