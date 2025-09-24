@@ -14,7 +14,6 @@ services:
     volumes:
       - ../../db:/var/lib/postgresql/data
       - ../postgresql/postgresql.conf:/etc/postgresql/postgresql.conf
-      - ../postgresql/pg_hba.conf:/etc/postgresql/pg_hba.conf
     command: [ "postgres", "-c", "config_file=/etc/postgresql/postgresql.conf" ]
     healthcheck:
       test: [ 'CMD-SHELL', "sh -c 'pg_isready -U postgres -d aidensrocks'" ]
