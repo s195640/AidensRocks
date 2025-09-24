@@ -57,7 +57,7 @@ services:
     image: alpine:latest
     env_file: .env
     command: >
-      sh -c "apk update && apk add --no-cache postgresql-client && echo '* * * * * PGPASSWORD=$DB_PASSWORD pg_dump -h $DB_HOST -p $DB_PORT -U $DB_USER $DB_NAME > /backup/$NODE/${DB_NAME}_backup_\$(date +\%F_\%H-\%M).sql' > /etc/crontabs/root && crond -f -l 2"
+      sh -c "apk update && apk add --no-cache postgresql-client && echo '0 * * * * PGPASSWORD=$DB_PASSWORD pg_dump -h $DB_HOST -p $DB_PORT -U $DB_USER $DB_NAME > /backup/$NODE/${DB_NAME}_backup_\$(date +\%F_\%H-\%M).sql' > /etc/crontabs/root && crond -f -l 2"
     volumes:
       - truenas-sql-backup:/backup
     networks:
