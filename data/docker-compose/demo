@@ -9,6 +9,6 @@ DB_NAME=aidensrocks
 NODE=node1
 
 VIP=192.168.1.99           # Floating IP
-INTERFACE=vmbr0            # Proxmox host interface
+INTERFACE=eth0             # Proxmox host interface
 NODE_PRIORITY=101          # Node1 = 101 (primary), Node2 = 100 (secondary)
 VRRP_PASSWORD=secret123    # VRRP authentication password
