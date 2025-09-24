@@ -8,7 +8,7 @@ DB_PASSWORD=OmegaA..1154
 DB_NAME=aidensrocks
 NODE=node1
 
-VIP=192.168.1.99           # Floating IP
-INTERFACE=eth0             # Proxmox host interface
-NODE_PRIORITY=101          # Node1 = 101 (primary), Node2 = 100 (secondary)
-VRRP_PASSWORD=secret123    # VRRP authentication password
+KEEPALIVED_INTERFACE=eth0             # Proxmox host interface
+KEEPALIVED_PRIORITY=101          # Node1 = 101 (primary), Node2 = 100 (secondary)
+KEEPALIVED_PASSWORD=secret123    # VRRP authentication password
+KEEPALIVED_UNICAST_PEERS="#PYTHON2BASH:['192.168.1.98', '192.168.1.99']"
