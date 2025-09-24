@@ -65,6 +65,19 @@ services:
       - app-network
 
   keepalived:
+    container_name: keepalived
+    image: osixia/keepalived:2.0.20
+    network_mode: "host"
+    cap_add:
+      - NET_ADMIN
+      - NET_BROADCAST
+      - NET_RAW
+    env_file: .env
+    volumes:
+      - ../keepalived/keepalived.conf:/etc/keepalived/keepalived.conf:ro
+    restart: always
+
+  keepalived:
     image: osixia/keepalived:2.0.20
     container_name: keepalived
     network_mode: "host"
@@ -76,10 +89,11 @@ services:
     volumes:
       - ../keepalived/keepalived.conf.template:/container/service/keepalived/assets/keepalived.conf.tpl:ro
     command: >
-      sh -c "apt-get update && apt-get install -y gettext-base &&
-            envsubst < /tmp/keepalived.conf.tpl > /etc/keepalived/keepalived.conf &&
-            /container/tool/run"
+      sh -c "envsubst < /container/service/keepalived/assets/keepalived.conf.tpl > /etc/keepalived/keepalived.conf &&
+             /container/tool/run"
     restart: always
+
+
 
 volumes:
   nas-media:

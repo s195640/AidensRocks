@@ -1,0 +1,14 @@
+# Use osixia/keepalived as the base image
+FROM osixia/keepalived:2.0.20
+
+# Install gettext-base to provide envsubst for variable substitution
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends gettext-base && \
+  rm -rf /var/lib/apt/lists/*
+
+# Copy in your keepalived template
+# This should contain variables like ${VIP}, ${INTERFACE}, etc.
+COPY keepalived.conf.tpl /tmp/keepalived.conf.tpl
+
+# Entry script: substitute env vars and then start keepalived
+CMD ["/bin/bash", "-c", "envsubst < /tmp/keepalived.conf.tpl > /etc/keepalived/keepalived.conf && /container/tool/run"]
