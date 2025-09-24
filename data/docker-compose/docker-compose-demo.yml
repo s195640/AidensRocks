@@ -74,7 +74,7 @@ services:
       - NET_RAW
     env_file: .env
     volumes:
-      - ../keepalived/keepalived.conf::/etc/keepalived/keepalived.conf:ro
+      - ../keepalived/keepalived.conf:/etc/keepalived/keepalived.conf:ro
     restart: always
 
 volumes:
