@@ -51,14 +51,16 @@ services:
       - server
     networks:
       - app-network
-  pg_backup:
-    container_name: pg_backup
-    image: alpine:latest
-    command: sh -c " apk update && apk add --no-cache postgresql-client && \ echo '0 * * * * PGPASSWORD=OmegaA..1154 pg_dump -h 192.168.1.70 -p 5432 -U postgres aidensrocks > /backup/node1/aidensrocks_backup_$(date +\%F_\%H-\%M).sql' > /etc/crontabs/root && \ crond -f -l 2 "
-    volumes:
-      - truenas-sql-backup:/backup
-    networks:
-      - app-network
+pg_backup:
+  container_name: pg_backup
+  image: alpine:latest
+  env_file: .env
+  command: >
+    sh -c "apk update && apk add --no-cache postgresql-client && echo '* * * * * PGPASSWORD=$DB_PASSWORD pg_dump -h $DB_HOST -p $DB_PORT -U $DB_USER $DB_NAME > /backup/$NODE/${DB_NAME}_backup_\$(date +\%F_\%H-\%M).sql' > /etc/crontabs/root && crond -f -l 2"
+  volumes:
+    - truenas-sql-backup:/backup
+  networks:
+    - app-network
 
 volumes:
   truenas-media:
