@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: OmegaA..1154
       POSTGRES_DB: aidensrocks
     ports:
-      - '5431:5432'
+      - '5432:5432'
     volumes:
       - ../../db:/var/lib/postgresql/data
       - ../postgresql/postgresql.conf:/etc/postgresql/postgresql.conf
