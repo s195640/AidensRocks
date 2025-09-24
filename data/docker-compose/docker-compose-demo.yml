@@ -29,7 +29,7 @@ services:
       dockerfile: ./data/docker/docker-server-demo
     command: bash -c "npm start"
     volumes:
-      - truenas-media:/app/media
+      - nas-media:/app/media
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,8 +45,8 @@ services:
       - '80:80'
       - '443:443'
     volumes:
-      - truenas-certs:/etc/ssl/certs:ro
-      - truenas-private:/etc/ssl/private:ro
+      - nas-certs:/etc/ssl/certs:ro
+      - nas-private:/etc/ssl/private:ro
     depends_on:
       - server
     networks:
@@ -59,33 +59,33 @@ services:
     command: >
       sh -c "apk update && apk add --no-cache postgresql-client && echo '0 * * * * PGPASSWORD=$DB_PASSWORD pg_dump -h $DB_HOST -p $DB_PORT -U $DB_USER $DB_NAME > /backup/$NODE/${DB_NAME}_backup_\$(date +\%F_\%H-\%M).sql' > /etc/crontabs/root && crond -f -l 2"
     volumes:
-      - truenas-sql-backup:/backup
+      - nas-sql-backup:/backup
     networks:
       - app-network
 
 volumes:
-  truenas-media:
+  nas-media:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: /mnt/aidensrocks/prod/media
 
-  truenas-certs:
+  nas-certs:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: /mnt/aidensrocks/prod/ssl/certs
 
-  truenas-private:
+  nas-private:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: /mnt/aidensrocks/prod/ssl/private
 
-  truenas-sql-backup:
+  nas-sql-backup:
     driver: local
     driver_opts:
       type: none

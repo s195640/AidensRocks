@@ -1,11 +1,5 @@
 FROM node:18
 
-ENV DB_HOST=192.168.1.70
-ENV DB_PORT=5432
-ENV DB_USER=postgres
-ENV DB_PASSWORD=OmegaA..1154
-ENV DB_NAME=aidensrocks
-
 WORKDIR /app
 COPY server/src/ /app/src
 COPY server/package.json /app
