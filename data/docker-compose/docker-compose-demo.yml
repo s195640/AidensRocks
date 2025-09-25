@@ -64,6 +64,21 @@ services:
     networks:
       - app-network
 
+  nas_backup:
+    image: alpine:latest
+    container_name: nas_backup
+    restart: always
+    volumes:
+      - volume-base:/data:ro
+      - volume-backup:/backup
+    env_file:
+      - .env
+    entrypoint: [ "/bin/sh", "-c" ]
+    command: |
+      apk add --no-cache rsync bash coreutils
+      echo "0 */${BACKUP_INTERVAL} * * * sleep ${BACKUP_OFFSET} && rsync -av --delete /data/ /backup/" > /etc/crontabs/root
+      crond -f -L /dev/stdout
+
   keepalived:
     container_name: keepalived
     image: osixia/keepalived:2.0.20
@@ -76,6 +91,13 @@ services:
     restart: always
 
 volumes:
+  volume-backup:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/aidensrocks_backup
+
   volume-base:
     driver: local
     driver_opts:
