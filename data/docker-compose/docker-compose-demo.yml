@@ -30,7 +30,7 @@ services:
     env_file: .env
     command: bash -c "npm start"
     volumes:
-      - nas-media:/app/media
+      - dir/media:/app/media
     depends_on:
       postgres:
         condition: service_healthy
@@ -46,8 +46,8 @@ services:
       - '80:80'
       - '443:443'
     volumes:
-      - nas-certs:/etc/ssl/certs:ro
-      - nas-private:/etc/ssl/private:ro
+      - dir/ssl/certs:/etc/ssl/certs:ro
+      - dir/ssl/private:/etc/ssl/private:ro
     depends_on:
       - server
     networks:
@@ -60,7 +60,7 @@ services:
     command: >
       sh -c "apk update && apk add --no-cache postgresql-client && echo '0 * * * * PGPASSWORD=$DB_PASSWORD pg_dump -h $DB_HOST -p $DB_PORT -U $DB_USER $DB_NAME > /backup/$NODE/${DB_NAME}_backup_\$(date +\%F_\%H-\%M).sql' > /etc/crontabs/root && crond -f -l 2"
     volumes:
-      - nas-sql-backup:/backup
+      - dir/backup:/backup
     networks:
       - app-network
 
@@ -76,33 +76,12 @@ services:
     restart: always
 
 volumes:
-  nas-media:
+  dir:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /mnt/aidensrocks/prod/media
-
-  nas-certs:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /mnt/aidensrocks/prod/ssl/certs
-
-  nas-private:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /mnt/aidensrocks/prod/ssl/private
-
-  nas-sql-backup:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /mnt/aidensrocks/prod/sql_backup
+      device: /mnt/aidensrocks/prod
 
 networks:
   app-network:
