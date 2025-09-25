@@ -65,19 +65,15 @@ services:
       - app-network
 
   nas_backup:
-    image: alpine:latest
+    build:
+      context: ../../
+      dockerfile: ./data/docker/docker-nasbackup-demo
     container_name: nas_backup
     restart: always
     volumes:
       - volume-base:/data:ro
       - volume-backup:/backup
-    env_file:
-      - .env
-    entrypoint: [ "/bin/sh", "-c" ]
-    command: |
-      apk add --no-cache rsync bash coreutils
-      echo "0 */${BACKUP_INTERVAL} * * * sleep ${BACKUP_OFFSET} && rsync -av --delete /data/ /backup/" > /etc/crontabs/root
-      crond -f -L /dev/stdout
+    env_file: .env
 
   keepalived:
     container_name: keepalived

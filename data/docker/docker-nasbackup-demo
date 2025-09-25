@@ -1,0 +1,8 @@
+FROM alpine:latest
+
+# Install required packages
+RUN apk add --no-cache bash rsync coreutils
+
+# Create cron job and start cron in foreground
+CMD echo "0 */${BACKUP_INTERVAL} * * * sleep ${BACKUP_OFFSET} && rsync -av --delete /data/ /backup/" > /etc/crontabs/root \
+  && crond -f -L /dev/stdout
