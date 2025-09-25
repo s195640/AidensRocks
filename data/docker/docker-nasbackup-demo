@@ -4,5 +4,7 @@ FROM alpine:latest
 RUN apk add --no-cache bash rsync coreutils
 
 # Create cron job and start cron in foreground
-CMD echo "0 */${BACKUP_INTERVAL} * * * sleep ${BACKUP_OFFSET} && rsync -av --delete /data/ /backup/" > /etc/crontabs/root \
+CMD echo "0 */${BACKUP_INTERVAL} * * * sleep ${BACKUP_OFFSET} && \
+  mkdir -p /backup/$(date +\%Y-\%m-\%d_\%H-\%M-\%S) && \
+  rsync -av --delete /data/ /backup/$(date +\%Y-\%m-\%d_\%H-\%M-\%S)/" > /etc/crontabs/root \
   && crond -f -L /dev/stdout
