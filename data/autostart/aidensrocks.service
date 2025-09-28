@@ -1,0 +1,17 @@
+[Unit]
+Description=Start Aidens Rocks
+After=network-online.target docker.service
+Wants=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStartPre=/bin/bash -c 'until docker info > /dev/null 2>&1; do sleep 1; done'
+ExecStart=/usr/bin/env docker compose -f /root/AidensRocks/data/docker-compose/docker-compose-demo.yml up -d
+ExecStop=/usr/bin/env docker compose -f /root/AidensRocks/data/docker-compose/docker-compose-demo.yml down
+RemainAfterExit=true
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
