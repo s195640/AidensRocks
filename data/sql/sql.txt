@@ -79,7 +79,9 @@ CREATE TABLE Rock_Post_Summary (
     uuid VARCHAR(50),
     show BOOLEAN DEFAULT FALSE,
     latitude NUMERIC(18,15),
-    longitude NUMERIC(18,15)
+    longitude NUMERIC(18,15),
+    country VARCHAR(255),
+    state VARCHAR(255)
 );
 
 CREATE TABLE Rock_Post_Image (

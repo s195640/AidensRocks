@@ -1,7 +1,14 @@
 const express = require('express');
 const pool = require('../db/pool');
+const NodeGeocoder = require("node-geocoder");
 
 const router = express.Router();
+
+const geocoder = NodeGeocoder({
+  provider: "opencage",
+  apiKey: "18b5ecfa7dbb4fbea8107dc52069ee3c", // your API key
+});
+
 
 // GET /api/journey - fetch all posts with total images count
 router.get("/", async (req, res) => {
@@ -153,10 +160,26 @@ router.put("/:rps_key", async (req, res) => {
     email,
     show,
     latitude,
-    longitude, // ✅ new fields
+    longitude,
   } = req.body;
 
+  let country = null;
+  let state = null;
+
   try {
+    // ✅ If lat/lon provided, do reverse lookup
+    if (latitude && longitude) {
+      try {
+        const geoRes = await geocoder.reverse({ lat: latitude, lon: longitude });
+        if (geoRes && geoRes.length > 0) {
+          country = geoRes[0].country || null;
+          state = geoRes[0].state || null;
+        }
+      } catch (geoErr) {
+        console.warn(`Reverse geocode failed for rps_key=${rps_key}`, geoErr.message);
+      }
+    }
+
     const result = await pool.query(
       `UPDATE Rock_Post_Summary
        SET rock_number = $1,
@@ -168,8 +191,10 @@ router.put("/:rps_key", async (req, res) => {
            show = $7,
            latitude = $8,
            longitude = $9,
+           country = COALESCE($10, country),
+           state = COALESCE($11, state),
            update_dt = CURRENT_TIMESTAMP
-       WHERE rps_key = $10
+       WHERE rps_key = $12
        RETURNING *`,
       [
         rock_number,
@@ -181,6 +206,8 @@ router.put("/:rps_key", async (req, res) => {
         show,
         latitude,
         longitude,
+        country,
+        state,
         rps_key,
       ]
     );
