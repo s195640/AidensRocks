@@ -1,7 +1,7 @@
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=OmegaA..1154
 POSTGRES_DB=aidensrocks
-DB_HOST=192.168.1.70
+DB_HOST=192.168.1.57
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=OmegaA..1154
@@ -12,7 +12,7 @@ KEEPALIVED_INTERFACE=eth0                   # Proxmox host interface
 KEEPALIVED_PRIORITY=101                     # Node1 = 101 (primary), Node2 = 100 (secondary)
 KEEPALIVED_PASSWORD=secret123               # VRRP authentication password
 KEEPALIVED_VIRTUAL_IPS="#PYTHON2BASH:['192.168.1.99']"
-KEEPALIVED_UNICAST_PEERS="#PYTHON2BASH:['192.168.1.71']" #IP address of other node
+KEEPALIVED_UNICAST_PEERS="#PYTHON2BASH:['192.168.1.47']" #IP address of other node
 KEEPALIVED_STATE=MASTER                     # Node1 = MASTER, Node2 = BACKUP
 
 # Run every 6 hours
