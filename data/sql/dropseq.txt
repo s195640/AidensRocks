@@ -1,0 +1,17 @@
+-- Photo Albums
+drop SEQUENCE photoalbums_pa_key_seq;
+drop SEQUENCE photos_p_key_seq;
+
+-- Rock / Artist
+drop SEQUENCE rock_catalog_rc_key_seq;
+drop SEQUENCE rock_artist_ra_key_seq;
+drop SEQUENCE rock_artist_link_ral_key_seq;
+
+-- Rock Posts
+drop SEQUENCE rock_post_summary_rps_key_seq;
+drop SEQUENCE rock_post_image_rpi_key_seq;
+drop SEQUENCE rock_post_tracking_rpt_key_seq;
+
+-- Counter
+drop SEQUENCE rock_count_summary_rcs_key_seq;
+drop SEQUENCE rock_count_tracking_rct_key_seq;

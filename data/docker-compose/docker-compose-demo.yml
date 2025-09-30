@@ -52,7 +52,12 @@ services:
       - server
     networks:
       - app-network
-
+  cloudflare-ddns:
+    image: favonia/cloudflare-ddns:1
+    container_name: cloudflare-ddns
+    restart: always
+    network_mode: host
+    env_file: .env
   pg_backup:
     container_name: pg_backup
     image: alpine:latest

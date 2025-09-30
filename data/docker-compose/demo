@@ -21,3 +21,11 @@ BACKUP_INTERVAL=6
 # Node-specific offset (set different per node!)
 # Node1 = 0, Node2 = 10800 (3h in seconds)
 BACKUP_OFFSET=0
+
+#Cloudflare (dns thing)
+CLOUDFLARE_API_TOKEN=_92Y5n8vMScmf6EArIG7sbiAZfVfpFcSGOpaI24u
+DOMAINS=aidensrocks.com,www.aidensrocks.com
+PROXIED=false
+UPDATE_INTERVAL=30
+QUIET=1
+IP6_PROVIDER=none
