@@ -27,6 +27,7 @@ services:
     volumes:
       - ../../server:/app
       - /app/node_modules
+      - ../test_instance/media:/app/media
       - truenas-media:/app/media
     depends_on:
       postgres:
@@ -72,19 +73,19 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /mnt/aidensrocks/test/media
+      device: ../test_instance/media
   truenas-sql:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /mnt/aidensrocks/test/sql
+      device: ../test_instance/sql
   truenas-sql-backup:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /mnt/aidensrocks/test/sql_backup
+      device: ../test_instance/sql_backup
 networks:
   app-network:
     driver: bridge
