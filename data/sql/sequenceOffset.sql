@@ -3,9 +3,9 @@ ALTER SEQUENCE photoalbums_pa_key_seq RESTART WITH 1000000;
 ALTER SEQUENCE photos_p_key_seq RESTART WITH 1000000;
 
 -- Rock / Artist
-ALTER SEQUENCE rock_catalog_rc_key_seq RESTART WITH 1000000;
-ALTER SEQUENCE rock_artist_ra_key_seq RESTART WITH 1000000;
-ALTER SEQUENCE rock_artist_link_ral_key_seq RESTART WITH 1000000;
+ALTER SEQUENCE catalog_rc_key_seq RESTART WITH 1000000;
+ALTER SEQUENCE artist_ra_key_seq RESTART WITH 1000000;
+ALTER SEQUENCE artist_link_ral_key_seq RESTART WITH 1000000;
 
 -- Rock Posts
 ALTER SEQUENCE rock_post_summary_rps_key_seq RESTART WITH 1000000;

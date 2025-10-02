@@ -5,9 +5,9 @@ drop table PhotoAlbums cascade;
 
 /* Rock/Artist Details*/
 
-drop table Rock_Artist_Link cascade;
-drop table Rock_Artist cascade;
-drop table Rock_Catalog cascade;
+drop table artist_link cascade;
+drop table artist cascade;
+drop table catalog cascade;
 
 /* Rock Posts */
 

@@ -6,7 +6,7 @@ const router = express.Router();
 router.get('/', async (req, res, next) => {
   try {
     const result = await pool.query(
-      'SELECT * FROM Rock_Artist ORDER BY ra_key ASC'
+      'SELECT * FROM artist ORDER BY ra_key ASC'
     );
     res.json(result.rows);
   } catch (err) {
@@ -22,7 +22,7 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ error: 'Display name required' });
 
     const result = await pool.query(
-      `INSERT INTO Rock_Artist (display_name, relation, dob)
+      `INSERT INTO artist (display_name, relation, dob)
        VALUES ($1, $2, $3)
        RETURNING *`,
       [display_name, relation || null, dob || null]
@@ -47,7 +47,7 @@ router.put('/:id', async (req, res, next) => {
       return res.status(400).json({ error: 'Display name required' });
 
     const result = await pool.query(
-      `UPDATE Rock_Artist
+      `UPDATE artist
        SET display_name = $1,
            relation = $2,
            dob = $3,
@@ -76,7 +76,7 @@ router.delete('/:id', async (req, res, next) => {
     const { id } = req.params;
 
     const result = await pool.query(
-      'DELETE FROM Rock_Artist WHERE ra_key = $1 RETURNING *',
+      'DELETE FROM artist WHERE ra_key = $1 RETURNING *',
       [id]
     );
 

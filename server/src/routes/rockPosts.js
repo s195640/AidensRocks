@@ -28,8 +28,8 @@ router.get('/allrocks', async (req, res) => {
           ''
         ) AS artists
       FROM catalog rc
-      LEFT JOIN Rock_Artist_Link ral ON rc.rc_key = ral.rc_key
-      LEFT JOIN Rock_Artist ra ON ral.ra_key = ra.ra_key
+      LEFT JOIN artist_link ral ON rc.rc_key = ral.rc_key
+      LEFT JOIN artist ra ON ral.ra_key = ra.ra_key
       GROUP BY rc.rock_number
       ORDER BY rc.rock_number;
     `);
@@ -53,8 +53,8 @@ WITH images AS (
 artists AS (
     SELECT rc.rock_number, 
            ARRAY_AGG(ra.display_name || ' (' || ra.relation || ')') AS artists
-    FROM Rock_Artist_Link ral
-    JOIN Rock_Artist ra ON ra.ra_key = ral.ra_key
+    FROM artist_link ral
+    JOIN artist ra ON ra.ra_key = ral.ra_key
     JOIN catalog rc ON rc.rc_key = ral.rc_key
     GROUP BY rc.rock_number
 )
@@ -96,8 +96,8 @@ WITH images AS (
 artists AS (
     SELECT rc.rock_number, 
            ARRAY_AGG(ra.display_name || ' (' || ra.relation || ')') AS artists
-    FROM Rock_Artist_Link ral
-    JOIN Rock_Artist ra ON ra.ra_key = ral.ra_key
+    FROM artist_link ral
+    JOIN artist ra ON ra.ra_key = ral.ra_key
     JOIN catalog rc ON rc.rc_key = ral.rc_key
     GROUP BY rc.rock_number
 )

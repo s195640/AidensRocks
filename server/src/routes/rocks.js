@@ -35,8 +35,8 @@ router.get('/', async (req, res, next) => {
              rc.comment,
              json_agg(json_build_object('ra_key', ra.ra_key, 'display_name', ra.display_name)) AS artists
       FROM catalog rc
-      LEFT JOIN Rock_Artist_Link ral ON rc.rc_key = ral.rc_key
-      LEFT JOIN Rock_Artist ra ON ral.ra_key = ra.ra_key
+      LEFT JOIN artist_link ral ON rc.rc_key = ral.rc_key
+      LEFT JOIN artist ra ON ral.ra_key = ra.ra_key
       GROUP BY rc.rc_key
       ORDER BY rc.rock_number ASC
     `);
@@ -63,7 +63,7 @@ router.post('/', upload.single('image'), async (req, res, next) => {
 
     for (const ra_key of artists) {
       await client.query(
-        `INSERT INTO Rock_Artist_Link (ra_key, rc_key) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        `INSERT INTO artist_link (ra_key, rc_key) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
         [ra_key, rc_key]
       );
     }
@@ -100,13 +100,13 @@ router.put('/:rc_key', upload.single('image'), async (req, res, next) => {
       [rc_key, comment]
     );
 
-    await client.query(`DELETE FROM Rock_Artist_Link WHERE rc_key = $1`, [
+    await client.query(`DELETE FROM artist_link WHERE rc_key = $1`, [
       rc_key,
     ]);
 
     for (const ra_key of artists) {
       await client.query(
-        `INSERT INTO Rock_Artist_Link (ra_key, rc_key) VALUES ($1, $2)`,
+        `INSERT INTO artist_link (ra_key, rc_key) VALUES ($1, $2)`,
         [ra_key, rc_key]
       );
     }

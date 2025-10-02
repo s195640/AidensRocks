@@ -125,10 +125,10 @@ ALTER SEQUENCE public.photos_p_key_seq OWNED BY public.photos.p_key;
 
 
 --
--- Name: rock_artist; Type: TABLE; Schema: public; Owner: postgres
+-- Name: artist; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.rock_artist (
+CREATE TABLE public.artist (
     ra_key integer NOT NULL,
     display_name character varying(255) NOT NULL,
     create_dt timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
@@ -138,13 +138,13 @@ CREATE TABLE public.rock_artist (
 );
 
 
-ALTER TABLE public.rock_artist OWNER TO postgres;
+ALTER TABLE public.artist OWNER TO postgres;
 
 --
--- Name: rock_artist_link; Type: TABLE; Schema: public; Owner: postgres
+-- Name: artist_link; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.rock_artist_link (
+CREATE TABLE public.artist_link (
     ral_key integer NOT NULL,
     ra_key integer NOT NULL,
     rc_key integer NOT NULL,
@@ -153,13 +153,13 @@ CREATE TABLE public.rock_artist_link (
 );
 
 
-ALTER TABLE public.rock_artist_link OWNER TO postgres;
+ALTER TABLE public.artist_link OWNER TO postgres;
 
 --
--- Name: rock_artist_link_ral_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: artist_link_ral_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.rock_artist_link_ral_key_seq
+CREATE SEQUENCE public.artist_link_ral_key_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -168,20 +168,20 @@ CREATE SEQUENCE public.rock_artist_link_ral_key_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rock_artist_link_ral_key_seq OWNER TO postgres;
+ALTER SEQUENCE public.artist_link_ral_key_seq OWNER TO postgres;
 
 --
--- Name: rock_artist_link_ral_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: artist_link_ral_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.rock_artist_link_ral_key_seq OWNED BY public.rock_artist_link.ral_key;
+ALTER SEQUENCE public.artist_link_ral_key_seq OWNED BY public.artist_link.ral_key;
 
 
 --
--- Name: rock_artist_ra_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: artist_ra_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.rock_artist_ra_key_seq
+CREATE SEQUENCE public.artist_ra_key_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -190,20 +190,20 @@ CREATE SEQUENCE public.rock_artist_ra_key_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rock_artist_ra_key_seq OWNER TO postgres;
+ALTER SEQUENCE public.artist_ra_key_seq OWNER TO postgres;
 
 --
--- Name: rock_artist_ra_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: artist_ra_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.rock_artist_ra_key_seq OWNED BY public.rock_artist.ra_key;
+ALTER SEQUENCE public.artist_ra_key_seq OWNED BY public.artist.ra_key;
 
 
 --
--- Name: rock_catalog; Type: TABLE; Schema: public; Owner: postgres
+-- Name: catalog; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.rock_catalog (
+CREATE TABLE public.catalog (
     rc_key integer NOT NULL,
     rock_number integer NOT NULL,
     create_dt timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
@@ -212,13 +212,13 @@ CREATE TABLE public.rock_catalog (
 );
 
 
-ALTER TABLE public.rock_catalog OWNER TO postgres;
+ALTER TABLE public.catalog OWNER TO postgres;
 
 --
--- Name: rock_catalog_rc_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: catalog_rc_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.rock_catalog_rc_key_seq
+CREATE SEQUENCE public.catalog_rc_key_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -227,13 +227,13 @@ CREATE SEQUENCE public.rock_catalog_rc_key_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rock_catalog_rc_key_seq OWNER TO postgres;
+ALTER SEQUENCE public.catalog_rc_key_seq OWNER TO postgres;
 
 --
--- Name: rock_catalog_rc_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: catalog_rc_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.rock_catalog_rc_key_seq OWNED BY public.rock_catalog.rc_key;
+ALTER SEQUENCE public.catalog_rc_key_seq OWNED BY public.catalog.rc_key;
 
 
 --
@@ -476,24 +476,24 @@ ALTER TABLE ONLY public.photos ALTER COLUMN p_key SET DEFAULT nextval('public.ph
 
 
 --
--- Name: rock_artist ra_key; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: artist ra_key; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_artist ALTER COLUMN ra_key SET DEFAULT nextval('public.rock_artist_ra_key_seq'::regclass);
-
-
---
--- Name: rock_artist_link ral_key; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.rock_artist_link ALTER COLUMN ral_key SET DEFAULT nextval('public.rock_artist_link_ral_key_seq'::regclass);
+ALTER TABLE ONLY public.artist ALTER COLUMN ra_key SET DEFAULT nextval('public.artist_ra_key_seq'::regclass);
 
 
 --
--- Name: rock_catalog rc_key; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: artist_link ral_key; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_catalog ALTER COLUMN rc_key SET DEFAULT nextval('public.rock_catalog_rc_key_seq'::regclass);
+ALTER TABLE ONLY public.artist_link ALTER COLUMN ral_key SET DEFAULT nextval('public.artist_link_ral_key_seq'::regclass);
+
+
+--
+-- Name: catalog rc_key; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.catalog ALTER COLUMN rc_key SET DEFAULT nextval('public.catalog_rc_key_seq'::regclass);
 
 
 --
@@ -532,10 +532,10 @@ ALTER TABLE ONLY public.rock_post_tracking ALTER COLUMN rpt_key SET DEFAULT next
 
 
 --
--- Name: rock_artist display_name_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: artist display_name_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_artist
+ALTER TABLE ONLY public.artist
     ADD CONSTRAINT display_name_unique UNIQUE (display_name);
 
 
@@ -556,27 +556,27 @@ ALTER TABLE ONLY public.photos
 
 
 --
--- Name: rock_artist_link rock_artist_link_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: artist_link artist_link_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_artist_link
-    ADD CONSTRAINT rock_artist_link_pkey PRIMARY KEY (ral_key);
-
-
---
--- Name: rock_artist rock_artist_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.rock_artist
-    ADD CONSTRAINT rock_artist_pkey PRIMARY KEY (ra_key);
+ALTER TABLE ONLY public.artist_link
+    ADD CONSTRAINT artist_link_pkey PRIMARY KEY (ral_key);
 
 
 --
--- Name: rock_catalog rock_catalog_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: artist artist_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_catalog
-    ADD CONSTRAINT rock_catalog_pkey PRIMARY KEY (rc_key);
+ALTER TABLE ONLY public.artist
+    ADD CONSTRAINT artist_pkey PRIMARY KEY (ra_key);
+
+
+--
+-- Name: catalog catalog_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.catalog
+    ADD CONSTRAINT catalog_pkey PRIMARY KEY (rc_key);
 
 
 --
@@ -596,10 +596,10 @@ ALTER TABLE ONLY public.rock_count_tracking
 
 
 --
--- Name: rock_catalog rock_number_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: catalog rock_number_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_catalog
+ALTER TABLE ONLY public.catalog
     ADD CONSTRAINT rock_number_unique UNIQUE (rock_number);
 
 
@@ -628,10 +628,10 @@ ALTER TABLE ONLY public.rock_post_tracking
 
 
 --
--- Name: rock_artist_link unique_ra_rc; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: artist_link unique_ra_rc; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_artist_link
+ALTER TABLE ONLY public.artist_link
     ADD CONSTRAINT unique_ra_rc UNIQUE (ra_key, rc_key);
 
 
@@ -644,19 +644,19 @@ ALTER TABLE ONLY public.photos
 
 
 --
--- Name: rock_artist_link fk_ra_key; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: artist_link fk_ra_key; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_artist_link
-    ADD CONSTRAINT fk_ra_key FOREIGN KEY (ra_key) REFERENCES public.rock_artist(ra_key) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE ONLY public.artist_link
+    ADD CONSTRAINT fk_ra_key FOREIGN KEY (ra_key) REFERENCES public.artist(ra_key) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
--- Name: rock_artist_link fk_rc_key; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: artist_link fk_rc_key; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_artist_link
-    ADD CONSTRAINT fk_rc_key FOREIGN KEY (rc_key) REFERENCES public.rock_catalog(rc_key) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE ONLY public.artist_link
+    ADD CONSTRAINT fk_rc_key FOREIGN KEY (rc_key) REFERENCES public.catalog(rc_key) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
