@@ -1,6 +1,6 @@
 node_modules/
 docker_test_db/
-*/.env
+**/.env
 temp_uploads/
 **/package-lock.json
 **/test_instance/
