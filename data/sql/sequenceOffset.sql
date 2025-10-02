@@ -8,9 +8,9 @@ ALTER SEQUENCE artist_ra_key_seq RESTART WITH 1000000;
 ALTER SEQUENCE artist_link_ral_key_seq RESTART WITH 1000000;
 
 -- Rock Posts
-ALTER SEQUENCE rock_post_summary_rps_key_seq RESTART WITH 1000000;
-ALTER SEQUENCE rock_post_image_rpi_key_seq RESTART WITH 1000000;
-ALTER SEQUENCE rock_post_tracking_rpt_key_seq RESTART WITH 1000000;
+ALTER SEQUENCE journey_rps_key_seq RESTART WITH 1000000;
+ALTER SEQUENCE journey_image_rpi_key_seq RESTART WITH 1000000;
+ALTER SEQUENCE journey_tracking_rpt_key_seq RESTART WITH 1000000;
 
 -- Counter
 ALTER SEQUENCE counter_rcs_key_seq RESTART WITH 1000000;

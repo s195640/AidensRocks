@@ -11,9 +11,9 @@ drop table catalog cascade;
 
 /* Rock Posts */
 
-drop table Rock_Post_Tracking cascade;
-drop table Rock_Post_Image cascade;
-drop table Rock_Post_Summary cascade;
+drop table journey_tracking cascade;
+drop table journey_image cascade;
+drop table journey cascade;
 
 /* COUNTER */
 

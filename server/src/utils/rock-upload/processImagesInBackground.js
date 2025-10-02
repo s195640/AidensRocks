@@ -20,8 +20,8 @@ async function processImagesInBackground(baseDir, name, safeRockNumber, commentS
 
     // Only update DB if safeRockNumber > 0
     if (safeRockNumber > 0 && rpsKey) {
-      await db.query('UPDATE Rock_Post_Summary SET show = true WHERE rps_key = $1', [rpsKey]);
-      await db.query('UPDATE Rock_Post_Image SET show = true WHERE rps_key = $1', [rpsKey]);
+      await db.query('UPDATE journey SET show = true WHERE rps_key = $1', [rpsKey]);
+      await db.query('UPDATE journey_image SET show = true WHERE rps_key = $1', [rpsKey]);
       console.log(`✅ Updated DB show flags for rps_key ${rpsKey}`);
     }
 

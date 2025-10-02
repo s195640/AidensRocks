@@ -27,8 +27,8 @@ router.get("/", async (req, res) => {
         rps.latitude,
 		    rps.longitude,
         COUNT(rpi.rpi_key) AS total_images
-      FROM Rock_Post_Summary rps
-      LEFT JOIN Rock_Post_Image rpi ON rps.rps_key = rpi.rps_key
+      FROM journey rps
+      LEFT JOIN journey_image rpi ON rps.rps_key = rpi.rps_key
       GROUP BY rps.rps_key
       ORDER BY rps.latitude desc, rps.date desc
     `;
@@ -59,7 +59,7 @@ router.post("/:rps_key/toggle-show", async (req, res) => {
 
   try {
     const updateQuery = `
-      UPDATE Rock_Post_Summary
+      UPDATE journey
       SET show = $1,
           update_dt = CURRENT_TIMESTAMP
       WHERE rps_key = $2
@@ -83,7 +83,7 @@ router.delete("/:rps_key", async (req, res) => {
   const { rps_key } = req.params;
 
   try {
-    const deleteQuery = `DELETE FROM Rock_Post_Summary WHERE rps_key = $1 RETURNING rps_key`;
+    const deleteQuery = `DELETE FROM journey WHERE rps_key = $1 RETURNING rps_key`;
     const { rows } = await pool.query(deleteQuery, [rps_key]);
 
     if (rows.length === 0) {
@@ -104,7 +104,7 @@ router.get("/:rps_key/images", async (req, res) => {
   try {
     const query = `
       SELECT rpi_key, original_name, current_name, upload_order, show, width, height
-      FROM Rock_Post_Image
+      FROM journey_image
       WHERE rps_key = $1
       ORDER BY upload_order ASC NULLS LAST, create_dt ASC
     `;
@@ -123,7 +123,7 @@ router.post("/images/:rpi_key/toggle-show", async (req, res) => {
 
   try {
     const result = await pool.query(
-      "UPDATE Rock_Post_Image SET show = $1, update_dt = CURRENT_TIMESTAMP WHERE rpi_key = $2 RETURNING *",
+      "UPDATE journey_image SET show = $1, update_dt = CURRENT_TIMESTAMP WHERE rpi_key = $2 RETURNING *",
       [show, rpi_key]
     );
     if (result.rowCount === 0) return res.status(404).json({ error: "Image not found" });
@@ -139,7 +139,7 @@ router.delete("/images/:rpi_key", async (req, res) => {
   const { rpi_key } = req.params;
 
   try {
-    const result = await pool.query("DELETE FROM Rock_Post_Image WHERE rpi_key = $1", [rpi_key]);
+    const result = await pool.query("DELETE FROM journey_image WHERE rpi_key = $1", [rpi_key]);
     if (result.rowCount === 0) return res.status(404).json({ error: "Image not found" });
     res.json({ success: true });
   } catch (err) {
@@ -181,7 +181,7 @@ router.put("/:rps_key", async (req, res) => {
     }
 
     const result = await pool.query(
-      `UPDATE Rock_Post_Summary
+      `UPDATE journey
        SET rock_number = $1,
            location = $2,
            date = $3,

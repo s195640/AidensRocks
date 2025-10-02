@@ -322,10 +322,10 @@ ALTER SEQUENCE public.counter_tracking_rct_key_seq OWNED BY public.counter_track
 
 
 --
--- Name: rock_post_image; Type: TABLE; Schema: public; Owner: postgres
+-- Name: journey_image; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.rock_post_image (
+CREATE TABLE public.journey_image (
     rpi_key integer NOT NULL,
     rps_key integer NOT NULL,
     create_dt timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
@@ -339,13 +339,13 @@ CREATE TABLE public.rock_post_image (
 );
 
 
-ALTER TABLE public.rock_post_image OWNER TO postgres;
+ALTER TABLE public.journey_image OWNER TO postgres;
 
 --
--- Name: rock_post_image_rpi_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: journey_image_rpi_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.rock_post_image_rpi_key_seq
+CREATE SEQUENCE public.journey_image_rpi_key_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -354,20 +354,20 @@ CREATE SEQUENCE public.rock_post_image_rpi_key_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rock_post_image_rpi_key_seq OWNER TO postgres;
+ALTER SEQUENCE public.journey_image_rpi_key_seq OWNER TO postgres;
 
 --
--- Name: rock_post_image_rpi_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: journey_image_rpi_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.rock_post_image_rpi_key_seq OWNED BY public.rock_post_image.rpi_key;
+ALTER SEQUENCE public.journey_image_rpi_key_seq OWNED BY public.journey_image.rpi_key;
 
 
 --
--- Name: rock_post_summary; Type: TABLE; Schema: public; Owner: postgres
+-- Name: journey; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.rock_post_summary (
+CREATE TABLE public.journey (
     rps_key integer NOT NULL,
     rock_qr_number integer NOT NULL,
     rock_number integer NOT NULL,
@@ -388,13 +388,13 @@ CREATE TABLE public.rock_post_summary (
 );
 
 
-ALTER TABLE public.rock_post_summary OWNER TO postgres;
+ALTER TABLE public.journey OWNER TO postgres;
 
 --
--- Name: rock_post_summary_rps_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: journey_rps_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.rock_post_summary_rps_key_seq
+CREATE SEQUENCE public.journey_rps_key_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -403,20 +403,20 @@ CREATE SEQUENCE public.rock_post_summary_rps_key_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rock_post_summary_rps_key_seq OWNER TO postgres;
+ALTER SEQUENCE public.journey_rps_key_seq OWNER TO postgres;
 
 --
--- Name: rock_post_summary_rps_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: journey_rps_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.rock_post_summary_rps_key_seq OWNED BY public.rock_post_summary.rps_key;
+ALTER SEQUENCE public.journey_rps_key_seq OWNED BY public.journey.rps_key;
 
 
 --
--- Name: rock_post_tracking; Type: TABLE; Schema: public; Owner: postgres
+-- Name: journey_tracking; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.rock_post_tracking (
+CREATE TABLE public.journey_tracking (
     rpt_key integer NOT NULL,
     rps_key integer NOT NULL,
     create_dt timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
@@ -437,13 +437,13 @@ CREATE TABLE public.rock_post_tracking (
 );
 
 
-ALTER TABLE public.rock_post_tracking OWNER TO postgres;
+ALTER TABLE public.journey_tracking OWNER TO postgres;
 
 --
--- Name: rock_post_tracking_rpt_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: journey_tracking_rpt_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.rock_post_tracking_rpt_key_seq
+CREATE SEQUENCE public.journey_tracking_rpt_key_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -452,13 +452,13 @@ CREATE SEQUENCE public.rock_post_tracking_rpt_key_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rock_post_tracking_rpt_key_seq OWNER TO postgres;
+ALTER SEQUENCE public.journey_tracking_rpt_key_seq OWNER TO postgres;
 
 --
--- Name: rock_post_tracking_rpt_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: journey_tracking_rpt_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.rock_post_tracking_rpt_key_seq OWNED BY public.rock_post_tracking.rpt_key;
+ALTER SEQUENCE public.journey_tracking_rpt_key_seq OWNED BY public.journey_tracking.rpt_key;
 
 
 --
@@ -511,24 +511,24 @@ ALTER TABLE ONLY public.counter_tracking ALTER COLUMN rct_key SET DEFAULT nextva
 
 
 --
--- Name: rock_post_image rpi_key; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: journey_image rpi_key; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_post_image ALTER COLUMN rpi_key SET DEFAULT nextval('public.rock_post_image_rpi_key_seq'::regclass);
-
-
---
--- Name: rock_post_summary rps_key; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.rock_post_summary ALTER COLUMN rps_key SET DEFAULT nextval('public.rock_post_summary_rps_key_seq'::regclass);
+ALTER TABLE ONLY public.journey_image ALTER COLUMN rpi_key SET DEFAULT nextval('public.journey_image_rpi_key_seq'::regclass);
 
 
 --
--- Name: rock_post_tracking rpt_key; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: journey rps_key; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_post_tracking ALTER COLUMN rpt_key SET DEFAULT nextval('public.rock_post_tracking_rpt_key_seq'::regclass);
+ALTER TABLE ONLY public.journey ALTER COLUMN rps_key SET DEFAULT nextval('public.journey_rps_key_seq'::regclass);
+
+
+--
+-- Name: journey_tracking rpt_key; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.journey_tracking ALTER COLUMN rpt_key SET DEFAULT nextval('public.journey_tracking_rpt_key_seq'::regclass);
 
 
 --
@@ -604,27 +604,27 @@ ALTER TABLE ONLY public.catalog
 
 
 --
--- Name: rock_post_image rock_post_image_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: journey_image journey_image_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_post_image
-    ADD CONSTRAINT rock_post_image_pkey PRIMARY KEY (rpi_key);
-
-
---
--- Name: rock_post_summary rock_post_summary_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.rock_post_summary
-    ADD CONSTRAINT rock_post_summary_pkey PRIMARY KEY (rps_key);
+ALTER TABLE ONLY public.journey_image
+    ADD CONSTRAINT journey_image_pkey PRIMARY KEY (rpi_key);
 
 
 --
--- Name: rock_post_tracking rock_post_tracking_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: journey journey_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_post_tracking
-    ADD CONSTRAINT rock_post_tracking_pkey PRIMARY KEY (rpt_key);
+ALTER TABLE ONLY public.journey
+    ADD CONSTRAINT journey_pkey PRIMARY KEY (rps_key);
+
+
+--
+-- Name: journey_tracking journey_tracking_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.journey_tracking
+    ADD CONSTRAINT journey_tracking_pkey PRIMARY KEY (rpt_key);
 
 
 --
@@ -668,16 +668,16 @@ ALTER TABLE ONLY public.counter_tracking
 
 
 --
--- Name: rock_post_image fk_rps_key; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: journey_image fk_rps_key; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_post_image
-    ADD CONSTRAINT fk_rps_key FOREIGN KEY (rps_key) REFERENCES public.rock_post_summary(rps_key) ON DELETE CASCADE;
+ALTER TABLE ONLY public.journey_image
+    ADD CONSTRAINT fk_rps_key FOREIGN KEY (rps_key) REFERENCES public.journey(rps_key) ON DELETE CASCADE;
 
 
 --
--- Name: rock_post_tracking fk_rps_key; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: journey_tracking fk_rps_key; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_post_tracking
-    ADD CONSTRAINT fk_rps_key FOREIGN KEY (rps_key) REFERENCES public.rock_post_summary(rps_key) ON DELETE CASCADE;
+ALTER TABLE ONLY public.journey_tracking
+    ADD CONSTRAINT fk_rps_key FOREIGN KEY (rps_key) REFERENCES public.journey(rps_key) ON DELETE CASCADE;

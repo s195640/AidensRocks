@@ -8,7 +8,7 @@ router.get('/totals', async (req, res) => {
     const result = await pool.query(`
       SELECT 
         (SELECT COUNT(1) FROM catalog) AS total_rocks,
-        (SELECT COUNT(DISTINCT rock_number) FROM Rock_Post_Summary WHERE show = TRUE) AS rocks_found
+        (SELECT COUNT(DISTINCT rock_number) FROM journey WHERE show = TRUE) AS rocks_found
     `);
 
     res.json(result.rows[0]);
@@ -46,7 +46,7 @@ router.get('/', async (req, res) => {
     const result = await pool.query(`
 WITH images AS (
     SELECT rps_key, ARRAY_AGG(current_name ORDER BY upload_order) AS imageNames
-    FROM Rock_Post_Image
+    FROM journey_image
     WHERE show = TRUE
     GROUP BY rps_key
 ),
@@ -67,7 +67,7 @@ SELECT
     rps.uuid,
     img.imageNames,
     COALESCE(a.artists, '{}') AS artists
-FROM Rock_Post_Summary rps
+FROM journey rps
 JOIN images img ON img.rps_key = rps.rps_key
 LEFT JOIN artists a ON a.rock_number = rps.rock_number
 WHERE rps.show = TRUE
@@ -89,7 +89,7 @@ router.get('/:rockNumber', async (req, res) => {
       `
 WITH images AS (
     SELECT rps_key, ARRAY_AGG(current_name ORDER BY upload_order) AS imageNames
-    FROM Rock_Post_Image
+    FROM journey_image
     WHERE show = TRUE
     GROUP BY rps_key
 ),
@@ -110,7 +110,7 @@ SELECT
     rps.uuid,
     img.imageNames,
     COALESCE(a.artists, '{}') AS artists
-FROM Rock_Post_Summary rps
+FROM journey rps
 JOIN images img ON img.rps_key = rps.rps_key
 LEFT JOIN artists a ON a.rock_number = rps.rock_number
 WHERE rps.show = TRUE
@@ -132,7 +132,7 @@ router.get('/locations/all', async (req, res) => {
     const result = await pool.query(
       `
       SELECT rps_key, rock_number, latitude, longitude
-      FROM Rock_Post_Summary
+      FROM journey
       WHERE rock_number > 0
         AND show = TRUE
         AND latitude IS NOT NULL

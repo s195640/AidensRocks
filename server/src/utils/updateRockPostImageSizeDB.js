@@ -28,7 +28,7 @@ async function updateRockPostImageSizes(client, folderPath) {
 
       // Query DB for matching current_name
       const { rows } = await client.query(
-        'SELECT rpi_key FROM Rock_Post_Image WHERE current_name = $1',
+        'SELECT rpi_key FROM journey_image WHERE current_name = $1',
         [baseName]
       );
 
@@ -44,7 +44,7 @@ async function updateRockPostImageSizes(client, folderPath) {
 
       // Update DB record with width and height
       await client.query(
-        `UPDATE Rock_Post_Image 
+        `UPDATE journey_image 
          SET width = $1, height = $2, update_dt = CURRENT_TIMESTAMP
          WHERE rpi_key = $3`,
         [width, height, rows[0].rpi_key]

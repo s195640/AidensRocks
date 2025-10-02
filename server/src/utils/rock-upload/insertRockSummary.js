@@ -14,7 +14,7 @@ async function insertRockSummary(
 ) {
   const result = await client.query(
     `
-  INSERT INTO Rock_Post_Summary (
+  INSERT INTO journey (
     rock_qr_number, rock_number, location, date,
     comment, name, email, upload_timestamp, uuid
   )

@@ -3,7 +3,7 @@ async function handleTracking(client, data, rpsKey, fallbackTime) {
     const tracker = JSON.parse(data);
     await client.query(
       `
-      INSERT INTO Rock_Post_Tracking (
+      INSERT INTO journey_tracking (
         rps_key, ip_address, user_agent, "window", screen,
         platform, language, timezone, timestamp, page_url,
         referrer, cookies_enabled, session_id, geo

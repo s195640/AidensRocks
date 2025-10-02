@@ -25,7 +25,7 @@ async function saveOriginalImages(files, destDir, uuid, client, rpsKey) {
 
     await client.query(
       `
-      INSERT INTO Rock_Post_Image (
+      INSERT INTO journey_image (
         rps_key,
         original_name,
         current_name,
