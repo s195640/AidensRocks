@@ -13,5 +13,5 @@ SELECT pglogical.replication_set_add_table('default', 'rock_post_image');
 SELECT pglogical.replication_set_add_table('default', 'rock_post_tracking');
 
 -- Counter
-SELECT pglogical.replication_set_add_table('default', 'rock_count_summary');
-SELECT pglogical.replication_set_add_table('default', 'rock_count_tracking');
+SELECT pglogical.replication_set_add_table('default', 'counter');
+SELECT pglogical.replication_set_add_table('default', 'counter_tracking');

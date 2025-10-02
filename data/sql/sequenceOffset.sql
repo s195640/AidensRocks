@@ -13,5 +13,5 @@ ALTER SEQUENCE rock_post_image_rpi_key_seq RESTART WITH 1000000;
 ALTER SEQUENCE rock_post_tracking_rpt_key_seq RESTART WITH 1000000;
 
 -- Counter
-ALTER SEQUENCE rock_count_summary_rcs_key_seq RESTART WITH 1000000;
-ALTER SEQUENCE rock_count_tracking_rct_key_seq RESTART WITH 1000000;
+ALTER SEQUENCE counter_rcs_key_seq RESTART WITH 1000000;
+ALTER SEQUENCE counter_tracking_rct_key_seq RESTART WITH 1000000;

@@ -25,9 +25,9 @@ router.post('/rock-count', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // 1. Insert or get rcs_key from Rock_Count_Summary
+    // 1. Insert or get rcs_key from counter
     const { rows } = await client.query(
-      `INSERT INTO Rock_Count_Summary (rock_qr_number)
+      `INSERT INTO counter (rock_qr_number)
    VALUES ($1)
    RETURNING rcs_key`,
       [rock_qr_number]
@@ -35,9 +35,9 @@ router.post('/rock-count', async (req, res) => {
 
     const rcs_key = rows[0].rcs_key;
 
-    // 2. Insert into Rock_Count_Tracking
+    // 2. Insert into counter_tracking
     await client.query(
-      `INSERT INTO Rock_Count_Tracking (
+      `INSERT INTO counter_tracking (
         rcs_key, ip_address, user_agent, "window", screen, platform, language,
         timezone, timestamp, page_url, referrer, cookies_enabled, session_id, geo
       ) VALUES (

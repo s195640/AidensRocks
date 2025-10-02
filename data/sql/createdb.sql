@@ -237,10 +237,10 @@ ALTER SEQUENCE public.catalog_rc_key_seq OWNED BY public.catalog.rc_key;
 
 
 --
--- Name: rock_count_summary; Type: TABLE; Schema: public; Owner: postgres
+-- Name: counter; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.rock_count_summary (
+CREATE TABLE public.counter (
     rcs_key integer NOT NULL,
     rock_qr_number character varying(50) NOT NULL,
     create_dt timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
@@ -248,13 +248,13 @@ CREATE TABLE public.rock_count_summary (
 );
 
 
-ALTER TABLE public.rock_count_summary OWNER TO postgres;
+ALTER TABLE public.counter OWNER TO postgres;
 
 --
--- Name: rock_count_summary_rcs_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: counter_rcs_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.rock_count_summary_rcs_key_seq
+CREATE SEQUENCE public.counter_rcs_key_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -263,20 +263,20 @@ CREATE SEQUENCE public.rock_count_summary_rcs_key_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rock_count_summary_rcs_key_seq OWNER TO postgres;
+ALTER SEQUENCE public.counter_rcs_key_seq OWNER TO postgres;
 
 --
--- Name: rock_count_summary_rcs_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: counter_rcs_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.rock_count_summary_rcs_key_seq OWNED BY public.rock_count_summary.rcs_key;
+ALTER SEQUENCE public.counter_rcs_key_seq OWNED BY public.counter.rcs_key;
 
 
 --
--- Name: rock_count_tracking; Type: TABLE; Schema: public; Owner: postgres
+-- Name: counter_tracking; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.rock_count_tracking (
+CREATE TABLE public.counter_tracking (
     rct_key integer NOT NULL,
     rcs_key integer NOT NULL,
     create_dt timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
@@ -297,13 +297,13 @@ CREATE TABLE public.rock_count_tracking (
 );
 
 
-ALTER TABLE public.rock_count_tracking OWNER TO postgres;
+ALTER TABLE public.counter_tracking OWNER TO postgres;
 
 --
--- Name: rock_count_tracking_rct_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: counter_tracking_rct_key_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.rock_count_tracking_rct_key_seq
+CREATE SEQUENCE public.counter_tracking_rct_key_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -312,13 +312,13 @@ CREATE SEQUENCE public.rock_count_tracking_rct_key_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rock_count_tracking_rct_key_seq OWNER TO postgres;
+ALTER SEQUENCE public.counter_tracking_rct_key_seq OWNER TO postgres;
 
 --
--- Name: rock_count_tracking_rct_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: counter_tracking_rct_key_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.rock_count_tracking_rct_key_seq OWNED BY public.rock_count_tracking.rct_key;
+ALTER SEQUENCE public.counter_tracking_rct_key_seq OWNED BY public.counter_tracking.rct_key;
 
 
 --
@@ -497,17 +497,17 @@ ALTER TABLE ONLY public.catalog ALTER COLUMN rc_key SET DEFAULT nextval('public.
 
 
 --
--- Name: rock_count_summary rcs_key; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: counter rcs_key; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_count_summary ALTER COLUMN rcs_key SET DEFAULT nextval('public.rock_count_summary_rcs_key_seq'::regclass);
+ALTER TABLE ONLY public.counter ALTER COLUMN rcs_key SET DEFAULT nextval('public.counter_rcs_key_seq'::regclass);
 
 
 --
--- Name: rock_count_tracking rct_key; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: counter_tracking rct_key; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_count_tracking ALTER COLUMN rct_key SET DEFAULT nextval('public.rock_count_tracking_rct_key_seq'::regclass);
+ALTER TABLE ONLY public.counter_tracking ALTER COLUMN rct_key SET DEFAULT nextval('public.counter_tracking_rct_key_seq'::regclass);
 
 
 --
@@ -580,19 +580,19 @@ ALTER TABLE ONLY public.catalog
 
 
 --
--- Name: rock_count_summary rock_count_summary_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: counter counter_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_count_summary
-    ADD CONSTRAINT rock_count_summary_pkey PRIMARY KEY (rcs_key);
+ALTER TABLE ONLY public.counter
+    ADD CONSTRAINT counter_pkey PRIMARY KEY (rcs_key);
 
 
 --
--- Name: rock_count_tracking rock_count_tracking_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: counter_tracking counter_tracking_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_count_tracking
-    ADD CONSTRAINT rock_count_tracking_pkey PRIMARY KEY (rct_key);
+ALTER TABLE ONLY public.counter_tracking
+    ADD CONSTRAINT counter_tracking_pkey PRIMARY KEY (rct_key);
 
 
 --
@@ -660,11 +660,11 @@ ALTER TABLE ONLY public.artist_link
 
 
 --
--- Name: rock_count_tracking fk_rcs_key; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: counter_tracking fk_rcs_key; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rock_count_tracking
-    ADD CONSTRAINT fk_rcs_key FOREIGN KEY (rcs_key) REFERENCES public.rock_count_summary(rcs_key) ON DELETE CASCADE;
+ALTER TABLE ONLY public.counter_tracking
+    ADD CONSTRAINT fk_rcs_key FOREIGN KEY (rcs_key) REFERENCES public.counter(rcs_key) ON DELETE CASCADE;
 
 
 --

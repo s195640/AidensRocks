@@ -17,5 +17,5 @@ drop table Rock_Post_Summary cascade;
 
 /* COUNTER */
 
-drop table Rock_Count_Tracking cascade;
-drop table Rock_Count_Summary cascade;
+drop table counter_tracking cascade;
+drop table counter cascade;
