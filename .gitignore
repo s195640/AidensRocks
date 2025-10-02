@@ -4,4 +4,4 @@ docker_test_db/
 temp_uploads/
 **/package-lock.json
 **/test_instance/
-
+**/db/
