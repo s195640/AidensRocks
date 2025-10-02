@@ -7,7 +7,7 @@ router.get('/totals', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        (SELECT COUNT(1) FROM Rock_Catalog) AS total_rocks,
+        (SELECT COUNT(1) FROM catalog) AS total_rocks,
         (SELECT COUNT(DISTINCT rock_number) FROM Rock_Post_Summary WHERE show = TRUE) AS rocks_found
     `);
 
@@ -27,7 +27,7 @@ router.get('/allrocks', async (req, res) => {
           STRING_AGG(ra.display_name, ', ' ORDER BY ra.display_name),
           ''
         ) AS artists
-      FROM Rock_Catalog rc
+      FROM catalog rc
       LEFT JOIN Rock_Artist_Link ral ON rc.rc_key = ral.rc_key
       LEFT JOIN Rock_Artist ra ON ral.ra_key = ra.ra_key
       GROUP BY rc.rock_number
@@ -55,7 +55,7 @@ artists AS (
            ARRAY_AGG(ra.display_name || ' (' || ra.relation || ')') AS artists
     FROM Rock_Artist_Link ral
     JOIN Rock_Artist ra ON ra.ra_key = ral.ra_key
-    JOIN Rock_Catalog rc ON rc.rc_key = ral.rc_key
+    JOIN catalog rc ON rc.rc_key = ral.rc_key
     GROUP BY rc.rock_number
 )
 SELECT 
@@ -98,7 +98,7 @@ artists AS (
            ARRAY_AGG(ra.display_name || ' (' || ra.relation || ')') AS artists
     FROM Rock_Artist_Link ral
     JOIN Rock_Artist ra ON ra.ra_key = ral.ra_key
-    JOIN Rock_Catalog rc ON rc.rc_key = ral.rc_key
+    JOIN catalog rc ON rc.rc_key = ral.rc_key
     GROUP BY rc.rock_number
 )
 SELECT 

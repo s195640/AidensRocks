@@ -34,7 +34,7 @@ router.get('/', async (req, res, next) => {
       SELECT rc.rc_key, rc.rock_number, rc.create_dt, rc.update_dt,
              rc.comment,
              json_agg(json_build_object('ra_key', ra.ra_key, 'display_name', ra.display_name)) AS artists
-      FROM Rock_Catalog rc
+      FROM catalog rc
       LEFT JOIN Rock_Artist_Link ral ON rc.rc_key = ral.rc_key
       LEFT JOIN Rock_Artist ra ON ral.ra_key = ra.ra_key
       GROUP BY rc.rc_key
@@ -56,7 +56,7 @@ router.post('/', upload.single('image'), async (req, res, next) => {
     await client.query('BEGIN');
 
     const insertRock = await client.query(
-      `INSERT INTO Rock_Catalog (rock_number, comment) VALUES ($1, $2) RETURNING rc_key, rock_number`,
+      `INSERT INTO catalog (rock_number, comment) VALUES ($1, $2) RETURNING rc_key, rock_number`,
       [rock_number, comment]
     );
     const rc_key = insertRock.rows[0].rc_key;
@@ -93,7 +93,7 @@ router.put('/:rc_key', upload.single('image'), async (req, res, next) => {
     await client.query('BEGIN');
 
     await client.query(
-      `UPDATE Rock_Catalog 
+      `UPDATE catalog 
        SET update_dt = CURRENT_TIMESTAMP,
            comment = $2
        WHERE rc_key = $1`,
@@ -113,7 +113,7 @@ router.put('/:rc_key', upload.single('image'), async (req, res, next) => {
 
     if (req.file) {
       const rockRes = await client.query(
-        `SELECT rock_number FROM Rock_Catalog WHERE rc_key = $1`,
+        `SELECT rock_number FROM catalog WHERE rc_key = $1`,
         [rc_key]
       );
       const rock_number = rockRes.rows[0]?.rock_number;
@@ -137,7 +137,7 @@ router.delete('/:rc_key', async (req, res, next) => {
   const { rc_key } = req.params;
   try {
     const result = await pool.query(
-      `DELETE FROM Rock_Catalog WHERE rc_key = $1 RETURNING rock_number`,
+      `DELETE FROM catalog WHERE rc_key = $1 RETURNING rock_number`,
       [rc_key]
     );
     if (result.rows.length === 0) {
