@@ -1,8 +1,9 @@
-
-//  src/routes/serverHealth.js
+// src/routes/serverHealth.js
 const express = require('express');
 const router = express.Router();
 const os = require('os');
+const axios = require('axios');
+require('dotenv').config(); // Load .env
 
 // Get container/server IP
 function getServerIp() {
@@ -17,22 +18,12 @@ function getServerIp() {
   return "127.0.0.1";
 }
 
-// Get host LAN IP using host.docker.internal (works in Docker Desktop)
+// Get host LAN IP from environment variable (DB_HOST)
 // fallback to container IP if not available
 async function getLanIp() {
-  try {
-    const { address } = await new Promise((resolve, reject) => {
-      import("dns").then((dns) =>
-        dns.lookup("host.docker.internal", (err, address) => {
-          if (err) reject(err);
-          else resolve({ address });
-        })
-      );
-    });
-    return address;
-  } catch (err) {
-    return getServerIp();
-  }
+  const envLanIp = process.env.DB_HOST;
+  if (envLanIp) return envLanIp;
+  return getServerIp();
 }
 
 // Get public Internet IP
@@ -45,17 +36,23 @@ async function getInternetIp() {
   }
 }
 
+function getMasterOrBackup() {
+  const NODE = process.env.NODE || "node2";
+  return NODE === "node1" ? "MASTER" : "BACKUP";
+}
+
 router.get("/", async (req, res) => {
   const serverIp = getServerIp();
   const lanIp = await getLanIp();
   const internetIp = await getInternetIp();
+  const connectedNode = getMasterOrBackup();
 
   const serverHealth = {
     lastUpdated: new Date().toISOString(),
     serverIp,
     lanIp,
     internetIp,
-    connectedNode: "MASTER",
+    connectedNode: connectedNode,
     gluster: {
       node1: true,
       node2: false,
