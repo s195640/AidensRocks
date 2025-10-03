@@ -1,3 +1,4 @@
+SERVER_NODE=node1
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=OmegaA..1154
 POSTGRES_DB=aidensrocks
@@ -6,7 +7,6 @@ DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=OmegaA..1154
 DB_NAME=aidensrocks
-NODE=node1
 
 KEEPALIVED_INTERFACE=eth0                   # Proxmox host interface
 KEEPALIVED_PRIORITY=101                     # Node1 = 101 (primary), Node2 = 100 (secondary)

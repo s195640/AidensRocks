@@ -1,18 +1,15 @@
 services:
   postgres:
     container_name: database
+    env_file: .env
     ports:
-      - '5431:5432'
+      - "${DB_PORT}:${DB_PORT}"
     image: postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 'OmegaA..1154'
-      POSTGRES_DB: 'aidensrocks'
     volumes:
-      - truenas-sql:/var/lib/postgresql/data
-      - truenas-sql-backup:/backup
+      - volume-sql:/var/lib/postgresql/data
+      - volume-sql-backup:/backup
     healthcheck:
-      test: [ 'CMD-SHELL', "sh -c 'pg_isready -U postgres -d aidensrocks'" ]
+      test: [ 'CMD-SHELL', "sh -c 'pg_isready -U $DB_USER -d ${DB_NAME}'" ]
       interval: 5s
       timeout: 60s
       retries: 5
@@ -22,13 +19,12 @@ services:
   server:
     container_name: server
     build:
-      context: ../../server
-      dockerfile: ../data/docker/docker-server-dev
+      context: ../../
+      dockerfile: ./data/docker/docker-server-dev
+    env_file: .env
+    command: bash -c "npm start"
     volumes:
-      - ../../server:/app
-      - /app/node_modules
-      - ../test_instance/media:/app/media
-      - truenas-media:/app/media
+      - volume-media:/app/media
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,11 +33,8 @@ services:
   client:
     container_name: client
     build:
-      context: ../../client
-      dockerfile: ../data/docker/docker-client-dev
-    volumes:
-      - ../../client:/app
-      - /app/node_modules
+      context: ../../
+      dockerfile: ./data/docker/docker-client-dev
     depends_on:
       - server
     networks:
@@ -62,25 +55,25 @@ services:
   pg_backup:
     container_name: pg_backup
     image: alpine:latest
-    command: sh -c " apk update && apk add --no-cache postgresql-client && \ echo '*/5 * * * * PGPASSWORD=OmegaA..1154 pg_dump -h 192.168.1.50 -p 5431 -U postgres aidensrocks > /backup/aidensrocks_backup_$(date +\%F_\%H-\%M).sql' > /etc/crontabs/root && \ crond -f -l 2 "
+    command: sh -c " apk update && apk add --no-cache postgresql-client && \ echo '*/5 * * * * PGPASSWORD=$DB_PASSWORD pg_dump -h $DB_HOST -p $DB_PORT -U $DB_USER $DB_NAME > /backup/${DB_NAME}_backup_$(date +\%F_\%H-\%M).sql' > /etc/crontabs/root && \ crond -f -l 2 "
     volumes:
-      - truenas-sql-backup:/backup
+      - volume-sql-backup:/backup
     networks:
       - app-network
 volumes:
-  truenas-media:
+  volume-media:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: ../test_instance/media
-  truenas-sql:
+  volume-sql:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: ../test_instance/sql
-  truenas-sql-backup:
+  volume-sql-backup:
     driver: local
     driver_opts:
       type: none

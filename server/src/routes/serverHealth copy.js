@@ -19,6 +19,7 @@ function getServerIp() {
 }
 
 // Get host LAN IP from environment variable (DB_HOST)
+// fallback to container IP if not available
 async function getLanIp() {
   const envLanIp = process.env.DB_HOST;
   if (envLanIp) return envLanIp;
@@ -35,66 +36,23 @@ async function getInternetIp() {
   }
 }
 
-// Determine MASTER/BACKUP status
 function getMasterOrBackup() {
   const SERVER_NODE = process.env.SERVER_NODE || "node2";
   return SERVER_NODE === "node1" ? "MASTER" : "BACKUP";
 }
 
-// Check status of all nodes in the cluster
-async function checkClusterStatus() {
-  const localNode = {
-    name: process.env.NODE || "node1",
-    ip: process.env.DB_HOST || getServerIp(),
-    state: process.env.KEEPALIVED_STATE || "UNKNOWN",
-  };
-
-  // Parse peer IPs from KEEPALIVED_UNICAST_PEERS
-  let peerIps = [];
-  if (process.env.KEEPALIVED_UNICAST_PEERS) {
-    try {
-      peerIps = JSON.parse(process.env.KEEPALIVED_UNICAST_PEERS.replace('#PYTHON2BASH:', ''));
-    } catch (err) {
-      console.error("Error parsing KEEPALIVED_UNICAST_PEERS:", err);
-    }
-  }
-
-  const nodes = [localNode];
-
-  for (const ip of peerIps) {
-    try {
-      const res = await axios.get(`http://${ip}:3000/serverHealth`); // adjust port if needed
-      nodes.push({
-        name: res.data.connectedNode || ip,
-        ip,
-        state: "UP",
-        gluster: res.data.gluster,
-        dbSync: res.data.dbSync,
-        dbTables: res.data.dbTables,
-      });
-    } catch (err) {
-      nodes.push({ name: ip, ip, state: "DOWN" });
-    }
-  }
-
-  return nodes;
-}
-
-// Main route
 router.get("/", async (req, res) => {
   const serverIp = getServerIp();
   const lanIp = await getLanIp();
   const internetIp = await getInternetIp();
   const connectedNode = getMasterOrBackup();
-  const clusterNodes = await checkClusterStatus();
 
   const serverHealth = {
     lastUpdated: new Date().toISOString(),
     serverIp,
     lanIp,
     internetIp,
-    connectedNode,
-    cluster: clusterNodes,
+    connectedNode: connectedNode,
     gluster: {
       node1: true,
       node2: false,
@@ -128,7 +86,6 @@ router.get("/", async (req, res) => {
     },
   };
 
-  console.log(serverHealth);
   res.json(serverHealth);
 });
 
