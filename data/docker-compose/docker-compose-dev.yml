@@ -22,7 +22,6 @@ services:
       context: ../../
       dockerfile: ./data/docker/docker-server-dev
     env_file: .env
-    command: bash -c "npm start"
     volumes:
       - ../../server:/app
       - /app/node_modules
