@@ -1,0 +1,33 @@
+/* src/pages/Admin.module.css */
+.container {
+  padding: 20px;
+  padding-top: 80px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  /* two equal columns */
+  gap: 20px;
+}
+
+.box {
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  padding: 40px;
+  text-align: center;
+  font-weight: bold;
+  border-radius: 8px;
+}
+
+/* On smaller screens, collapse to 1 column */
+@media (max-width: 768px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+}

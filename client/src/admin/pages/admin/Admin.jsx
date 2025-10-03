@@ -1,13 +1,18 @@
 // src/pages/Admin.jsx
-import { useAuth } from "../../context/AuthContext";
+import ServerHealth from "../../components/server-health/ServerHealth";
+import styles from "./Admin.module.css";
 
 const Admin = () => {
-  const { logout } = useAuth();
-
   return (
-    <div style={{ padding: "80px 20px", textAlign: "center" }}>
-      <h1>Admin Dashboard</h1>
-      <button onClick={logout}>Logout</button>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1>Admin Dashboard</h1>
+      </div>
+      <div className={styles.content}>
+        <ServerHealth />
+        <div className={styles.box}>Box 2</div>
+
+      </div>
     </div>
   );
 };

@@ -27,6 +27,7 @@ app.use('/api/rocks', require('./routes/rocks'));
 app.use('/api/rock-posts', require('./routes/rockPosts'));
 app.use('/api/albums', require('./routes/albums'));
 app.use('/api/journey-admin', require('./routes/journeyAdmin'));
+app.use('/api/server-health', require('./routes/serverHealth'));
 
 // Health Check
 app.get('/health', (req, res) => res.send('OK'));
