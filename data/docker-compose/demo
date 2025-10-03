@@ -7,6 +7,7 @@ DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=OmegaA..1154
 DB_NAME=aidensrocks
+GLUSTER_IP=192.168.1.56,192.168.1.46
 
 KEEPALIVED_INTERFACE=eth0                   # Proxmox host interface
 KEEPALIVED_PRIORITY=101                     # Node1 = 101 (primary), Node2 = 100 (secondary)

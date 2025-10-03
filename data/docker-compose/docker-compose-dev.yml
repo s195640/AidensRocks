@@ -24,6 +24,8 @@ services:
     env_file: .env
     command: bash -c "npm start"
     volumes:
+      - ../../server:/app
+      - /app/node_modules
       - volume-media:/app/media
     depends_on:
       postgres:
@@ -35,6 +37,9 @@ services:
     build:
       context: ../../
       dockerfile: ./data/docker/docker-client-dev
+    volumes:
+      - ../../client:/app
+      - /app/node_modules
     depends_on:
       - server
     networks:

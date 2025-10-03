@@ -29,8 +29,6 @@ const ServerHealth = () => {
         lanIp: data.lanIp,
         internetIp: data.internetIp,
         connectedNode: data.connectedNode,
-        glusterNode1: data.gluster.node1,
-        glusterNode2: data.gluster.node2,
         dbSync: data.dbSync,
         dbTablesNode1,
         dbTablesNode2,
@@ -80,16 +78,6 @@ const ServerHealth = () => {
 
         <div className={styles.label}>Connected Node:</div>
         <div className={styles.value}>{healthData.connectedNode}</div>
-
-        <div className={styles.label}>Gluster Node 1:</div>
-        <div className={styles.value}>
-          <StatusIcon status={healthData.glusterNode1} />
-        </div>
-
-        <div className={styles.label}>Gluster Node 2:</div>
-        <div className={styles.value}>
-          <StatusIcon status={healthData.glusterNode2} />
-        </div>
 
         <div className={styles.label}>Database Sync:</div>
         <div className={styles.value}>
