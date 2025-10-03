@@ -37,8 +37,12 @@ async function getInternetIp() {
 }
 
 function getMasterOrBackup() {
-  const NODE = process.env.NODE || "node2";
-  return NODE === "node1" ? "MASTER" : "BACKUP";
+  console.log('*******************');
+  console.log(process.env.SERVER_NODE);
+  console.log('*******************');
+  const SERVER_NODE = process.env.SERVER_NODE || "node2";
+  console.log(SERVER_NODE);
+  return SERVER_NODE === "node1" ? "MASTER" : "BACKUP";
 }
 
 router.get("/", async (req, res) => {
