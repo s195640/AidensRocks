@@ -8,8 +8,8 @@ Requires=docker.service
 Type=oneshot
 Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStartPre=/bin/bash -c 'until docker info > /dev/null 2>&1; do sleep 1; done'
-ExecStart=/usr/bin/env docker compose -f /root/AidensRocks/data/docker-compose/docker-compose-demo.yml up --build -d
-ExecStop=/usr/bin/env docker compose -f /root/AidensRocks/data/docker-compose/docker-compose-demo.yml down
+ExecStart=/usr/bin/env docker compose -f /root/AidensRocks/data/docker-compose/docker-compose-prod.yml up --build -d
+ExecStop=/usr/bin/env docker compose -f /root/AidensRocks/data/docker-compose/docker-compose-prod.yml down
 RemainAfterExit=true
 TimeoutStartSec=0
 
