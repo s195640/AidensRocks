@@ -138,7 +138,6 @@ router.get("/", async (req, res) => {
     dbTables,
   };
 
-  console.log(serverHealth);
   res.json(serverHealth);
 });
 

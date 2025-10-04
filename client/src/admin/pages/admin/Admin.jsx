@@ -1,4 +1,5 @@
 // src/pages/Admin.jsx
+import ARDetails from "../../components/ar-details/ARDetails";
 import ServerHealth from "../../components/server-health/ServerHealth";
 import styles from "./Admin.module.css";
 
@@ -10,7 +11,7 @@ const Admin = () => {
       </div>
       <div className={styles.content}>
         <ServerHealth />
-        <div className={styles.box}>Box 2</div>
+        <ARDetails />
 
       </div>
     </div>
