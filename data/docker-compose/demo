@@ -12,7 +12,7 @@ DB_IPS=192.168.1.57,192.168.1.47
 KEEPALIVED_INTERFACE=eth0                   # Proxmox host interface
 KEEPALIVED_PRIORITY=101                     # Node1 = 101 (primary), Node2 = 100 (secondary)
 KEEPALIVED_PASSWORD=secret123               # VRRP authentication password
-KEEPALIVED_VIRTUAL_IPS="#PYTHON2BASH:['192.168.1.99']"
+KEEPALIVED_VIRTUAL_IPS=192.168.1.40/24
 KEEPALIVED_UNICAST_PEERS="#PYTHON2BASH:['192.168.1.47']" #IP address of other node
 KEEPALIVED_STATE=MASTER                     # Node1 = MASTER, Node2 = BACKUP
 

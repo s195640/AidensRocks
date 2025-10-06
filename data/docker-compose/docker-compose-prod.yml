@@ -24,6 +24,7 @@ services:
 
   server:
     container_name: server
+    restart: always
     build:
       context: ../../
       dockerfile: ./data/docker/docker-server-prod
@@ -39,6 +40,7 @@ services:
 
   client:
     container_name: client
+    restart: always
     build:
       context: ../../
       dockerfile: ./data/docker/docker-client-prod
@@ -60,6 +62,7 @@ services:
     env_file: .env
   pg_backup:
     container_name: pg_backup
+    restart: always
     image: alpine:latest
     env_file: .env
     command: >
