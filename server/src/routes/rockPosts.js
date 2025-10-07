@@ -111,7 +111,9 @@ SELECT
     rps.comment,
     rps.uuid,
     img.imageNames,
-    COALESCE(a.artists, '{}') AS artists
+    COALESCE(a.artists, '{}') AS artists,
+    rps.latitude,
+    rps.longitude
 FROM journey rps
 JOIN images img ON img.rps_key = rps.rps_key
 LEFT JOIN artists a ON a.rock_number = rps.rock_number
