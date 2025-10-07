@@ -12,7 +12,6 @@
 
 .rock-info {
   flex: 1;
-  /* take up remaining horizontal space */
   text-align: left;
   font-size: 14px;
   color: #333;
@@ -23,4 +22,8 @@
   font-style: italic;
   color: #666;
   user-select: none;
+}
+
+.date-line {
+  white-space: nowrap;
 }

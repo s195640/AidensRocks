@@ -1,7 +1,15 @@
 import RockImage from "../../rock-popup/RockImage";
 import "./RockBanner.css";
 
-const RockBanner = ({ rockNumber, totalTrips, startDate, latestDate, artists }) => {
+const formatDate = (d) => {
+  const date = new Date(d);
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const yy = String(date.getFullYear()).slice(-2);
+  return `${mm}/${dd}/${yy}`;
+};
+
+const RockBanner = ({ rockNumber, totalTrips, startDate, latestDate, artists, distance }) => {
   return (
     <div className="rock-banner">
       <RockImage
@@ -14,13 +22,17 @@ const RockBanner = ({ rockNumber, totalTrips, startDate, latestDate, artists }) 
 
       <div className="rock-info">
         <div>Aiden's Rock: {rockNumber}</div>
-        <div>
-          Total Trips: {totalTrips}&nbsp;&nbsp;&nbsp;&nbsp;
-          <span className="date-text">{startDate}</span> -{" "}
-          <span className="date-text">{latestDate}</span>
+
+        <div className="date-line">
+          <span>Trips: {totalTrips}</span>&nbsp;&nbsp;&nbsp;
+          <span className="date-text">
+            {formatDate(startDate)}&nbsp;-&nbsp;
+            {formatDate(latestDate)}
+          </span>
         </div>
+        <div>Distance: <span className="date-text">{distance} miles</span></div>
       </div>
-    </div>
+    </div >
   );
 };
 
