@@ -23,19 +23,20 @@ export default function AllRocks() {
   const [photos, setPhotos] = useState([]);
   const [index, setIndex] = useState(-1);
 
+
   useEffect(() => {
     const loadRocks = async () => {
       try {
         const res = await axios.get("/api/rock-posts/allrocks");
         const rocks = res.data;
 
-        // Build photo objects
         const photoList = rocks.map((rock) => ({
           key: rock.rock_number,
           src: `/media/catalog/${rock.rock_number}/a.webp`,
           width: 512,
           height: 512,
           title: `Rock: ${rock.rock_number} (${rock.artists || "UNKNOWN"})`,
+          artists: `${rock.artists}`
         }));
 
         setPhotos(photoList);
@@ -51,7 +52,7 @@ export default function AllRocks() {
     <div>
       <ContentBody>
         <div className={styles.galleryContainer}>
-          <h1 className={styles.galleryTitle}>All Rocks</h1>
+          <h1 className={styles.galleryTitle}>Rocks</h1>
           <RowsPhotoAlbum
             photos={photos}
             targetRowHeight={300}
