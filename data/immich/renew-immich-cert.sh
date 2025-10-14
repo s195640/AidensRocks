@@ -32,6 +32,8 @@ docker compose exec client nginx -s reload \
 
 # ------------------------------------------------------------
 # Notes:
+# 0. make script executeable 
+#     sudo chmod +x /root/AidensRocks/data/immich/renew-immich-cert.sh
 # 1. Deploy hook runs only if a renewal actually occurs.
 # 2. Certificates in /mnt/aidensrocks/prod/immich/webroot/certs
 #    and /private are what Nginx uses inside your Docker container.
