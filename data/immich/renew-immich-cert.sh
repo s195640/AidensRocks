@@ -27,7 +27,7 @@ cp /etc/letsencrypt/live/immich.aidensrocks.com/privkey.pem /mnt/aidensrocks/pro
 # Step 3: Reload Nginx inside Docker
 # - Ensures Nginx picks up the new certificate immediately
 # ------------------------------------------------------------
-/usr/bin/docker docker compose exec client nginx -s reload \
+/usr/bin/docker compose exec client nginx -s reload \
 "
 
 # ------------------------------------------------------------
