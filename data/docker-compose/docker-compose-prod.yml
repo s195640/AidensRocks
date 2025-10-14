@@ -50,7 +50,8 @@ services:
     volumes:
       - volume-certs:/etc/ssl/certs:ro
       - volume-private:/etc/ssl/private:ro
-      - volume-webroot:/var/www/certbot
+      - volume-webroot-certs/fullchain.pem:/etc/ssl/certs/immich.aidensrocks.com/fullchain.pem:ro
+      - volume-webroot-private/privkey.pem:/etc/ssl/private/immich.aidensrocks.com/privkey.pem:ro
     depends_on:
       - server
     networks:
@@ -131,12 +132,19 @@ volumes:
       o: bind
       device: /mnt/aidensrocks/prod/ssl/private
 
-  volume-webroot:
+  volume-webroot-certs:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /mnt/aidensrocks/prod/immich/webroot
+      device: /mnt/aidensrocks/prod/immich/webroot/certs
+
+  volume-webroot-private:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/aidensrocks/prod/immich/webroot/private
 
   volume-sql-backup:
     driver: local
