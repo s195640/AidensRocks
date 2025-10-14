@@ -50,6 +50,7 @@ services:
     volumes:
       - volume-certs:/etc/ssl/certs:ro
       - volume-private:/etc/ssl/private:ro
+      - volume-webroot:/var/www/certbot
     depends_on:
       - server
     networks:
@@ -129,6 +130,13 @@ volumes:
       type: none
       o: bind
       device: /mnt/aidensrocks/prod/ssl/private
+
+  volume-webroot:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/aidensrocks/prod/immich/webroot
 
   volume-sql-backup:
     driver: local
