@@ -4,7 +4,7 @@
 # Script: renew-immich-cert.sh
 # Purpose: Auto-renew Let's Encrypt certificate for Immich,
 #          copy it to Docker-mounted cert folders, and reload Nginx.
-# Usage: sudo /usr/local/bin/renew-immich-cert.sh
+# Usage: sudo /root/AidensRocks/data/immich/renew-immich-cert.sh
 # ============================================================
 
 # ------------------------------------------------------------
@@ -36,7 +36,7 @@ docker compose exec client nginx -s reload \
 # 2. Certificates in /mnt/aidensrocks/prod/immich/webroot/certs
 #    and /private are what Nginx uses inside your Docker container.
 # 3. Test with --dry-run before relying on automation:
-#      sudo /usr/local/bin/renew-immich-cert.sh --dry-run
+#      sudo /root/AidensRocks/data/immich/renew-immich-cert.sh --dry-run
 # 4. Schedule in cron to run daily:
-#      0 3 * * * /usr/local/bin/renew-immich-cert.sh >> /var/log/immich-cert-renew.log 2>&1
+#      0 3 * * * /root/AidensRocks/data/immich/renew-immich-cert.sh >> /var/log/immich-cert-renew.log 2>&1
 # ------------------------------------------------------------
