@@ -48,8 +48,8 @@ services:
       - '80:80'
       - '443:443'
     volumes:
-      - volume-webroot-certs:/etc/ssl/certs/immich.aidensrocks.com:ro
-      - volume-webroot-private:/etc/ssl/private/immich.aidensrocks.com:ro
+      - volume-webroot-certs:/etc/immich/certs/immich.aidensrocks.com:ro
+      - volume-webroot-private:/etc/immich/private/immich.aidensrocks.com:ro
       - volume-certs:/etc/ssl/certs:ro
       - volume-private:/etc/ssl/private:ro
     depends_on:
