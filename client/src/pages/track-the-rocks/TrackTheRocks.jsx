@@ -41,7 +41,7 @@ function TrackTheRocks() {
       {/* Header row */}
       <div className={styles.header}>
         <div className={styles.title}>
-          <TotalRocks found={12} total={200} />
+          <TotalRocks />
         </div>
         <div className={styles.buttonGroup}>
           <button
