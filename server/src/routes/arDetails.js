@@ -17,6 +17,7 @@ router.get("/", async (req, res) => {
     // --- Detailed tables ---
     const artistsTable = await client.query(`
       SELECT ra.display_name AS name,
+	  		     ra.relation,
              EXTRACT(YEAR FROM age(CURRENT_DATE, ra.dob))::int AS age,
              COUNT(ral.rc_key) AS rocks
       FROM Artist ra
