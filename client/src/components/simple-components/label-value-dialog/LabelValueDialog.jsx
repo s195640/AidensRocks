@@ -8,11 +8,11 @@ export default function LabelValueDialog({ name, value, iconColor = "#0099ff", t
   return (
     <div className={styles.statItem}>
       {name}: {value}
-      <Info
+      {items ? <Info
         className={styles.infoIcon}
         style={{ color: iconColor }}
         onClick={() => setOpen(true)}
-      />
+      /> : null}
 
       {open && (
         <div className={styles.dialogOverlay}>

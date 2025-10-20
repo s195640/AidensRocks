@@ -6,7 +6,6 @@ import LabelValueDialog from "../simple-components/label-value-dialog/LabelValue
 export default function TotalRocks() {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
-
   useEffect(() => {
     const fetchDetails = async () => {
       try {
@@ -31,6 +30,10 @@ export default function TotalRocks() {
       </div>
 
       <div className={styles.statsColumn}>
+        <LabelValueDialog
+          name="Total stops"
+          value={details.journeys}
+        />
         <LabelValueDialog
           name="Countries visited"
           value={details.countries}
