@@ -1,0 +1,71 @@
+.formFields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.formFields label {
+  display: flex;
+  flex-direction: column;
+  font-weight: bold;
+}
+
+.formFields input,
+.formFields textarea {
+  padding: 8px;
+  font-size: 14px;
+  margin-top: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.formFields textarea {
+  resize: vertical;
+}
+
+.readOnly {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.checkboxLabel {
+  display: flex;
+  flex-direction: column;
+  font-weight: bold;
+}
+
+.checkboxLabel input {
+  margin-top: 6px;
+  width: fit-content;
+}
+
+.error {
+  color: red;
+  font-size: 0.9em;
+}
+
+/* --- Icon panel styles --- */
+.iconPanel {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.iconBtn {
+  font-size: 18px;
+  color: #0077cc;
+  cursor: pointer;
+  transition: color 0.2s, transform 0.1s;
+}
+
+.iconBtn:hover {
+  color: #005fa3;
+  transform: scale(1.1);
+}
+
+.iconBtn.disabled {
+  color: #aaa;
+  cursor: not-allowed;
+  pointer-events: none;
+}

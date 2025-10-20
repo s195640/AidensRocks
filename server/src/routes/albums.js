@@ -261,68 +261,63 @@ router.post('/:name/init-folder', (req, res) => {
   }
 });
 
-router.post('/reorder', async (req, res) => {
-  const { a_key, a_order, b_key, b_order } = req.body;
+router.post("/reorder", async (req, res) => {
+  const { order } = req.body;
 
-  console.log(`[REORDER] Request to swap albums: ${a_key} <=> ${b_key}`);
-  console.log(
-    `[REORDER] Orders: ${a_key} => ${a_order}, ${b_key} => ${b_order}`
-  );
+  if (!Array.isArray(order) || order.length === 0) {
+    return res.status(400).json({ error: "Invalid or empty order array." });
+  }
 
   const client = await db.connect();
-
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
-    await client.query(
-      `UPDATE PhotoAlbums SET order_num = $1 WHERE pa_key = $2`,
-      [a_order, a_key]
-    );
+    // Loop through array and update each record
+    for (let i = 0; i < order.length; i++) {
+      const pa_key = order[i];
+      await client.query(
+        "UPDATE PhotoAlbums SET order_num = $1 WHERE pa_key = $2",
+        [i, pa_key]
+      );
+    }
 
-    await client.query(
-      `UPDATE PhotoAlbums SET order_num = $1 WHERE pa_key = $2`,
-      [b_order, b_key]
-    );
-
-    await client.query('COMMIT');
-
-    console.log(`[REORDER] Swap complete`);
-    res.status(200).json({ success: true });
+    await client.query("COMMIT");
+    res.json({ success: true });
   } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('[REORDER] Failed to swap album order:', err);
-    res.status(500).json({ error: 'Failed to reorder albums' });
+    await client.query("ROLLBACK");
+    console.error("Error reordering albums:", err);
+    res.status(500).json({ error: "Failed to reorder albums." });
   } finally {
     client.release();
   }
 });
 
-router.post('/:pa_key/photos/swap', async (req, res) => {
-  const { photo1, photo2 } = req.body;
+router.post("/photos/reorder", async (req, res) => {
+  const { pa_key, order } = req.body;
 
-  if (!photo1?.p_key || !photo2?.p_key) {
-    return res.status(400).json({ error: 'Missing photo data' });
+  if (!Array.isArray(order) || order.length === 0) {
+    return res.status(400).json({ error: "Invalid or empty order array." });
   }
 
   const client = await db.connect();
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
-    await client.query(
-      'UPDATE Photos SET order_num = $1, update_dt = NOW() WHERE p_key = $2',
-      [photo1.order_num, photo1.p_key]
-    );
-    await client.query(
-      'UPDATE Photos SET order_num = $1, update_dt = NOW() WHERE p_key = $2',
-      [photo2.order_num, photo2.p_key]
-    );
+    // Loop through array and update each record
+    for (let i = 0; i < order.length; i++) {
+      const p_key = order[i];
+      await client.query(
+        "UPDATE photos SET order_num = $1 WHERE pa_key = $2 and p_key = $3",
+        [i, pa_key, p_key]
+      );
+    }
 
-    await client.query('COMMIT');
+    await client.query("COMMIT");
     res.json({ success: true });
   } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('Swap error:', err);
-    res.status(500).json({ error: 'Failed to swap photos' });
+    await client.query("ROLLBACK");
+    console.error("Error reordering albums:", err);
+    res.status(500).json({ error: "Failed to reorder albums." });
   } finally {
     client.release();
   }

@@ -1,0 +1,101 @@
+.checkboxCell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.actionsWrapper {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.actionsWrapper button {
+  padding: 3px;
+  font-size: 16px;
+  border: none;
+  background: none;
+  outline: none;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.2s;
+}
+
+.actionsWrapper button:hover {
+  transform: scale(1.2);
+}
+
+.actionsWrapper button:nth-child(1) {
+  color: #007bff;
+}
+
+.actionsWrapper button:nth-child(2) {
+  color: #d9534f;
+}
+
+.thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.imageButton {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #2196f3;
+  background-color: #fff;
+  color: #2196f3;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.imageButton:hover {
+  background-color: #2196f3;
+  color: #fff;
+}
+
+.commentCell {
+  cursor: pointer;
+  color: #007bff;
+  text-decoration: underline;
+}
+
+.commentDialog {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  width: 500px;
+  max-width: 90%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.commentDialogHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 0.75rem;
+}
+
+.commentDialogContent {
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+}

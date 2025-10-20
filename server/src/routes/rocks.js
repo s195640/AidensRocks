@@ -135,23 +135,36 @@ router.put('/:rc_key', upload.single('image'), async (req, res, next) => {
 // DELETE a rock
 router.delete('/:rc_key', async (req, res, next) => {
   const { rc_key } = req.params;
+
   try {
+    await pool.query('BEGIN');
+
+    // 1️⃣ Remove all links from rock_artist_link
+    await pool.query('DELETE FROM artist_link WHERE rc_key = $1', [rc_key]);
+
+    // 2️⃣ Delete the rock from catalog
     const result = await pool.query(
-      `DELETE FROM catalog WHERE rc_key = $1 RETURNING rock_number`,
+      'DELETE FROM catalog WHERE rc_key = $1 RETURNING rock_number',
       [rc_key]
     );
+
     if (result.rows.length === 0) {
+      await pool.query('ROLLBACK');
       return res.status(404).json({ error: 'Rock not found' });
     }
 
     const rock_number = result.rows[0].rock_number;
+
+    // 3️⃣ Delete associated media folder
     const dir = path.join('media', 'catalog', String(rock_number));
     if (fs.existsSync(dir)) {
       fs.rmSync(dir, { recursive: true, force: true });
     }
 
+    await pool.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
+    await pool.query('ROLLBACK');
     next(err);
   }
 });

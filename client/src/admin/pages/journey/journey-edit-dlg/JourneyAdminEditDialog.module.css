@@ -1,0 +1,176 @@
+/* JourneyAdminEditDialog.module.css */
+
+.dialogContent {
+  background-color: #fff;
+  border-radius: 8px;
+  width: 90vw;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialogHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f5f5f5;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.dialogHeader h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.closeButton:hover {
+  color: #000;
+}
+
+.dialogForm {
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dialogForm label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.dialogForm input,
+.dialogForm select,
+.dialogForm textarea {
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dialogForm input:focus,
+.dialogForm select:focus,
+.dialogForm textarea:focus {
+  border-color: #4caf50;
+  box-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
+  outline: none;
+}
+
+.imagesTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.imagesTable th,
+.imagesTable td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+}
+
+.imagesTable th {
+  background-color: #f0f0f0;
+  font-weight: 600;
+}
+
+.imagePreview {
+  width: 50px;
+  height: 50px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.imagePreview:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.actionsCol button {
+  margin-right: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.actionsCol button:hover {
+  background: #eee;
+}
+
+.errorMessage {
+  background: #ffe5e5;
+  color: #d32f2f;
+  border: 1px solid #f5c2c2;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* Sticky Save/Cancel buttons */
+.stickyButtons {
+  position: sticky;
+  bottom: -20px;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding: 0.75rem 1.5rem;
+  background: #fff;
+  border-top: 1px solid #ddd;
+  z-index: 10;
+}
+
+.stickyButtons button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.stickyButtons button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.saveButton {
+  background: #4caf50;
+  color: #fff;
+}
+
+.saveButton:hover:not(:disabled) {
+  background: #43a047;
+}
+
+.cancelButton {
+  background: #bbb;
+  color: #fff;
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: #999;
+}

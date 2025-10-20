@@ -1,18 +1,23 @@
 // Albums.jsx
 import axios from "axios";
 import { useEffect, useState } from "react";
-import AlbumCreate from "../../components/album-create/AlbumCreate";
+import AlbumsCreateDlg from "./albums-create-dlg/AlbumsCreateDlg";
 import styles from "./Albums.module.css";
+import AlbumsTable from "./albums-table/AlbumsTable";
+import AlbumsSingleLightbox from "./albums-single-lightbox/AlbumsSingleLightbox";
+import AlbumsMultiLightbox from "./albums-multi-lightbox/AlbumsMultiLightbox";
 
 const Albums = () => {
   const [albums, setAlbums] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingAlbum, setEditingAlbum] = useState(null);
   const [editingPhotos, setEditingPhotos] = useState([]);
-  const [fullImage, setFullImage] = useState(null); // will hold the album object or just image info
+  const [fullImage, setFullImage] = useState(null);
+  const [imagesIndex, setImagesIndex] = useState(-1);
+  const [imagesLightbox, setImagesLightbox] = useState(null);
 
   const openFullImageDialog = (album) => {
-    setFullImage(album);
+    setFullImage(`/media/albums/${album.name}/webp/${album.first_image_name}`);
   };
 
   const closeFullImageDialog = () => {
@@ -91,20 +96,11 @@ const Albums = () => {
     }
   };
 
-  const handleReorder = async (index, direction) => {
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= albums.length) return;
-
-    const albumA = albums[index];
-    const albumB = albums[targetIndex];
-
+  const handleReorder = async (order) => {
     setLoading(true);
     try {
       await axios.post(`/api/albums/reorder`, {
-        a_key: albumA.pa_key,
-        a_order: albumB.order_num,
-        b_key: albumB.pa_key,
-        b_order: albumA.order_num,
+        order
       });
       await fetchAlbums();
     } catch (err) {
@@ -113,6 +109,12 @@ const Albums = () => {
       setLoading(false);
     }
   };
+
+  const openImagesLightbox = async (album, index = 0) => {
+    const res = await axios.get(`/api/albums/${album.pa_key}/photos`);
+    setImagesLightbox(res.data.map(i => ({ src: `/media/albums/${album.name}/webp/${i.name}` })));
+    setImagesIndex(index);
+  }
 
   return (
     <div className={styles.container}>
@@ -132,87 +134,20 @@ const Albums = () => {
       {loading ? (
         <p>Loading...</p>
       ) : (
-        <table className={styles.albumTable}>
-          <thead>
-            <tr>
-              <th>Image</th> {/* New column */}
-              <th>Name</th>
-              <th>Display Name</th>
-              <th>Description</th>
-              <th>Order</th>
-              <th>Show</th>
-              <th>Count</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {albums.map((album, index) => {
-              const imageUrl = album.first_image_name
-                ? `/media/albums/${album.name}/webp300x300/${album.first_image_name}`
-                : null;
-
-              return (
-                <tr key={album.pa_key}>
-                  <td>
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt={album.display_name || album.name}
-                        style={{
-                          width: 50,
-                          height: 50,
-                          objectFit: "cover",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => openFullImageDialog(album)}
-                      />
-                    ) : (
-                      <div
-                        style={{ width: 50, height: 50, background: "#ccc" }}
-                      />
-                    )}
-                  </td>
-                  <td>{album.name}</td>
-                  <td>{album.display_name}</td>
-                  <td>{album.desc}</td>
-                  <td>
-                    {album.order_num} <br />
-                    <button
-                      disabled={index === 0}
-                      onClick={() => handleReorder(index, "up")}
-                    >
-                      ▲
-                    </button>
-                    <button
-                      disabled={index === albums.length - 1}
-                      onClick={() => handleReorder(index, "down")}
-                    >
-                      ▼
-                    </button>
-                  </td>
-                  <td>{album.show ? "Yes" : "No"}</td>
-                  <td>{album.count}</td>
-                  <td className={styles.actionsCol}>
-                    <button onClick={() => handleToggleShow(album.pa_key)}>
-                      {album.show ? "Disable" : "Enable"}
-                    </button>
-                    <button onClick={() => handleEdit(album)}>Edit</button>
-                    <button
-                      onClick={() => handleDelete(album.pa_key, album.name)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <AlbumsTable
+          albums={albums}
+          handleToggleShow={handleToggleShow}
+          handleDelete={handleDelete}
+          handleEdit={handleEdit}
+          handleReorder={handleReorder}
+          openFullImageDialog={openFullImageDialog}
+          loading={loading}
+          openImagesLightbox={openImagesLightbox}
+        />
       )}
 
       {editingAlbum && (
-        <AlbumCreate
-          isEdit={!!editingAlbum.pa_key}
+        <AlbumsCreateDlg
           albumData={editingAlbum}
           photoData={editingPhotos}
           onClose={() => {
@@ -224,63 +159,12 @@ const Albums = () => {
             setEditingAlbum(null);
             setEditingPhotos([]);
           }}
+          isEdit={!!editingAlbum.pa_key}
+          openImagesLightbox={openImagesLightbox}
         />
       )}
-      {fullImage && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0,0,0,0.7)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 9999,
-          }}
-          onClick={closeFullImageDialog}
-        >
-          <div
-            style={{
-              position: "relative",
-              backgroundColor: "#fff",
-              padding: 10,
-              borderRadius: 6,
-              maxWidth: "90vw",
-              maxHeight: "90vh",
-            }}
-            onClick={(e) => e.stopPropagation()} // prevent modal close on inner click
-          >
-            <img
-              src={`/media/albums/${fullImage.name}/webp/${fullImage.first_image_name}`}
-              alt={fullImage.display_name || fullImage.name}
-              style={{
-                maxWidth: "80vw",
-                maxHeight: "80vh",
-                objectFit: "contain",
-              }}
-            />
-            <button
-              onClick={closeFullImageDialog}
-              style={{
-                position: "absolute",
-                top: 5,
-                right: 5,
-                background: "transparent",
-                border: "none",
-                fontSize: 24,
-                cursor: "pointer",
-                lineHeight: 1,
-              }}
-              aria-label="Close full image"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
+      <AlbumsSingleLightbox open={fullImage} onClose={closeFullImageDialog} imageSrc={fullImage} />
+      <AlbumsMultiLightbox open={imagesIndex >= 0} onClose={() => { setImagesIndex(-1); setImagesLightbox(null); }} imageSrc={imagesLightbox} index={imagesIndex} />
     </div>
   );
 };

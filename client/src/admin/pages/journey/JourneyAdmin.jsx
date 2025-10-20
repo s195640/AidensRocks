@@ -1,15 +1,31 @@
 import { useEffect, useState } from "react";
-import { FaEdit, FaTrash } from "react-icons/fa";
 import styles from "./JourneyAdmin.module.css";
-import EditJourneyDialog from "./EditJourneyDialog";
+import AdminContainer from "../../components/admin-base/AdminContainer";
+import JourneyAdminEditDialog from "./journey-edit-dlg/JourneyAdminEditDialog";
+import JourneyAdminTable from "./journey-table/JourneyAdminTable";
+import LightboxRock from "../../../components/lightbox-rock/LightboxRock";
+import Lightbox from "yet-another-react-lightbox";
+import Captions from "yet-another-react-lightbox/plugins/captions";
+import Counter from "yet-another-react-lightbox/plugins/counter";
+import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
+import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
+import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+
+import "react-photo-album/rows.css";
+import "yet-another-react-lightbox/plugins/captions.css";
+import "yet-another-react-lightbox/plugins/counter.css";
+import "yet-another-react-lightbox/plugins/thumbnails.css";
+import "yet-another-react-lightbox/styles.css";
+
 
 const JourneyAdmin = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sortField, setSortField] = useState("coordinates");
-  const [sortOrder, setSortOrder] = useState("asc");
   const [editingPost, setEditingPost] = useState(null);
   const [popupRockNumber, setPopupRockNumber] = useState(null);
+  const [imagesLightbox, setImagesLightbox] = useState(null);
+  const [imagesIndex, setImagesIndex] = useState(-1);
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -28,56 +44,6 @@ const JourneyAdmin = () => {
   useEffect(() => {
     fetchPosts();
   }, []);
-
-  const handleSort = (field) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortOrder("asc");
-    }
-  };
-
-  const comparePosts = (a, b) => {
-    let valA = a[sortField];
-    let valB = b[sortField];
-
-    if (valA === null || valA === undefined) valA = "";
-    if (valB === null || valB === undefined) valB = "";
-
-    if (sortField === "date") {
-      valA = valA ? new Date(valA) : new Date(0);
-      valB = valB ? new Date(valB) : new Date(0);
-      return sortOrder === "asc" ? valA - valB : valB - valA;
-    }
-
-    if (sortField === "show") {
-      valA = valA ? 1 : 0;
-      valB = valB ? 1 : 0;
-    }
-
-    if (sortField === "coordinates") {
-      valA = a.latitude && a.longitude ? `${a.latitude},${a.longitude}` : "";
-      valB = b.latitude && b.longitude ? `${b.latitude},${b.longitude}` : "";
-    }
-
-    if (typeof valA === "number" && typeof valB === "number") {
-      return sortOrder === "asc" ? valA - valB : valB - valA;
-    }
-
-    valA = valA.toString().toLowerCase();
-    valB = valB.toString().toLowerCase();
-    if (valA < valB) return sortOrder === "asc" ? -1 : 1;
-    if (valA > valB) return sortOrder === "asc" ? 1 : -1;
-    return 0;
-  };
-
-  const sortedPosts = [...posts].sort(comparePosts);
-
-  const renderSortArrow = (field) => {
-    if (sortField !== field) return null;
-    return sortOrder === "asc" ? " ▲" : " ▼";
-  };
 
   const handleToggleShow = async (rps_key, currentShow) => {
     try {
@@ -122,106 +88,67 @@ const JourneyAdmin = () => {
     setPopupRockNumber(null);
   };
 
+  const openImagesLightbox = (post) => {
+    setImagesLightbox(
+      Array.from({ length: post.total_images }, (_, i) => ({
+        src: `/media/rocks/${post.rock_number}/${post.uuid}/webp/${i + 1}_${post.uuid}.webp`
+      }))
+    );
+    setImagesIndex(0);
+  }
+  const closeImagesLightbox = () => {
+    setImagesIndex(-1);
+    setImagesLightbox(null);
+  }
   return (
-    <div className={styles.container}>
+    <AdminContainer>
       <h2>Journey Posts Admin</h2>
-      {loading ? (
-        <p>Loading...</p>
-      ) : (
-        <table className={styles.albumTable}>
-          <thead>
-            <tr>
-              <th>Image</th>
-              <th onClick={() => handleSort("rock_number")}>Rock{renderSortArrow("rock_number")}</th>
-              <th onClick={() => handleSort("location")}>Location{renderSortArrow("location")}</th>
-              <th onClick={() => handleSort("coordinates")}>Coordinates{renderSortArrow("coordinates")}</th>
-              <th onClick={() => handleSort("date")}>Date{renderSortArrow("date")}</th>
-              <th onClick={() => handleSort("comment")}>Comment{renderSortArrow("comment")}</th>
-              <th onClick={() => handleSort("name")}>Name{renderSortArrow("name")}</th>
-              <th onClick={() => handleSort("email")}>Email{renderSortArrow("email")}</th>
-              <th>UUID</th>
-              <th onClick={() => handleSort("show")}>Show{renderSortArrow("show")}</th>
-              <th onClick={() => handleSort("total_images")}>Images{renderSortArrow("total_images")}</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedPosts.length === 0 ? (
-              <tr>
-                <td colSpan={12} style={{ textAlign: "center" }}>
-                  No posts found
-                </td>
-              </tr>
-            ) : (
-              sortedPosts.map((post) => (
-                <tr key={post.rps_key}>
-                  <td>
-                    <img
-                      src={`/media/catalog/${post.rock_number}/a_sm.webp`}
-                      alt={`Rock ${post.rock_number}`}
-                      className={styles.thumbnail}
-                      onClick={() => openImagePopup(post.rock_number)}
-                    />
-                  </td>
-                  <td>{post.rock_number}</td>
-                  <td>{post.location || "-"}</td>
-                  <td>
-                    {post.latitude && post.longitude
-                      ? `${post.latitude}, ${post.longitude}`
-                      : "-"}
-                  </td>
-                  <td>{post.date ? post.date.replace("T", " ").slice(0, 16) : "-"}</td>
-                  <td>{post.comment || "-"}</td>
-                  <td>{post.name || "-"}</td>
-                  <td>{post.email || "-"}</td>
-                  <td>{post.uuid}</td>
-                  <td className={styles.checkboxCell}>
-                    <input
-                      type="checkbox"
-                      checked={post.show}
-                      onChange={() => handleToggleShow(post.rps_key, post.show)}
-                    />
-                  </td>
-                  <td>{post.total_images ?? 0}</td>
-                  <td>
-                    <div className={styles.actionsWrapper}>
-                      <button onClick={() => handleEdit(post)} title="Edit">
-                        <FaEdit />
-                      </button>
-                      <button onClick={() => handleDelete(post.rps_key)} title="Delete">
-                        <FaTrash />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      )}
+      <JourneyAdminTable
+        posts={posts}
+        handleToggleShow={handleToggleShow}
+        handleDelete={handleDelete}
+        handleEdit={handleEdit}
+        openImageDialog={openImagePopup}
+        openImagesLightbox={openImagesLightbox}
+      />
 
-      {editingPost && (
-        <EditJourneyDialog
+      {editingPost &&
+        <JourneyAdminEditDialog
           post={editingPost}
+          isOpen={editingPost}
           onClose={() => setEditingPost(null)}
           onSave={() => {
             fetchPosts();
             setEditingPost(null);
           }}
-        />
-      )}
+          openImagesLightbox={openImagesLightbox}
+        />}
 
-      {popupRockNumber && (
-        <div className={styles.imagePopupOverlay} onClick={closeImagePopup}>
-          <div className={styles.imagePopup} onClick={(e) => e.stopPropagation()}>
-            <img
-              src={`/media/catalog/${popupRockNumber}/a.webp`}
-              alt={`Rock ${popupRockNumber}`}
-            />
-          </div>
-        </div>
-      )}
-    </div>
+
+      <LightboxRock open={popupRockNumber} onClose={closeImagePopup} imageSrc={{ rock_number: popupRockNumber }} />
+      <Lightbox
+        slides={imagesLightbox}
+        open={imagesIndex >= 0}
+        index={imagesIndex}
+        close={() => closeImagesLightbox()}
+        plugins={[Thumbnails, Fullscreen, Zoom, Counter, Slideshow, Captions]}
+        thumbnails={{
+          position: "bottom",
+          width: 100,
+          height: 60,
+          borderRadius: 4,
+        }}
+        slideshow={{ autoplay: false, delay: 3000 }}
+        captions={{
+          descriptionTextAlign: "center",
+          descriptionMaxLines: 2,
+        }}
+        styles={{
+          container: { backgroundColor: "rgba(0, 0, 0, 0.9)" },
+          slide: { padding: "10px" },
+        }}
+      />
+    </AdminContainer>
   );
 };
 

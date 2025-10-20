@@ -1,0 +1,29 @@
+.slideContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.topText {
+  color: white;
+  font-size: 1.2rem;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+  margin-bottom: 10px;
+}
+
+.bottomText {
+  color: white;
+  font-size: 1.2rem;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+  margin-top: 10px;
+}
+
+.image {
+  max-width: 90%;
+  max-height: 80%;
+  object-fit: contain;
+}

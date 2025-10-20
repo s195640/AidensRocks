@@ -1,0 +1,139 @@
+.albumTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.albumTable th,
+.albumTable td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+}
+
+.albumTable th {
+  background-color: #f0f0f0;
+}
+
+.thumb {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.orderCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.orderBtns button {
+  font-size: 10px;
+  margin: 2px 0;
+}
+
+.actionsCol button {
+  margin-right: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.actionsCol button:nth-child(1) {
+  background-color: #f0ad4e;
+  color: #fff;
+}
+
+.actionsCol button:nth-child(1):hover {
+  background-color: #ec971f;
+}
+
+.actionsCol button:nth-child(2) {
+  background-color: #5bc0de;
+  color: #fff;
+}
+
+.actionsCol button:nth-child(2):hover {
+  background-color: #31b0d5;
+}
+
+.actionsCol button:nth-child(3) {
+  background-color: #d9534f;
+  color: #fff;
+}
+
+.actionsCol button:nth-child(3):hover {
+  background-color: #c9302c;
+}
+
+.fullImageOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.fullImageContainer {
+  position: relative;
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 6px;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.fullImageContainer img {
+  max-width: 80vw;
+  max-height: 80vh;
+  object-fit: contain;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.thumbWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.thumb {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.thumbPlaceholder {
+  width: 50px;
+  height: 50px;
+  background-color: #ddd;
+  border-radius: 8px;
+}

@@ -1,0 +1,39 @@
+.dialogForm {
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialogForm label {
+  margin-top: 1rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.dialogForm input {
+  margin-top: 0.4rem;
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dialogForm input:focus {
+  border-color: #4caf50;
+  box-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
+  outline: none;
+}
+
+.errorMessage {
+  background: #ffe5e5;
+  color: #d32f2f;
+  border: 1px solid #f5c2c2;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
