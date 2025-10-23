@@ -16,6 +16,7 @@ const TABLES = [
   "journey_tracking",
   "photoalbums",
   "photos",
+  "music"
 ];
 
 // Get container/server IP

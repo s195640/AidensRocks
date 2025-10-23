@@ -471,3 +471,30 @@ ALTER TABLE ONLY public.artist_link
 
 ALTER TABLE ONLY public.photos
     ADD CONSTRAINT fk_photo_album FOREIGN KEY (pa_key) REFERENCES public.photoalbums(pa_key) ON DELETE CASCADE;
+
+
+CREATE TABLE music (
+  m_key SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  writer VARCHAR(255) NOT NULL,
+  lyrics TEXT NOT NULL,
+  order_num integer,
+  show BOOLEAN DEFAULT TRUE,
+  create_dt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  update_dt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE public.music OWNER TO postgres;
+
+CREATE SEQUENCE public.music_m_key_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.music_m_key_seq OWNER TO postgres;
+
+ALTER TABLE ONLY public.music ALTER COLUMN m_key SET DEFAULT nextval('public.music_m_key_seq'::regclass);

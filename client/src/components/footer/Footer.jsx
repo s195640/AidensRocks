@@ -1,7 +1,8 @@
 import { useState } from "react";
-import ComingSoonPopup from "../coming-soon/ComingSoonPopup"; // adjust path if needed
-import ContactPopup from "../contact-popup/ContactPopup"; // import new component
-import "./Footer.css";
+import ComingSoonPopup from "../coming-soon/ComingSoonPopup";
+import ContactPopup from "../contact-popup/ContactPopup";
+import styles from "./Footer.module.css";
+import ARAudioPlayer from "../ar-audio-player/ARAudioPlayer";
 
 const Footer = () => {
   const [showPopup, setShowPopup] = useState(false);
@@ -19,8 +20,8 @@ const Footer = () => {
 
   return (
     <>
-      <div className="footer-content">
-        <div className="footer-content-inner">
+      <div className={styles.footerContent}>
+        <div className={styles.footerContentInner}>
           <ul>
             <li>
               <a
@@ -28,21 +29,22 @@ const Footer = () => {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <div className="icon-circle">
+                <div className={styles.iconCircle}>
                   <i className="fa-brands fa-facebook"></i>
                 </div>
               </a>
             </li>
             <li>
               <a href="#" onClick={handleContactClick} aria-label="Contact Me">
-                <div className="icon-circle">
-                  <i className="fa-solid fa-envelope"></i> {/* envelope icon */}
+                <div className={styles.iconCircle}>
+                  <i className="fa-solid fa-envelope"></i>
                 </div>
               </a>
             </li>
           </ul>
         </div>
       </div>
+      <ARAudioPlayer />
 
       {showPopup && <ComingSoonPopup onClose={() => setShowPopup(false)} />}
       {showContactPopup && <ContactPopup onClose={() => setShowContactPopup(false)} />}

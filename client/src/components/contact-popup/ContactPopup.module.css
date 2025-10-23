@@ -1,5 +1,5 @@
-/* components/contact-popup/ContactPopup.css */
-.popup-overlay {
+/* components/contact-popup/ContactPopup.module.css */
+.popupOverlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -12,7 +12,7 @@
   z-index: 9999;
 }
 
-.popup-content {
+.popupContent {
   background: white;
   padding: 20px 30px;
   border-radius: 8px;
@@ -20,16 +20,16 @@
   text-align: center;
 }
 
-.popup-content h2 {
+.popupContent h2 {
   margin-bottom: 15px;
 }
 
-.popup-content p {
+.popupContent p {
   margin-bottom: 25px;
   font-size: 16px;
 }
 
-.popup-content button {
+.popupContent button {
   padding: 8px 16px;
   cursor: pointer;
 }

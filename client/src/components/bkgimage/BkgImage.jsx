@@ -1,23 +1,21 @@
-import "./BkgImage.css";
+import styles from "./BkgImage.module.css";
 
 const BkgImage = ({ backgroundImage, children, scrollTargetSelector }) => {
   const scrollToTarget = () => {
     const targetSection = document.querySelector(scrollTargetSelector);
     if (targetSection) {
-      // const topPosition = targetSection.offsetTop;
-      // window.scrollTo({ top: topPosition, behavior: "smooth" });
       targetSection.scrollIntoView({ behavior: "smooth" });
     }
   };
 
   return (
     <div
-      className="bkgimg-section"
+      className={styles.section}
       style={{ backgroundImage: `url(${backgroundImage})` }}
     >
-      <div className="bkgimg-content">{children}</div>
+      <div className={styles.content}>{children}</div>
       <span
-        className="bkgimg-scroll-icon-container"
+        className={styles.scrollIconContainer}
         onClick={scrollToTarget}
         aria-label="Scroll to content"
         role="button"
@@ -25,7 +23,7 @@ const BkgImage = ({ backgroundImage, children, scrollTargetSelector }) => {
         onKeyDown={(e) => e.key === "Enter" && scrollToTarget()}
       >
         <svg
-          className="bkgimg-scroll-icon"
+          className={styles.scrollIcon}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

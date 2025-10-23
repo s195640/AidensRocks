@@ -1,9 +1,10 @@
+// ComingSoonPopup.jsx
 import React from "react";
-import "./ComingSoonPopup.css";
+import styles from "./ComingSoonPopup.module.css";
 
 const ComingSoonPopup = ({ onClose }) => (
-  <div className="popup-overlay" onClick={onClose}>
-    <div className="popup-content" onClick={(e) => e.stopPropagation()}>
+  <div className={styles.popupOverlay} onClick={onClose}>
+    <div className={styles.popupContent} onClick={(e) => e.stopPropagation()}>
       <h3>Coming Soon</h3>
       <p>
         Facebook, and Instagram pages are not currently available (coming soon).<br />

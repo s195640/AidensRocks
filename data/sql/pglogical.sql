@@ -15,3 +15,6 @@ SELECT pglogical.replication_set_add_table('default', 'journey_tracking');
 -- Counter
 SELECT pglogical.replication_set_add_table('default', 'counter');
 SELECT pglogical.replication_set_add_table('default', 'counter_tracking');
+
+-- Music
+SELECT pglogical.replication_set_add_table('default', 'music');

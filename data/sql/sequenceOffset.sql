@@ -38,6 +38,12 @@ BEGIN
         GREATEST((SELECT COALESCE(MAX(rct_key), 0) + 1 FROM counter_tracking), 100000));
 END $$;
 
+-- Music
+DO $$
+BEGIN
+    EXECUTE format('ALTER SEQUENCE music_m_key_seq RESTART WITH %s;',
+        GREATEST((SELECT COALESCE(MAX(rcs_key), 0) + 1 FROM counter), 100000));
+END $$;
 
 /*
 SELECT 'photoalbums_pa_key_seq' AS sequence_name, last_value, is_called FROM photoalbums_pa_key_seq

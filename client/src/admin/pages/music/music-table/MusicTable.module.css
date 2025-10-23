@@ -1,49 +1,35 @@
-.checkboxCell {
+.thumbWrapper {
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.actionsWrapper {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-}
-
-.actionsWrapper button {
-  padding: 3px;
-  font-size: 16px;
-  border: none;
-  background: none;
-  outline: none;
-  cursor: pointer;
-  transition: transform 0.1s, opacity 0.2s;
-}
-
-.actionsWrapper button:hover {
-  transform: scale(1.2);
-}
-
-.actionsWrapper button:nth-child(1) {
-  color: #007bff;
-}
-
-.actionsWrapper button:nth-child(2) {
-  color: #d9534f;
-}
-
 .thumb {
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   object-fit: cover;
   border-radius: 8px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
 }
 
 .thumb:hover {
   transform: scale(1.1);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.thumbPlaceholder {
+  width: 50px;
+  height: 50px;
+  background-color: #ddd;
+  border-radius: 8px;
+}
+
+.countCol {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .imageButton {
@@ -61,13 +47,7 @@
   color: #fff;
 }
 
-.commentCell {
-  cursor: pointer;
-  color: #007bff;
-  text-decoration: underline;
-}
-
-.commentText {
+.lyricsText {
   white-space: pre-wrap;
   font-family: inherit;
   font-size: 0.95rem;

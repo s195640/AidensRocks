@@ -20,6 +20,7 @@ import Sudc from "./pages/sudc/Sudc.jsx";
 import TrackTheRocks from "./pages/track-the-rocks/TrackTheRocks.jsx";
 import JourneyAdmin from "./admin/pages/journey/JourneyAdmin.jsx";
 import AllRocks from "./pages/all-rocks/AllRocks.jsx";
+import MusicAdmin from "./admin/pages/music/MusicAdmin.jsx";
 
 const publicNavItems = [
   { path: "/", label: "Home" },
@@ -37,6 +38,7 @@ const adminNavItems = [
   { path: "/admin/rocks", label: "Rocks" },
   { path: "/admin/albums", label: "Albums" },
   { path: "/admin/journey", label: "Journey" },
+  { path: "/admin/music", label: "Music" },
   { path: "/", label: "Exit Admin" },
 ];
 
@@ -105,6 +107,14 @@ function AppContent() {
           element={
             <PrivateRoute>
               <JourneyAdmin />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/music"
+          element={
+            <PrivateRoute>
+              <MusicAdmin />
             </PrivateRoute>
           }
         />

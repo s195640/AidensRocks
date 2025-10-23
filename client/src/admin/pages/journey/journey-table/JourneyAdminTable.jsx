@@ -169,20 +169,16 @@ const JourneyAdminTable = ({
       <Dialog
         isOpen={commentDialog.open}
         onClose={() => setCommentDialog({ open: false, text: "" })}
+        title="Full Comment"
+        buttonPanel={<button
+          className={styles.closeButton}
+          onClick={() => setCommentDialog({ open: false, text: "" })}
+        >
+          ✕
+        </button>}
       >
-        <div className={styles.commentDialog}>
-          <div className={styles.commentDialogHeader}>
-            <h3>Full Comment</h3>
-            <button
-              className={styles.closeButton}
-              onClick={() => setCommentDialog({ open: false, text: "" })}
-            >
-              ✕
-            </button>
-          </div>
-          <div className={styles.commentDialogContent}>
-            {commentDialog.text || "(No comment)"}
-          </div>
+        <div className={styles.commentText}>
+          {commentDialog.text || "(No comment)"}
         </div>
       </Dialog>
     </>
