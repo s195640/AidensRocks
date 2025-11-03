@@ -79,4 +79,8 @@
   .content p {
     font-size: clamp(0.5rem, 15vw, 0.8rem);
   }
+
+  .scrollIconContainer {
+    bottom: 170px;
+  }
 }

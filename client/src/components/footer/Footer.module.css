@@ -12,12 +12,6 @@
   background-size: auto;
 }
 
-@media (max-width: 768px) {
-  .footerContent {
-    height: 150px;
-  }
-}
-
 .footerContentInner {
   position: relative;
   text-align: center;
@@ -65,4 +59,16 @@
   display: inline-flex;
   justify-content: center;
   align-items: center;
+}
+
+@media (max-width: 768px) {
+  .footerContent {
+    height: 200px;
+    justify-content: flex-start;
+    padding-top: 20px;
+  }
+
+  .footerContentInner ul {
+    margin-top: 0;
+  }
 }
