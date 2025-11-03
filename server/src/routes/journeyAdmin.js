@@ -1,6 +1,8 @@
 const express = require('express');
 const pool = require('../db/pool');
 const NodeGeocoder = require("node-geocoder");
+const fs = require("fs");
+const path = require('path');
 
 const router = express.Router();
 
@@ -9,6 +11,9 @@ const geocoder = NodeGeocoder({
   apiKey: "18b5ecfa7dbb4fbea8107dc52069ee3c", // your API key
 });
 
+const accessAsync = fs.promises.access;
+const mkdirAsync = fs.promises.mkdir;
+const renameAsync = fs.promises.rename;
 
 // GET /api/journey - fetch all posts with total images count
 router.get("/", async (req, res) => {
@@ -167,7 +172,20 @@ router.put("/:rps_key", async (req, res) => {
   let state = null;
 
   try {
-    // ✅ If lat/lon provided, do reverse lookup
+    // ✅ 1. Fetch current record to compare old vs new rock_number
+    const oldRes = await pool.query(
+      "SELECT rock_number, uuid FROM journey WHERE rps_key = $1",
+      [rps_key]
+    );
+
+    if (oldRes.rowCount === 0) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    const oldRockNumber = oldRes.rows[0].rock_number;
+    const uuid = oldRes.rows[0].uuid; // assuming `uuid` is stored in `journey`
+
+    // ✅ 2. Reverse geocode (optional)
     if (latitude && longitude) {
       try {
         const geoRes = await geocoder.reverse({ lat: latitude, lon: longitude });
@@ -180,6 +198,7 @@ router.put("/:rps_key", async (req, res) => {
       }
     }
 
+    // ✅ 3. Perform DB update
     const result = await pool.query(
       `UPDATE journey
        SET rock_number = $1,
@@ -214,6 +233,28 @@ router.put("/:rps_key", async (req, res) => {
 
     if (result.rowCount === 0) {
       return res.status(404).json({ error: "Post not found" });
+    }
+
+    // ✅ 4. If rock_number changed, move the directory
+    if (oldRockNumber !== rock_number) {
+      const oldDir = path.join("media", "rocks", String(oldRockNumber), uuid);
+      const newDir = path.join("media", "rocks", String(rock_number), uuid);
+
+      try {
+        // Ensure parent directory exists
+        const newParentDir = path.dirname(newDir);
+        try {
+          await accessAsync(newParentDir, fs.constants.F_OK);
+        } catch {
+          await mkdirAsync(newParentDir, { recursive: true });
+        }
+
+        // Move the folder
+        await renameAsync(oldDir, newDir);
+        console.log(`Moved directory from ${oldDir} → ${newDir}`);
+      } catch (fsErr) {
+        console.error(`⚠️ Failed to move directory for rps_key=${rps_key}:`, fsErr);
+      }
     }
 
     res.json(result.rows[0]);
