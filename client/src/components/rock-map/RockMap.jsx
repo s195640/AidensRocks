@@ -7,16 +7,20 @@ import styles from "./RockMap.module.css";
 import RockMapPopup from "./rock-map-popup/RockMapPopup";
 
 // Fix default marker icons (needed for React + Webpack/Vite)
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
+// delete L.Icon.Default.prototype._getIconUrl;
+// L.Icon.Default.mergeOptions({
+//   iconRetinaUrl:
+//     "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+//   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+//   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+// });
 
 export default function RockMap({ pins = [] }) {
   const [selectedRock, setSelectedRock] = useState(null);
+  const mapURL = ["https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+    "https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png"
+  ];
 
   return (
     <div className={styles.mapContainer}>
@@ -30,7 +34,7 @@ export default function RockMap({ pins = [] }) {
         maxBounds={[[-90, -180], [90, 180]]} // Keeps inside the world bounds
       >
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url={mapURL[1]}
           noWrap={true} // Stops repeating tiles horizontally
         />
 
