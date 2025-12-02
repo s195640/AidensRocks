@@ -3,6 +3,7 @@ import { useState, useRef } from "react";
 import { useARContext } from "../../context/ARContext";
 import "./UploadRockForm.css";
 import { FaFacebookSquare } from "react-icons/fa";
+import heic2any from "heic2any";
 
 export default function UploadRockForm({ onClose }) {
   const { trackerData, rValue } = useARContext();
@@ -24,21 +25,21 @@ export default function UploadRockForm({ onClose }) {
   const [email, setEmail] = useState("");
   const [imageError, setImageError] = useState("");
   const [dialog, setDialog] = useState(null);
-
-
   const fileInputRef = useRef(null);
-
   const isSubmitEnabled =
     rockNumber.trim() &&
     location.trim() &&
     comment.trim() &&
     images.length > 0 &&
     !loading;
+  const [heicLoading, setHeicLoading] = useState(false);
 
-  const handleImageChange = (e) => {
+
+
+  const handleImageChange = async (e) => {
     const files = Array.from(e.target.files);
 
-    // Allow image/* AND .heic/.heif even if type is blank or weird
+    // Filter invalid files (same as before)
     const invalidFiles = files.filter(file => {
       const isImageMime = file.type.startsWith("image/");
       const isHeicExt = file.name.toLowerCase().endsWith(".heic") || file.name.toLowerCase().endsWith(".heif");
@@ -61,20 +62,49 @@ export default function UploadRockForm({ onClose }) {
 
     const allowedFiles = files.slice(0, 5 - images.length);
 
-    const fileURLs = allowedFiles.map((file) => ({
+    setHeicLoading(true); // <-- SHOW HEIC LOADING SPINNER
+
+    const processedFiles = [];
+
+    for (const file of allowedFiles) {
+      const isHeic =
+        file.name.toLowerCase().endsWith(".heic") ||
+        file.name.toLowerCase().endsWith(".heif");
+
+      if (isHeic) {
+        try {
+          const convertedBlob = await heic2any({
+            blob: file,
+            toType: "image/jpeg",
+            quality: 0.9,
+          });
+
+          const convertedFile = new File(
+            [convertedBlob],
+            file.name.replace(/\.(heic|heif)$/i, ".jpg"),
+            { type: "image/jpeg" }
+          );
+
+          processedFiles.push(convertedFile);
+        } catch (err) {
+          console.error("HEIC conversion failed:", err);
+          setImageError("Failed to convert HEIC image.");
+        }
+      } else {
+        processedFiles.push(file); // normal image
+      }
+    }
+
+    const fileURLs = processedFiles.map((file) => ({
       url: URL.createObjectURL(file),
       file,
     }));
 
     setImages((prev) => [...prev, ...fileURLs]);
 
+    setHeicLoading(false); // <-- HIDE HEIC SPINNER
     e.target.value = null;
   };
-
-
-
-
-
 
   const handleRemoveImage = (index) => {
     setImages((prev) => {
@@ -177,6 +207,13 @@ export default function UploadRockForm({ onClose }) {
   return (
     <>
       <div className="rock-form-overlay">
+        {heicLoading && (
+          <div className="heic-spinner-overlay">
+            <div className="heic-spinner"></div>
+            <p className="heic-spinner-text">Converting HEIC images...</p>
+          </div>
+        )}
+
         <div className="rock-form">
           <button
             type="button"

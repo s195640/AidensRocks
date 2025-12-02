@@ -4,19 +4,11 @@ import { FaFacebookSquare, FaInstagram } from "react-icons/fa";
 import BkgImage from "../../components/bkgimage/BkgImage";
 import ContentBody from "../../components/content-body/ContentBody";
 import UploadRockForm from "../../components/upload-rock-form/UploadRockForm";
-import ComingSoonPopup from "../../components/coming-soon/ComingSoonPopup";
 import styles from "./ShareYourRock.module.css";
 
 const ShareYourRock = () => {
   const backgroundImage = `/media/bkg/rock_bkg.webp`;
   const [showForm, setShowForm] = useState(false);
-  const [showPopup, setShowPopup] = useState(false);
-
-  // Handler for FB/IG links
-  const handleSocialClick = (e) => {
-    e.preventDefault();
-    setShowPopup(true);
-  };
 
   return (
     <div>
@@ -28,7 +20,6 @@ const ShareYourRock = () => {
       </BkgImage>
 
       {showForm && <UploadRockForm onClose={() => setShowForm(false)} />}
-      {showPopup && <ComingSoonPopup onClose={() => setShowPopup(false)} />}
 
       <ContentBody>
         <h2>Aiden's Rocks</h2>
