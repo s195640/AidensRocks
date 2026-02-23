@@ -4,9 +4,6 @@
   left: 0;
   z-index: 999;
   padding: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
 }
 
 .button {
@@ -19,9 +16,6 @@
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: background-color 0.3s ease;
-  width: 100%;
-  white-space: nowrap;
-  text-align: center;
 }
 
 .button:hover {
