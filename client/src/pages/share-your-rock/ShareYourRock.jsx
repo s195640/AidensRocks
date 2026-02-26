@@ -5,6 +5,7 @@ import BkgImage from "../../components/bkgimage/BkgImage";
 import ContentBody from "../../components/content-body/ContentBody";
 import UploadRockForm from "../../components/upload-rock-form/UploadRockForm";
 import styles from "./ShareYourRock.module.css";
+import FloatingRockLink from "../../components/floating-rock-link/FloatingRockLink";
 
 const ShareYourRock = () => {
   const backgroundImage = `/media/bkg/rock_bkg.webp`;
@@ -12,6 +13,7 @@ const ShareYourRock = () => {
 
   return (
     <div>
+      <FloatingRockLink />
       <BkgImage
         backgroundImage={backgroundImage}
         scrollTargetSelector=".additional-content"
@@ -89,15 +91,6 @@ const ShareYourRock = () => {
             </li>
           </ul>
         </ol>
-        <br />
-        <p className={styles.callout}>
-          <strong>
-            ***If you want to have some rocks sent to you for your other trips
-            or have any other locations in mind you would like to place an Aiden
-            Rock, reach out please. We will send them anywhere in the world for
-            free. We just want to see them take off and see new places***
-          </strong>
-        </p>
       </ContentBody>
     </div>
   );
