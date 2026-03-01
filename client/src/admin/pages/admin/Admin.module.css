@@ -11,23 +11,55 @@
 
 .content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  /* two equal columns */
+  gap: 20px;
+  grid-template-columns: 1fr;
+  /* Mobile default */
+  align-items: start;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
   gap: 20px;
 }
 
-.box {
-  background: #f0f0f0;
-  border: 1px solid #ccc;
-  padding: 40px;
-  text-align: center;
-  font-weight: bold;
-  border-radius: 8px;
+/* PC Layout */
+@media (min-width: 1025px) {
+  .content {
+    /* Statistics/Health on left, ARDetails on right */
+    grid-template-columns: 1fr 1.2fr;
+  }
+
+  /* On PC, we re-order the visual flow for the mobile requirement */
+  /* If you need ARDetails in the middle for mobile, the JSX order handles it */
 }
 
-/* On smaller screens, collapse to 1 column */
-@media (max-width: 768px) {
+/* Specific Mobile Re-ordering */
+@media (max-width: 1024px) {
   .content {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
   }
+
+  /* Order: 1. Statistics, 2. ARDetails, 3. ServerHealth */
+  .leftColumn {
+    display: contents;
+    /* Flattens the div so we can reorder children */
+  }
+
+  .leftColumn>div:first-child {
+    order: 1;
+  }
+
+  /* Statistics */
+  .rightColumn {
+    order: 2;
+  }
+
+  /* ARDetails */
+  .leftColumn>div:last-child {
+    order: 3;
+  }
+
+  /* ServerHealth */
 }

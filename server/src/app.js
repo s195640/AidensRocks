@@ -30,6 +30,7 @@ app.use('/api/journey-admin', require('./routes/journeyAdmin'));
 app.use('/api/server-health', require('./routes/serverHealth'));
 app.use("/api/ar-details", require("./routes/arDetails"));
 app.use("/api/music", require("./routes/music"));
+app.use("/api/statistics", require("./routes/statistics"));
 
 // Health Check
 app.get('/health', (req, res) => res.send('OK'));
