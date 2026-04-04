@@ -3,28 +3,8 @@ FROM alpine:latest
 # Install required packages
 RUN apk add --no-cache bash rsync coreutils
 
-# Create cron job and start cron in foreground
-CMD echo "0 */${BACKUP_INTERVAL} * * * sleep ${BACKUP_OFFSET} && \
-  TIMESTAMP=\$(date +\%Y-\%m-\%d_\%H-\%M-\%S) && \
-  mkdir -p /backup/\$TIMESTAMP && \
-  rsync -av --chmod=D777,F777 --perms /data/ /backup/\$TIMESTAMP/ && \
-  if [ \"${BACKUP_OFFSET}\" = \"0\" ]; then \
-    NOW=\$(date +\%s) && \
-    DAYS_7=\$((NOW - 604800)) && \
-    DAYS_60=\$((NOW - 5184000)) && \
-    ls /backup/ | sort | while read DIR; do \
-      DIR_TIME=\$(date -d \"\${DIR%_*}\" +\%s 2>/dev/null) || continue && \
-      if [ \"\$DIR_TIME\" -lt \"\$DAYS_60\" ]; then \
-        KEEP_KEY=\$(echo \$DIR | cut -c1-7) && \
-      elif [ \"\$DIR_TIME\" -lt \"\$DAYS_7\" ]; then \
-        KEEP_KEY=\$(echo \$DIR | cut -c1-10) && \
-      else \
-        KEEP_KEY=\$DIR && \
-      fi && \
-      echo \"\$KEEP_KEY \$DIR\"; \
-    done | awk '\''!seen[\$1]++ { next } { print \$2 }'\'' | while read DEL; do \
-      rm -rf /backup/\$DEL && \
-      echo \"Purged: \$DEL\"; \
-    done \
-  fi" > /etc/crontabs/root \
-  && crond -f -L /dev/stdout
+# Copy entrypoint
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
