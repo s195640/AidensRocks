@@ -40,7 +40,7 @@ mkdir -p "$DEST"
 log "INFO  Starting rsync from /data/ to $DEST"
 RSYNC_START=$(date +%s)
 
-rsync -av --chmod=D777,F777 --perms --stats /data/ "$DEST"/ 2>&1 | while read LINE; do
+rsync -av --chmod=D777,F777 --no-perms --no-owner --no-group --stats /data/ "$DEST"/ 2>&1 | while read LINE; do
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] RSYNC $LINE"
 done
 
