@@ -11,8 +11,15 @@ router.get("/", async (req, res) => {
     const rocksFoundRes = await client.query("select count(distinct rock_number) from journey");
     const journeysRes = await client.query("select count(*) from journey");
     const artistsRes = await client.query("SELECT COUNT(*) AS count FROM Artist");
-    const countriesRes = await client.query("select count(distinct country) from journey");
-    const statesRes = await client.query("select count(distinct state) from journey where country='United States'");
+    const countriesRes = await client.query(`
+      select count(distinct
+        CASE WHEN country IN ('United States', 'United States of America')
+             THEN 'United States'
+             ELSE country
+        END
+      ) from journey
+    `);
+    const statesRes = await client.query("select count(distinct state) from journey where country IN ('United States', 'United States of America')");
 
     // --- Detailed tables ---
     const artistsTable = await client.query(`
@@ -27,16 +34,26 @@ router.get("/", async (req, res) => {
     `);
 
     const countriesTable = await client.query(`
-      SELECT country AS name, COUNT(*) AS rocks
+      SELECT
+        CASE WHEN country IN ('United States', 'United States of America')
+             THEN 'United States'
+             ELSE country
+        END AS name,
+        COUNT(*) AS rocks
       FROM journey
-      GROUP BY country
-      ORDER BY country;
+      WHERE country IS NOT NULL
+      GROUP BY
+        CASE WHEN country IN ('United States', 'United States of America')
+             THEN 'United States'
+             ELSE country
+        END
+      ORDER BY name;
     `);
 
     const statesTable = await client.query(`
       SELECT state AS name, COUNT(*) AS rocks
       FROM journey
-      WHERE country = 'United States'
+      WHERE country IN ('United States', 'United States of America')
       GROUP BY state
       ORDER BY state;
     `);
