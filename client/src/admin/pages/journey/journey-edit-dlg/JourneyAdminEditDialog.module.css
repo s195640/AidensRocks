@@ -174,3 +174,129 @@
 .cancelButton:hover:not(:disabled) {
   background: #999;
 }
+
+/* Add New Images section */
+.newImagesSection {
+  position: relative;
+  padding: 0.5rem 0;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.imageSelectWrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.selectImagesBtn,
+.uploadImagesBtn {
+  background-color: #007BFF;
+  color: white;
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 6px rgba(0, 123, 255, 0.4);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  user-select: none;
+}
+
+.selectImagesBtn:hover:not(:disabled),
+.uploadImagesBtn:hover:not(:disabled) {
+  background-color: #0056b3;
+  box-shadow: 0 5px 12px rgba(0, 86, 179, 0.6);
+}
+
+.selectImagesBtn:disabled,
+.uploadImagesBtn:disabled {
+  background-color: #a3c0f9;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.imageErrorMessage {
+  color: #8B0000;
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin: 0.5rem 0 0;
+}
+
+.imagePreviewsFlex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.newImageContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.newImageContainer img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.removeNewImageBtn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.removeNewImageBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.heicSpinnerOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.heicSpinner {
+  width: 55px;
+  height: 55px;
+  border: 6px solid rgba(255, 255, 255, 0.4);
+  border-top: 6px solid #fff;
+  border-radius: 50%;
+  animation: heicSpin 0.8s linear infinite;
+}
+
+.heicSpinnerText {
+  color: white;
+  margin-top: 1rem;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+@keyframes heicSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}

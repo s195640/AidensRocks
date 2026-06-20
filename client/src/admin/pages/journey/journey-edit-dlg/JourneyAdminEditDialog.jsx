@@ -1,6 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import heic2any from "heic2any";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import styles from "./JourneyAdminEditDialog.module.css";
+
+const MAX_NEW_IMAGES = 10;
 
 const JourneyAdminEditDialog = ({
   post,
@@ -27,6 +30,12 @@ const JourneyAdminEditDialog = ({
   const [saving, setSaving] = useState(false);
   const [loadingImages, setLoadingImages] = useState(true);
   const [error, setError] = useState("");
+
+  const [newImages, setNewImages] = useState([]);
+  const [imageError, setImageError] = useState("");
+  const [heicLoading, setHeicLoading] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -87,6 +96,111 @@ const JourneyAdminEditDialog = ({
       setImages((imgs) => imgs.filter((img) => img.rpi_key !== rpi_key));
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleImageChange = async (e) => {
+    const files = Array.from(e.target.files);
+
+    const invalidFiles = files.filter((file) => {
+      const isImageMime = file.type.startsWith("image/");
+      const isHeicExt =
+        file.name.toLowerCase().endsWith(".heic") ||
+        file.name.toLowerCase().endsWith(".heif");
+      return !(isImageMime || isHeicExt);
+    });
+
+    if (invalidFiles.length > 0) {
+      setImageError("Only image files are allowed (.jpg, .png, .heic, etc).");
+      e.target.value = null;
+      return;
+    }
+
+    if (newImages.length + files.length > MAX_NEW_IMAGES) {
+      setImageError(`You can only add up to ${MAX_NEW_IMAGES} images at a time.`);
+      e.target.value = null;
+      return;
+    } else {
+      setImageError("");
+    }
+
+    const allowedFiles = files.slice(0, MAX_NEW_IMAGES - newImages.length);
+
+    setHeicLoading(true);
+
+    const processedFiles = [];
+
+    for (const file of allowedFiles) {
+      const isHeic =
+        file.name.toLowerCase().endsWith(".heic") ||
+        file.name.toLowerCase().endsWith(".heif");
+
+      if (isHeic) {
+        try {
+          const convertedBlob = await heic2any({
+            blob: file,
+            toType: "image/jpeg",
+            quality: 0.9,
+          });
+
+          const convertedFile = new File(
+            [convertedBlob],
+            file.name.replace(/\.(heic|heif)$/i, ".jpg"),
+            { type: "image/jpeg" }
+          );
+
+          processedFiles.push(convertedFile);
+        } catch (err) {
+          console.error("HEIC conversion failed:", err);
+          setImageError("Failed to convert HEIC image.");
+        }
+      } else {
+        processedFiles.push(file);
+      }
+    }
+
+    const fileURLs = processedFiles.map((file) => ({
+      url: URL.createObjectURL(file),
+      file,
+    }));
+
+    setNewImages((prev) => [...prev, ...fileURLs]);
+
+    setHeicLoading(false);
+    e.target.value = null;
+  };
+
+  const handleRemoveNewImage = (index) => {
+    setNewImages((prev) => prev.filter((_, i) => i !== index));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = null;
+    }
+  };
+
+  const handleUploadImages = async () => {
+    if (newImages.length === 0) return;
+    setUploadingImages(true);
+    setImageError("");
+
+    try {
+      const formData = new FormData();
+      newImages.forEach((imgObj) => formData.append("images", imgObj.file));
+
+      const res = await fetch(`/api/journey-admin/${post.rps_key}/images`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Failed to upload images");
+      const uploaded = await res.json();
+
+      setImages((prev) => [...prev, ...uploaded]);
+      setNewImages([]);
+      if (fileInputRef.current) fileInputRef.current.value = null;
+    } catch (err) {
+      console.error(err);
+      setImageError("Failed to upload images: " + err.message);
+    } finally {
+      setUploadingImages(false);
     }
   };
 
@@ -266,6 +380,66 @@ const JourneyAdminEditDialog = ({
           </tbody>
         </table>
       )}
+
+      <h3>Add New Images</h3>
+      <div className={styles.newImagesSection}>
+        {heicLoading && (
+          <div className={styles.heicSpinnerOverlay}>
+            <div className={styles.heicSpinner}></div>
+            <p className={styles.heicSpinnerText}>Converting HEIC images...</p>
+          </div>
+        )}
+
+        <input
+          id="newImages"
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleImageChange}
+          ref={fileInputRef}
+          className={styles.hiddenFileInput}
+        />
+
+        <div className={styles.imageSelectWrapper}>
+          <button
+            type="button"
+            className={styles.selectImagesBtn}
+            onClick={() => fileInputRef.current && fileInputRef.current.click()}
+            disabled={uploadingImages}
+          >
+            Select Images
+          </button>
+          <span>{newImages.length} of {MAX_NEW_IMAGES}</span>
+          <button
+            type="button"
+            className={styles.uploadImagesBtn}
+            onClick={handleUploadImages}
+            disabled={newImages.length === 0 || uploadingImages}
+          >
+            {uploadingImages ? "Uploading..." : "Upload"}
+          </button>
+        </div>
+
+        {imageError && <p className={styles.imageErrorMessage}>{imageError}</p>}
+
+        {newImages.length > 0 && (
+          <div className={styles.imagePreviewsFlex}>
+            {newImages.map((img, index) => (
+              <div className={styles.newImageContainer} key={index}>
+                <img src={img.url} alt={`New upload ${index}`} />
+                <button
+                  type="button"
+                  className={styles.removeNewImageBtn}
+                  onClick={() => handleRemoveNewImage(index)}
+                  disabled={uploadingImages}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </Dialog>
   );
 };

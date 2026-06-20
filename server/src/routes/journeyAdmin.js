@@ -3,6 +3,11 @@ const pool = require('../db/pool');
 const NodeGeocoder = require("node-geocoder");
 const fs = require("fs");
 const path = require('path');
+const sharp = require('sharp');
+const upload = require('../middleware/multer');
+const ensureDir = require('../utils/ensureDir');
+const convertToWebP = require('../utils/convert-to-webp/convertToWebP');
+const createThumbnails = require('../utils/convert-to-webp/createThumbnails');
 
 const router = express.Router();
 
@@ -118,6 +123,78 @@ router.get("/:rps_key/images", async (req, res) => {
   } catch (err) {
     console.error("Failed to load images:", err);
     res.status(500).json({ error: "Failed to load images" });
+  }
+});
+
+// POST /api/journey-admin/:rps_key/images - upload new images to an existing post
+router.post("/:rps_key/images", upload.array("images"), async (req, res) => {
+  const { rps_key } = req.params;
+  const files = req.files;
+
+  if (!files || files.length === 0) {
+    return res.status(400).json({ error: "No images provided" });
+  }
+
+  try {
+    const postRes = await pool.query(
+      "SELECT rock_number, uuid FROM journey WHERE rps_key = $1",
+      [rps_key]
+    );
+    if (postRes.rowCount === 0) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    const { rock_number, uuid } = postRes.rows[0];
+
+    const orderRes = await pool.query(
+      "SELECT COALESCE(MAX(upload_order), 0) AS max_order FROM journey_image WHERE rps_key = $1",
+      [rps_key]
+    );
+    let nextOrder = orderRes.rows[0].max_order + 1;
+
+    const baseDir = path.resolve("media", "rocks", String(rock_number), uuid);
+    const originalDir = path.join(baseDir, "o");
+    const webpDir = path.join(baseDir, "webp");
+    const smDir = path.join(baseDir, "sm");
+
+    await ensureDir(originalDir);
+    await ensureDir(webpDir);
+    await ensureDir(smDir);
+
+    const newImages = [];
+
+    for (const file of files) {
+      const ext = path.extname(file.originalname);
+      const baseName = `${nextOrder}_${uuid}`;
+      const fullName = baseName + ext;
+      const originalPath = path.join(originalDir, fullName);
+      const webpPath = path.join(webpDir, `${baseName}.webp`);
+      const smPath = path.join(smDir, `${baseName}.webp`);
+
+      const metadata = await sharp(file.buffer).metadata();
+      const width = metadata.width || null;
+      const height = metadata.height || null;
+
+      await fs.promises.writeFile(originalPath, file.buffer);
+      await convertToWebP(originalPath, webpPath);
+      await createThumbnails(webpPath, smPath, 300, 300);
+
+      const { rows } = await pool.query(
+        `INSERT INTO journey_image (
+           rps_key, original_name, current_name, upload_order, width, height, show
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, true)
+         RETURNING rpi_key, original_name, current_name, upload_order, show, width, height`,
+        [rps_key, file.originalname, baseName, nextOrder, width, height]
+      );
+
+      newImages.push(rows[0]);
+      nextOrder++;
+    }
+
+    res.status(201).json(newImages);
+  } catch (err) {
+    console.error(`POST /api/journey-admin/${rps_key}/images error:`, err);
+    res.status(500).json({ error: "Failed to upload images" });
   }
 });
 
