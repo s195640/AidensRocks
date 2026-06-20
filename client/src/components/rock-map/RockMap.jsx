@@ -30,8 +30,6 @@ export default function RockMap({ pins = [] }) {
     setFilters((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  console.log(pins)
-
   const visiblePins = pins.filter((pin) => {
     if (pin.year === 2025 && !filters.show2025) return false;
     if (pin.year === 2026 && !filters.show2026) return false;
