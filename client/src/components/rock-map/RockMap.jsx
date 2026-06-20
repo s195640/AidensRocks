@@ -16,11 +16,39 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
+// Default and green marker icons. Both are always passed explicitly to
+// <Marker icon> (never omitted) because react-leaflet's Marker only calls
+// setIcon when the new icon prop is non-null, so swapping between "an icon"
+// and "no icon prop" silently fails to revert the marker's color.
+const defaultIcon = L.icon({
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const greenIcon = L.icon({
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+  className: styles.greenMarkerIcon,
+});
+
 export default function RockMap({ pins = [] }) {
   const [selectedRock, setSelectedRock] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [filters, setFilters] = useState({ show2025: true, show2026: true });
   const [rockNumberQuery, setRockNumberQuery] = useState("");
+  const [highlightQuery, setHighlightQuery] = useState("");
   const mapURL = ["https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
     "https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png",
@@ -56,15 +84,25 @@ export default function RockMap({ pins = [] }) {
       >
         <TileLayer url={mapURL[3]} />
 
-        {visiblePins.map((pin) => (
-          <Marker
-            key={pin.id}
-            position={pin.coords}
-            eventHandlers={{
-              click: () => setSelectedRock(pin.label),
-            }}
-          />
-        ))}
+        {visiblePins.map((pin) => {
+          const trimmedHighlight = highlightQuery.trim();
+          const isHighlighted =
+            trimmedHighlight && pin.label === trimmedHighlight;
+
+          return (
+            <Marker
+              key={pin.id}
+              position={pin.coords}
+              icon={isHighlighted ? greenIcon : defaultIcon}
+              eventHandlers={{
+                click: () => {
+                  setSelectedRock(pin.label);
+                  setHighlightQuery(pin.label);
+                },
+              }}
+            />
+          );
+        })}
       </MapContainer>
 
       <button
@@ -75,6 +113,27 @@ export default function RockMap({ pins = [] }) {
       >
         ⚙
       </button>
+
+      <div className={styles.highlightInputWrap}>
+        <input
+          type="text"
+          className={styles.highlightInput}
+          placeholder="Rock #"
+          aria-label="Highlight rock number"
+          value={highlightQuery}
+          onChange={(e) => setHighlightQuery(e.target.value)}
+        />
+        {highlightQuery && (
+          <button
+            type="button"
+            className={styles.highlightClearBtn}
+            aria-label="Clear highlight"
+            onClick={() => setHighlightQuery("")}
+          >
+            ✕
+          </button>
+        )}
+      </div>
 
       <Dialog
         isOpen={settingsOpen}
