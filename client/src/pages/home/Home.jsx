@@ -2,6 +2,7 @@ import BkgImage from "../../components/bkgimage/BkgImage";
 import ContentBody from "../../components/content-body/ContentBody";
 import Counter from "../../components/counter/Counter";
 import FloatingRockLink from "../../components/floating-rock-link/FloatingRockLink";
+import InHeavenCounter from "../../components/in-heaven-counter/InHeavenCounter";
 
 const Home = () => {
   const backgroundImage = `/media/bkg/home_bkg.webp`;
@@ -17,6 +18,7 @@ const Home = () => {
         <h1>Aiden's Rocks</h1>
         <p>In Loving Memory of Aiden Armitage</p>
         <p>9/14/2022 - 5/20/2025</p>
+        <InHeavenCounter />
       </BkgImage>
 
       <ContentBody>

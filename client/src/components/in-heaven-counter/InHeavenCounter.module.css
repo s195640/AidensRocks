@@ -1,0 +1,68 @@
+.counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.label {
+  font-weight: 500;
+  font-size: clamp(0.5rem, 15vw, 1rem);
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.units {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.units > .unit:nth-child(3) {
+  margin-right: 0.5rem;
+}
+
+.unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 48px;
+  padding: 0.4rem 0.6rem;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+}
+
+.value {
+  font-size: clamp(1rem, 4vw, 1.6rem);
+  font-weight: 700;
+  line-height: 1;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.unitLabel {
+  margin-top: 0.2rem;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+@media (max-width: 768px) {
+  .unit {
+    min-width: 40px;
+    padding: 0.3rem 0.45rem;
+  }
+
+  .units > .unit:nth-child(3) {
+    margin-right: 0;
+  }
+
+  .units {
+    row-gap: 0.4rem;
+  }
+}
