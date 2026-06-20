@@ -215,17 +215,19 @@ export default function UploadRockForm({ onClose }) {
         )}
 
         <div className="rock-form">
-          <button
-            type="button"
-            onClick={onClose}
-            className="close-btn"
-            aria-label="Close form"
-            disabled={loading}
-          >
-            ×
-          </button>
+          <div className="rock-form-header">
+            <h2 id="upload-rock-title">Upload Your Rock</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="close-btn"
+              aria-label="Close form"
+              disabled={loading}
+            >
+              ×
+            </button>
+          </div>
 
-          <h2 id="upload-rock-title">Upload Your Rock</h2>
           <p className="upload-note">
             <strong>
               Thank you for helping us remember our baby! Provide the rock number, location, comment, and at least 1 image.  After you submit check the Track the Rocks page for the post.

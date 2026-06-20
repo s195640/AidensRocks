@@ -135,7 +135,7 @@ router.get('/locations/all', async (req, res) => {
   try {
     const result = await pool.query(
       `
-      SELECT rps_key, rock_number, latitude, longitude
+      SELECT rps_key, rock_number, latitude, longitude, date
       FROM journey
       WHERE rock_number > 0
         AND show = TRUE

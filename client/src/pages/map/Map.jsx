@@ -16,6 +16,7 @@ const Map = () => {
           id: row.rps_key,
           coords: [row.latitude, row.longitude],
           label: row.rock_number.toString(),
+          year: row.date ? new Date(row.date).getFullYear() : null,
         }));
         setPins(pinData);
       } catch (err) {

@@ -45,3 +45,119 @@
   cursor: pointer;
   color: #333;
 }
+
+/* Settings button, placed to the right of the default Leaflet zoom control.
+   Offset by the mapContainer's 50px top padding so it lines up with the
+   zoom control, which lives inside .map (not .mapContainer). */
+.settingsBtn {
+  position: absolute;
+  top: 60px;
+  left: 52px;
+  z-index: 1000;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  background-clip: padding-box;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+}
+
+.settingsBtn:hover {
+  background: #f4f4f4;
+}
+
+.rockNumberRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #444;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 0.5rem;
+}
+
+.rockNumberInput {
+  width: 120px;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: normal;
+}
+
+.rockNumberInput:focus {
+  border-color: #4caf50;
+  outline: none;
+}
+
+.switchRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #444;
+  cursor: pointer;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.switchTrack {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ccc;
+  border-radius: 24px;
+  transition: background-color 0.2s ease;
+}
+
+.switchTrack::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.switch input:checked + .switchTrack {
+  background: #4caf50;
+}
+
+.switch input:checked + .switchTrack::before {
+  transform: translateX(20px);
+}
