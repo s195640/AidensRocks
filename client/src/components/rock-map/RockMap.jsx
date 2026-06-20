@@ -23,7 +23,10 @@ export default function RockMap({ pins = [] }) {
   const [rockNumberQuery, setRockNumberQuery] = useState("");
   const mapURL = ["https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-    "https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png"
+    "https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png",
+    // Esri's legacy World Street Map service - free, no API key, English labels by default.
+    // Note: tile order is {z}/{y}/{x} (row before column), unlike the other providers above.
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
   ];
 
   const toggleFilter = (key) => {
@@ -51,10 +54,7 @@ export default function RockMap({ pins = [] }) {
         worldCopyJump={false} // Prevents infinite horizontal panning
         maxBounds={[[-90, -180], [90, 180]]} // Keeps inside the world bounds
       >
-        <TileLayer
-          url={mapURL[1]}
-          noWrap={true} // Stops repeating tiles horizontally
-        />
+        <TileLayer url={mapURL[3]} />
 
         {visiblePins.map((pin) => (
           <Marker
