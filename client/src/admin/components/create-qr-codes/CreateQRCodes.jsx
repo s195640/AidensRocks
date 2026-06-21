@@ -1,10 +1,20 @@
+import axios from "axios";
 import QRCode from "qrcode";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Job from "../../components/job/Job";
 import styles from "./CreateQRCodes.module.css";
 
 const CreateQRCodes = () => {
-  const [rangeStart, setRangeStart] = useState(101); // default value 101
+  const [rangeStart, setRangeStart] = useState(101);
+
+  useEffect(() => {
+    const loadDefaultRangeStart = async () => {
+      const res = await axios.get("/api/rocks");
+      const maxRockNumber = res.data.reduce((max, rock) => Math.max(max, rock.rock_number), 0);
+      setRangeStart(maxRockNumber + 1);
+    };
+    loadDefaultRangeStart();
+  }, []);
 
   const handlePreview = async () => {
     const rangeEnd = rangeStart + 109; // automatically +109
