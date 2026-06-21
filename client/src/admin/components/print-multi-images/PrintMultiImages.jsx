@@ -1,5 +1,7 @@
-import { useState } from "react";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import Job from "../job/Job";
+import Dialog from "../../../components/simple-components/dialog/Dialog";
 import styles from "./PrintMultiImages.module.css";
 
 const PrintMultiImages = () => {
@@ -8,17 +10,69 @@ const PrintMultiImages = () => {
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [customSize, setCustomSize] = useState({ width: 100, height: 100 });
 
+  const [facesAlbum, setFacesAlbum] = useState(null);
+  const [albumDialogOpen, setAlbumDialogOpen] = useState(false);
+  const [albumPhotos, setAlbumPhotos] = useState([]);
+  const [albumLoading, setAlbumLoading] = useState(false);
+
+  useEffect(() => {
+    const loadFacesAlbum = async () => {
+      try {
+        const res = await axios.get("/api/albums");
+        const album = res.data.find((a) => a.name.toLowerCase() === "faces");
+        setFacesAlbum(album || null);
+      } catch (err) {
+        console.error("Failed to load albums:", err);
+      }
+    };
+    loadFacesAlbum();
+  }, []);
+
+  const loadImageFile = (file) => {
+    setImageFile(file);
+    setImageName(file.name);
+
+    const img = new Image();
+    img.onload = () => {
+      setImageSize({ width: img.width, height: img.height });
+    };
+    img.src = URL.createObjectURL(file);
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      setImageName(file.name);
+    if (file) loadImageFile(file);
+  };
 
-      const img = new Image();
-      img.onload = () => {
-        setImageSize({ width: img.width, height: img.height });
-      };
-      img.src = URL.createObjectURL(file);
+  const openAlbumDialog = async () => {
+    if (!facesAlbum) return;
+    setAlbumDialogOpen(true);
+    setAlbumLoading(true);
+    try {
+      const res = await axios.get(`/api/albums/${facesAlbum.pa_key}/photos`);
+      setAlbumPhotos(res.data);
+    } catch (err) {
+      console.error("Failed to load faces album photos:", err);
+      setAlbumPhotos([]);
+    } finally {
+      setAlbumLoading(false);
+    }
+  };
+
+  const handleSelectAlbumPhoto = async (photo) => {
+    try {
+      const res = await fetch(`/media/albums/${facesAlbum.name}/webp/${photo.name}`);
+      const blob = await res.blob();
+      loadImageFile(new File([blob], photo.name, { type: blob.type }));
+
+      const sizeMatch = photo.desc?.match(/(\d+)\s*[x×]\s*(\d+)/i);
+      if (sizeMatch) {
+        setCustomSize({ width: Number(sizeMatch[1]), height: Number(sizeMatch[2]) });
+      }
+
+      setAlbumDialogOpen(false);
+    } catch (err) {
+      console.error("Failed to load selected album photo:", err);
     }
   };
 
@@ -116,6 +170,11 @@ const PrintMultiImages = () => {
           <label htmlFor="imageUpload" className={styles.pmiButton}>
             Choose Image
           </label>
+          {facesAlbum && (
+            <button type="button" onClick={openAlbumDialog} className={styles.pmiButton}>
+              Choose from Faces Album
+            </button>
+          )}
           <span className={styles.pmiFilename}>{imageName}</span>
         </div>
 
@@ -155,6 +214,30 @@ const PrintMultiImages = () => {
           Print Preview
         </button>
       </div>
+
+      <Dialog
+        isOpen={albumDialogOpen}
+        onClose={() => setAlbumDialogOpen(false)}
+        title="Choose from Faces Album"
+        closeOnOutsideClick
+      >
+        {albumLoading ? (
+          <p>Loading...</p>
+        ) : (
+          <div className={styles.pmiAlbumGrid}>
+            {albumPhotos.map((photo) => (
+              <div key={photo.p_key} className={styles.pmiAlbumItem} onClick={() => handleSelectAlbumPhoto(photo)}>
+                <img
+                  src={`/media/albums/${facesAlbum.name}/webp300x300/${photo.name}`}
+                  alt={photo.display_name || photo.name}
+                  className={styles.pmiAlbumThumb}
+                />
+                {photo.desc && <span className={styles.pmiAlbumDesc}>{photo.desc}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </Dialog>
     </Job>
   );
 };
