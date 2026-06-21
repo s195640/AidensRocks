@@ -1,7 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import Job from "../job/Job";
-import Dialog from "../../../components/simple-components/dialog/Dialog";
 import styles from "./PrintMultiImages.module.css";
 
 const PrintMultiImages = () => {
@@ -11,18 +10,26 @@ const PrintMultiImages = () => {
   const [customSize, setCustomSize] = useState({ width: 100, height: 100 });
 
   const [facesAlbum, setFacesAlbum] = useState(null);
-  const [albumDialogOpen, setAlbumDialogOpen] = useState(false);
   const [albumPhotos, setAlbumPhotos] = useState([]);
   const [albumLoading, setAlbumLoading] = useState(false);
+  const [selectedPhotoKey, setSelectedPhotoKey] = useState(null);
 
   useEffect(() => {
     const loadFacesAlbum = async () => {
+      setAlbumLoading(true);
       try {
-        const res = await axios.get("/api/albums");
-        const album = res.data.find((a) => a.name.toLowerCase() === "faces");
+        const albumsRes = await axios.get("/api/albums");
+        const album = albumsRes.data.find((a) => a.name.toLowerCase() === "faces");
         setFacesAlbum(album || null);
+
+        if (album) {
+          const photosRes = await axios.get(`/api/albums/${album.pa_key}/photos`);
+          setAlbumPhotos(photosRes.data);
+        }
       } catch (err) {
-        console.error("Failed to load albums:", err);
+        console.error("Failed to load faces album:", err);
+      } finally {
+        setAlbumLoading(false);
       }
     };
     loadFacesAlbum();
@@ -41,21 +48,9 @@ const PrintMultiImages = () => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) loadImageFile(file);
-  };
-
-  const openAlbumDialog = async () => {
-    if (!facesAlbum) return;
-    setAlbumDialogOpen(true);
-    setAlbumLoading(true);
-    try {
-      const res = await axios.get(`/api/albums/${facesAlbum.pa_key}/photos`);
-      setAlbumPhotos(res.data);
-    } catch (err) {
-      console.error("Failed to load faces album photos:", err);
-      setAlbumPhotos([]);
-    } finally {
-      setAlbumLoading(false);
+    if (file) {
+      setSelectedPhotoKey(null);
+      loadImageFile(file);
     }
   };
 
@@ -70,7 +65,7 @@ const PrintMultiImages = () => {
         setCustomSize({ width: Number(sizeMatch[1]), height: Number(sizeMatch[2]) });
       }
 
-      setAlbumDialogOpen(false);
+      setSelectedPhotoKey(photo.p_key);
     } catch (err) {
       console.error("Failed to load selected album photo:", err);
     }
@@ -176,13 +171,34 @@ const PrintMultiImages = () => {
           <label htmlFor="imageUpload" className={styles.pmiButton}>
             Choose Image
           </label>
-          {facesAlbum && (
-            <button type="button" onClick={openAlbumDialog} className={styles.pmiButton}>
-              Choose from Faces Album
-            </button>
-          )}
           <span className={styles.pmiFilename}>{imageName}</span>
         </div>
+
+        {albumLoading && <p>Loading Faces Album...</p>}
+
+        {!albumLoading && albumPhotos.length > 0 && (
+          <div className={styles.pmiAlbumSection}>
+            <span className={styles.pmiAlbumSectionLabel}>Or choose from Faces Album:</span>
+            <div className={styles.pmiAlbumGrid}>
+              {albumPhotos.map((photo) => (
+                <div
+                  key={photo.p_key}
+                  className={`${styles.pmiAlbumItem} ${
+                    selectedPhotoKey === photo.p_key ? styles.pmiAlbumItemSelected : ""
+                  }`}
+                  onClick={() => handleSelectAlbumPhoto(photo)}
+                >
+                  <img
+                    src={`/media/albums/${facesAlbum.name}/webp300x300/${photo.name}`}
+                    alt={photo.display_name || photo.name}
+                    className={styles.pmiAlbumThumb}
+                  />
+                  {photo.desc && <span className={styles.pmiAlbumDesc}>{photo.desc}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {imageFile && (
           <div className={styles.pmiSizeRow}>
@@ -220,30 +236,6 @@ const PrintMultiImages = () => {
           Print Preview
         </button>
       </div>
-
-      <Dialog
-        isOpen={albumDialogOpen}
-        onClose={() => setAlbumDialogOpen(false)}
-        title="Choose from Faces Album"
-        closeOnOutsideClick
-      >
-        {albumLoading ? (
-          <p>Loading...</p>
-        ) : (
-          <div className={styles.pmiAlbumGrid}>
-            {albumPhotos.map((photo) => (
-              <div key={photo.p_key} className={styles.pmiAlbumItem} onClick={() => handleSelectAlbumPhoto(photo)}>
-                <img
-                  src={`/media/albums/${facesAlbum.name}/webp300x300/${photo.name}`}
-                  alt={photo.display_name || photo.name}
-                  className={styles.pmiAlbumThumb}
-                />
-                {photo.desc && <span className={styles.pmiAlbumDesc}>{photo.desc}</span>}
-              </div>
-            ))}
-          </div>
-        )}
-      </Dialog>
     </Job>
   );
 };
