@@ -117,6 +117,10 @@ const PrintMultiImages = () => {
         <head>
           <title>Print Preview</title>
           <style>
+            @page {
+              size: auto;
+              margin: 0;
+            }
             body {
               margin: 0;
               padding: 0;
@@ -144,13 +148,15 @@ const PrintMultiImages = () => {
               .map(() => `<img src="${scaledDataURL}" class="print-image" />`)
               .join("")}
           </div>
+          <script>
+            window.onload = () => setTimeout(() => window.print(), 250);
+          </script>
         </body>
         </html>
       `);
 
       preview.document.close();
       preview.focus();
-      preview.print();
     };
 
     img.src = imgURL;

@@ -95,7 +95,7 @@ const CreateQRCodes = () => {
           ${qrHTMLChunks.join("")}
         </div>
         <script>
-          window.onload = () => window.print();
+          window.onload = () => setTimeout(() => window.print(), 250);
         </script>
       </body>
       </html>
