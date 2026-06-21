@@ -1,8 +1,31 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import jsQR from "jsqr";
 import styles from "./RockCreateEditDlg.module.css";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import LightboxRock from "../../../../components/lightbox-rock/LightboxRock";
+
+const decodeQrFromFile = (file) =>
+  new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const result = jsQR(imageData.data, imageData.width, imageData.height);
+      URL.revokeObjectURL(url);
+      resolve(result ? result.data : null);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    img.src = url;
+  });
 
 const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, rocks }) => {
   const [rockNumber, setRockNumber] = useState("");
@@ -21,8 +44,9 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
       setComment(selectedRock.comment || "");
       setImageFile(null);
     } else {
+      const defaultArtist = artists.find((a) => a.display_name === "Ashley Armitage");
       setRockNumber("");
-      setSelectedArtistKeys([]);
+      setSelectedArtistKeys(defaultArtist ? [defaultArtist.ra_key] : []);
       setComment("");
       setImageFile(null);
     }
@@ -67,6 +91,22 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
       setError("Error saving rock. Please try again.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    setImageFile(file);
+    if (file) {
+      const qrText = await decodeQrFromFile(file);
+      if (qrText) {
+        try {
+          const rockNumberFromQr = new URL(qrText).searchParams.get("r");
+          if (rockNumberFromQr) setRockNumber(rockNumberFromQr);
+        } catch {
+          // QR didn't decode to a URL we can parse, leave Rock Number as-is
+        }
+      }
     }
   };
 
@@ -142,7 +182,7 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
           <input
             type="file"
             accept="image/*"
-            onChange={(e) => setImageFile(e.target.files[0])}
+            onChange={handleImageChange}
             required={!selectedRock}
           />
 
