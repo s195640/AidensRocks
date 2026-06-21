@@ -5,22 +5,51 @@ import styles from "./RockCreateEditDlg.module.css";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import LightboxRock from "../../../../components/lightbox-rock/LightboxRock";
 
+// jsQR's binarizer struggles to find small QR modules in full-resolution camera
+// photos (lots of JPEG noise relative to module size), so scan progressively
+// larger downscaled copies of the image until one resolves. Starting small
+// (400px) skips the usually-futile full-resolution attempt.
+const SCAN_MAX_DIMENSIONS = [400, 800, 1200, 1600, 2400, null];
+
+const scanImageForQr = (img, maxDimension) => {
+  let { width, height } = img;
+  if (maxDimension && Math.max(width, height) > maxDimension) {
+    const scale = maxDimension / Math.max(width, height);
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, width, height);
+  const imageData = ctx.getImageData(0, 0, width, height);
+  return jsQR(imageData.data, imageData.width, imageData.height);
+};
+
 const decodeQrFromFile = (file) =>
   new Promise((resolve) => {
+    console.log("[QR] scanning file for QR code:", file.name, file.size, "bytes");
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const result = jsQR(imageData.data, imageData.width, imageData.height);
+      console.log("[QR] image loaded:", img.width, "x", img.height);
+      let result = null;
+      for (const maxDimension of SCAN_MAX_DIMENSIONS) {
+        result = scanImageForQr(img, maxDimension);
+        console.log(`[QR] attempt at max dimension ${maxDimension ?? "original"}:`, result ? "found" : "not found");
+        if (result) break;
+      }
       URL.revokeObjectURL(url);
+      if (result) {
+        console.log("[QR] QR code found:", result.data);
+      } else {
+        console.log("[QR] no QR code found in image after all attempts");
+      }
       resolve(result ? result.data : null);
     };
     img.onerror = () => {
+      console.log("[QR] failed to load image for QR scanning");
       URL.revokeObjectURL(url);
       resolve(null);
     };
@@ -102,9 +131,10 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
       if (qrText) {
         try {
           const rockNumberFromQr = new URL(qrText).searchParams.get("r");
+          console.log("[QR] parsed rock number from QR:", rockNumberFromQr);
           if (rockNumberFromQr) setRockNumber(rockNumberFromQr);
-        } catch {
-          // QR didn't decode to a URL we can parse, leave Rock Number as-is
+        } catch (err) {
+          console.log("[QR] QR content was not a parseable URL:", qrText, err);
         }
       }
     }
