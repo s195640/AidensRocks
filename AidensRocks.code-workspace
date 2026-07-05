@@ -4,5 +4,31 @@
 			"path": "."
 		}
   ],
-  "settings": {}
+  "settings": {},
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Start",
+        "type": "shell",
+        "command": "docker compose -f ${workspaceFolder}/data/docker-compose/docker-compose-dev.yml up -d --build",
+        "problemMatcher": [],
+        "group": "build"
+      },
+      {
+        "label": "Stop",
+        "type": "shell",
+        "command": "docker compose -f ${workspaceFolder}/data/docker-compose/docker-compose-dev.yml down",
+        "problemMatcher": [],
+        "group": "build"
+      },
+      {
+        "label": "Restart",
+        "type": "shell",
+        "command": "docker compose -f ${workspaceFolder}/data/docker-compose/docker-compose-dev.yml restart",
+        "problemMatcher": [],
+        "group": "build"
+      }
+    ]
+  }
 }
