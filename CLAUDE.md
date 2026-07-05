@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## What this project is
+
+"Journey Through the World With Aiden's Rocks" is a memorial site built in honor of Aiden Asher Armitage, who passed away in May 2025 at 2.5 years old. Aiden loved adventure — swimming, hiking, national parks, and collecting rocks to throw into water or at trees. His parents promised him a life of exploration, and this site continues that promise: rocks collected in his memory travel to new places (national parks, countries, landmarks), and their journeys are documented and shown on an interactive map, so Aiden's adventurous spirit keeps growing even though he isn't here to grow with it.
+
+The public site shares these rock journeys with family and visitors. The `/admin` section is where the family manages and uploads new rock journey content (photos, locations, journal entries).
+
+This is a deeply personal, emotionally significant project, not just a technical one. When touching user-facing copy, tone, or content presentation, keep that context in mind — the engineering conversation itself should stay normal and direct.
+
 ## Project shape
 
 Two independent apps, no root-level `package.json`/workspace — run commands from inside each directory:

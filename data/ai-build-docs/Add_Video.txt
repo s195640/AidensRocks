@@ -1,0 +1,77 @@
+Context: Aiden's Rocks memorial site. Photos/Albums subsystem (server/src/routes/albums.js,
+client/src/pages/photos/*, client/src/pages/admin/albums/*) currently supports images only.
+Adding video support. This subsystem is synchronous admin-triggered sync (upload files, then
+admin clicks Sync), NOT the async rock-journey upload pipeline — don't apply that pattern here.
+
+Production runs pglogical replication across 2 Postgres nodes (provider + subscriber). Local
+dev has no pglogical. Past practice: schema (DDL) changes are applied by hand, identically, on
+both nodes — pglogical does not replicate DDL automatically. Never attempt to run any SQL
+against a live/production database yourself. Produce SQL files for me to run manually.
+
+No new tables are needed for this feature — media_type and duration live on the existing
+photos table.
+
+Before writing any code, investigate and report back on:
+1. server/src/utils/albums/syncAlbums.js — how it currently names files across o/, webp/,
+   webp300x300/, and whether extension is stored in DB or assumed. DELETE /photos/:p_key
+   in albums.js hardcodes .jpg for o/ and .webp for webp/webp300x300 — confirm whether that's
+   safe for photos and what it implies for video.
+2. server/src/app.js — how /media is served (express.static vs custom route), to confirm
+   HTTP range request support for video playback/scrubbing.
+3. data/sql/droptables.sql — check whether it references columns specifically (vs. just
+   table names) before ruling out changes.
+4. data/sql/restorebackup.sql — check whether it does column-explicit INSERT/COPY
+   statements. If so, it needs media_type/duration_seconds added or it'll silently drop
+   them on restore.
+5. data/sql/pglogical.sql — confirm it defines replication sets by table, not column,
+   before ruling out changes.
+6. data/sql/sequenceOffset.sql — quick check that it's sequence-value-only and unaffected.
+
+Then produce (as files for me to review, don't run any of them):
+
+1. data/sql/createdb.sql — update the CREATE TABLE photos block to include
+   media_type VARCHAR(10) NOT NULL DEFAULT 'photo' and duration_seconds INTEGER NULL,
+   so a fresh install matches production going forward.
+
+2. A NEW, separate file — data/sql/migrations/add_video_support.sql (or similar, your
+   call on naming convention if one exists in the repo) — idempotent
+   (ADD COLUMN IF NOT EXISTS) ALTER TABLE statements for the same two columns, meant to
+   be run by hand on provider then subscriber in production. This must NOT be derived by
+   just copy-pasting the createdb.sql block — it needs to be safe against a live table
+   with existing rows and safe to re-run if a deploy step fails partway.
+
+3. Any updates to restorebackup.sql / droptables.sql / pglogical.sql identified as
+   necessary in the investigation step above — call each one out individually with
+   the reasoning, don't bundle silently.
+
+New dependencies to flag before installing: fluent-ffmpeg (npm) and confirm ffmpeg
+binary availability (system-level install, not npm — note in deploy docs if any exist).
+
+Implementation (after the above is confirmed):
+
+4. syncAlbums.js: branch on file extension. Video files get poster-frame extraction to
+   webp/webp300x300 (same paths/sizes as photos, so downstream consumers don't need to
+   special-case discovery), duration probed via ffmpeg and stored, source video moved to
+   a new video/ folder tier. Set media_type accordingly on insert.
+
+5. albums.js DELETE /photos/:p_key: fix the hardcoded extension assumption so video files
+   (and the video/ tier file) get cleaned up correctly. Don't change photo deletion
+   behavior unless step 1 shows it's already wrong.
+
+6. Admin: AlbumsCreateDlg.jsx upload input — accept video mimetypes alongside image/*.
+
+7. Admin: AlbumsSingleLightbox.jsx / AlbumsMultiLightbox.jsx — add a video slide branch
+   (yet-another-react-lightbox supports type: "video" with sources/poster).
+
+8. Public: PhotoAlbum.jsx and PhotoCollection.jsx — grid tile shows poster + play-icon
+   overlay when media_type === 'video'; PhotoCollection's fullPhotos array builds a
+   video-type lightbox slide instead of an image slide for those items.
+
+Don't touch: rock journey upload routes, AuthContext, Leaflet map components — out of
+scope for this task.
+
+No test suite exists in this repo — mention if a specific test would be valuable, but
+don't scaffold test infrastructure.
+
+If any UI change needs visual verification, ask me before running automated browser
+checks — don't assume it.
