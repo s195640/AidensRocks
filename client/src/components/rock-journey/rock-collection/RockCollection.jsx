@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Play } from "lucide-react";
 
 import "./RockCollection.css";
 
@@ -8,6 +9,7 @@ import Counter from "yet-another-react-lightbox/plugins/counter";
 import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
 import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import Video from "yet-another-react-lightbox/plugins/video";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 
 
@@ -24,10 +26,18 @@ const RockCollection = ({ path, imagenames, date, location, comment, journeyNumb
 
   // Prepare images for Lightbox
   // Lightbox expects array of objects with `src` property (full image URL)
-  const images = imagenames.map((name) => ({
-    src: `${path}/webp/${name}.webp`,
-    alt: `Rock image`,
-  }));
+  const images = imagenames.map((img) =>
+    img.media_type === "video"
+      ? {
+          type: "video",
+          poster: `${path}/webp/${img.name}.webp`,
+          sources: [{ src: `${path}/video/${img.name}.mp4`, type: "video/mp4" }],
+        }
+      : {
+          src: `${path}/webp/${img.name}.webp`,
+          alt: `Rock image`,
+        }
+  );
 
   const openLightbox = (index) => {
     setCurrentIndex(index);
@@ -59,9 +69,9 @@ const RockCollection = ({ path, imagenames, date, location, comment, journeyNumb
 
         <div className={`image-grid ${imagenames.length === 1 ? "single-image" : ""}`}>
           {imagenames.slice(0, 2).map((img, index) => (
-            <div className="thumbnail-wrapper" key={img}>
+            <div className="thumbnail-wrapper" key={img.name}>
               <img
-                src={`${path}/sm/${img}.webp`}
+                src={`${path}/sm/${img.name}.webp`}
                 alt={`Rock image ${index + 1}`}
                 className="thumbnail"
                 onClick={() => openLightbox(index)}
@@ -72,6 +82,11 @@ const RockCollection = ({ path, imagenames, date, location, comment, journeyNumb
                   if (e.key === "Enter" || e.key === " ") openLightbox(index);
                 }}
               />
+              {img.media_type === "video" && (
+                <div className="play-icon-overlay">
+                  <Play size={32} fill="white" />
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -98,7 +113,7 @@ const RockCollection = ({ path, imagenames, date, location, comment, journeyNumb
           open={isLightboxOpen}
           index={currentIndex}
           close={() => setIsLightboxOpen(false)}
-          plugins={[Thumbnails, Fullscreen, Zoom, Counter, Slideshow, Captions]}
+          plugins={[Thumbnails, Fullscreen, Zoom, Counter, Slideshow, Captions, Video]}
           thumbnails={{
             position: "bottom",
             width: 100,
@@ -106,6 +121,7 @@ const RockCollection = ({ path, imagenames, date, location, comment, journeyNumb
             borderRadius: 4,
           }}
           slideshow={{ autoplay: false, delay: 3000 }}
+          video={{ controls: true, autoPlay: true }}
           captions={{
             descriptionTextAlign: "center",
             descriptionMaxLines: 2,

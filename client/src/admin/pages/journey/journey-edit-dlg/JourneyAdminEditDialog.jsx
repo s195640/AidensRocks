@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import heic2any from "heic2any";
+import { Play } from "lucide-react";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import styles from "./JourneyAdminEditDialog.module.css";
 
@@ -104,14 +105,15 @@ const JourneyAdminEditDialog = ({
 
     const invalidFiles = files.filter((file) => {
       const isImageMime = file.type.startsWith("image/");
+      const isVideoMime = file.type.startsWith("video/");
       const isHeicExt =
         file.name.toLowerCase().endsWith(".heic") ||
         file.name.toLowerCase().endsWith(".heif");
-      return !(isImageMime || isHeicExt);
+      return !(isImageMime || isVideoMime || isHeicExt);
     });
 
     if (invalidFiles.length > 0) {
-      setImageError("Only image files are allowed (.jpg, .png, .heic, etc).");
+      setImageError("Only image and video files are allowed (.jpg, .png, .heic, .mp4, .mov, etc).");
       e.target.value = null;
       return;
     }
@@ -351,13 +353,16 @@ const JourneyAdminEditDialog = ({
           <tbody>
             {images.map((img) => (
               <tr key={img.rpi_key}>
-                <td>
+                <td className={styles.thumbCell}>
                   <img
                     src={getThumbnailUrl(img)}
                     alt={img.original_name}
                     className={styles.imagePreview}
                     onClick={() => openImagesLightbox(post)}
                   />
+                  {img.media_type === "video" && (
+                    <Play size={20} fill="white" className={styles.playIconOverlay} />
+                  )}
                 </td>
                 <td>{img.original_name}</td>
                 <td>{img.show ? "Yes" : "No"}</td>
@@ -394,7 +399,7 @@ const JourneyAdminEditDialog = ({
           id="newImages"
           type="file"
           multiple
-          accept="image/*"
+          accept="image/*,video/*"
           onChange={handleImageChange}
           ref={fileInputRef}
           className={styles.hiddenFileInput}
@@ -407,7 +412,7 @@ const JourneyAdminEditDialog = ({
             onClick={() => fileInputRef.current && fileInputRef.current.click()}
             disabled={uploadingImages}
           >
-            Select Images
+            Select Files
           </button>
           <span>{newImages.length} of {MAX_NEW_IMAGES}</span>
           <button
@@ -426,7 +431,11 @@ const JourneyAdminEditDialog = ({
           <div className={styles.imagePreviewsFlex}>
             {newImages.map((img, index) => (
               <div className={styles.newImageContainer} key={index}>
-                <img src={img.url} alt={`New upload ${index}`} />
+                {img.file.type.startsWith("video/") ? (
+                  <video src={img.url} muted />
+                ) : (
+                  <img src={img.url} alt={`New upload ${index}`} />
+                )}
                 <button
                   type="button"
                   className={styles.removeNewImageBtn}

@@ -45,7 +45,7 @@ router.get('/', async (req, res) => {
   try {
     const result = await pool.query(`
 WITH images AS (
-    SELECT rps_key, ARRAY_AGG(current_name ORDER BY upload_order) AS imageNames
+    SELECT rps_key, json_agg(json_build_object('name', current_name, 'media_type', media_type) ORDER BY upload_order) AS imageNames
     FROM journey_image
     WHERE show = TRUE
     GROUP BY rps_key
@@ -90,7 +90,7 @@ router.get('/:rockNumber', async (req, res) => {
     const result = await pool.query(
       `
 WITH images AS (
-    SELECT rps_key, ARRAY_AGG(current_name ORDER BY upload_order) AS imageNames
+    SELECT rps_key, json_agg(json_build_object('name', current_name, 'media_type', media_type) ORDER BY upload_order) AS imageNames
     FROM journey_image
     WHERE show = TRUE
     GROUP BY rps_key

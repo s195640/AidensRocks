@@ -3,6 +3,7 @@ const fs = require('fs').promises;
 const ensureDir = require('../ensureDir');
 const convertToWebP = require('../convert-to-webp/convertToWebP');
 const createThumbnails = require('../convert-to-webp/createThumbnails');
+const processVideo = require('../processVideo');
 const sendEmail = require('../sendEmail');
 const db = require('../../db/pool');
 
@@ -11,12 +12,40 @@ async function processImagesInBackground(baseDir, name, safeRockNumber, commentS
     const originalDir = path.join(baseDir, 'o');
     const webpDir = path.join(baseDir, 'webp');
     const smDir = path.join(baseDir, 'sm');
+    const videoDir = path.join(baseDir, 'video');
 
     await ensureDir(webpDir);
-    await convertToWebP(originalDir, webpDir);
-
     await ensureDir(smDir);
-    await createThumbnails(webpDir, smDir, 300, 300);
+    await ensureDir(videoDir);
+
+    const { rows } = await db.query(
+      'SELECT current_name, media_type FROM journey_image WHERE rps_key = $1',
+      [rpsKey]
+    );
+    const originalFiles = await fs.readdir(originalDir);
+
+    for (const row of rows) {
+      const originalFile = originalFiles.find(
+        (f) => path.parse(f).name === row.current_name
+      );
+      if (!originalFile) {
+        console.warn(`⚠️ Original file for ${row.current_name} not found, skipping`);
+        continue;
+      }
+
+      const originalPath = path.join(originalDir, originalFile);
+      const webpOutputPath = path.join(webpDir, `${row.current_name}.webp`);
+      const smOutputPath = path.join(smDir, `${row.current_name}.webp`);
+
+      if (row.media_type === 'video') {
+        const videoOutputPath = path.join(videoDir, `${row.current_name}.mp4`);
+        await processVideo(originalPath, { webpOutputPath, videoOutputPath });
+      } else {
+        await convertToWebP(originalPath, webpOutputPath);
+      }
+
+      await createThumbnails(webpOutputPath, smOutputPath, 300, 300);
+    }
 
     // Only update DB if safeRockNumber > 0
     if (safeRockNumber > 0 && rpsKey) {

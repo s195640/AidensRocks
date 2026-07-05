@@ -8,6 +8,8 @@ const upload = require('../middleware/multer');
 const ensureDir = require('../utils/ensureDir');
 const convertToWebP = require('../utils/convert-to-webp/convertToWebP');
 const createThumbnails = require('../utils/convert-to-webp/createThumbnails');
+const processVideo = require('../utils/processVideo');
+const isVideoFile = require('../utils/isVideoFile');
 
 const router = express.Router();
 
@@ -113,7 +115,7 @@ router.get("/:rps_key/images", async (req, res) => {
   const { rps_key } = req.params;
   try {
     const query = `
-      SELECT rpi_key, original_name, current_name, upload_order, show, width, height
+      SELECT rpi_key, original_name, current_name, upload_order, show, width, height, media_type, duration_seconds
       FROM journey_image
       WHERE rps_key = $1
       ORDER BY upload_order ASC NULLS LAST, create_dt ASC
@@ -155,10 +157,12 @@ router.post("/:rps_key/images", upload.array("images"), async (req, res) => {
     const originalDir = path.join(baseDir, "o");
     const webpDir = path.join(baseDir, "webp");
     const smDir = path.join(baseDir, "sm");
+    const videoDir = path.join(baseDir, "video");
 
     await ensureDir(originalDir);
     await ensureDir(webpDir);
     await ensureDir(smDir);
+    await ensureDir(videoDir);
 
     const newImages = [];
 
@@ -169,22 +173,39 @@ router.post("/:rps_key/images", upload.array("images"), async (req, res) => {
       const originalPath = path.join(originalDir, fullName);
       const webpPath = path.join(webpDir, `${baseName}.webp`);
       const smPath = path.join(smDir, `${baseName}.webp`);
-
-      const metadata = await sharp(file.buffer).metadata();
-      const width = metadata.width || null;
-      const height = metadata.height || null;
+      const isVideo = isVideoFile(fullName);
 
       await fs.promises.writeFile(originalPath, file.buffer);
-      await convertToWebP(originalPath, webpPath);
+
+      let width = null;
+      let height = null;
+      let duration = null;
+
+      if (isVideo) {
+        const videoPath = path.join(videoDir, `${baseName}.mp4`);
+        const result = await processVideo(originalPath, {
+          webpOutputPath: webpPath,
+          videoOutputPath: videoPath,
+        });
+        duration = result.duration;
+        width = result.width;
+        height = result.height;
+      } else {
+        const metadata = await sharp(file.buffer).metadata();
+        width = metadata.width || null;
+        height = metadata.height || null;
+        await convertToWebP(originalPath, webpPath);
+      }
+
       await createThumbnails(webpPath, smPath, 300, 300);
 
       const { rows } = await pool.query(
         `INSERT INTO journey_image (
-           rps_key, original_name, current_name, upload_order, width, height, show
+           rps_key, original_name, current_name, upload_order, width, height, show, media_type, duration_seconds
          )
-         VALUES ($1, $2, $3, $4, $5, $6, true)
-         RETURNING rpi_key, original_name, current_name, upload_order, show, width, height`,
-        [rps_key, file.originalname, baseName, nextOrder, width, height]
+         VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8)
+         RETURNING rpi_key, original_name, current_name, upload_order, show, width, height, media_type, duration_seconds`,
+        [rps_key, file.originalname, baseName, nextOrder, width, height, isVideo ? 'video' : 'photo', duration]
       );
 
       newImages.push(rows[0]);

@@ -10,6 +10,7 @@ import Counter from "yet-another-react-lightbox/plugins/counter";
 import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
 import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import Video from "yet-another-react-lightbox/plugins/video";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 
 import "react-photo-album/rows.css";
@@ -88,13 +89,34 @@ const JourneyAdmin = () => {
     setPopupRockNumber(null);
   };
 
-  const openImagesLightbox = (post) => {
-    setImagesLightbox(
-      Array.from({ length: post.total_images }, (_, i) => ({
-        src: `/media/rocks/${post.rock_number}/${post.uuid}/webp/${i + 1}_${post.uuid}.webp`
-      }))
-    );
-    setImagesIndex(0);
+  const openImagesLightbox = async (post) => {
+    try {
+      const res = await fetch(`/api/journey-admin/${post.rps_key}/images`);
+      if (!res.ok) throw new Error("Failed to load images");
+      const data = await res.json();
+      const basePath = `/media/rocks/${post.rock_number}/${post.uuid}`;
+
+      setImagesLightbox(
+        data.map((img) => {
+          const posterSrc = `${basePath}/webp/${img.current_name}.webp`;
+          if (img.media_type === "video") {
+            return {
+              type: "video",
+              poster: posterSrc,
+              width: img.width,
+              height: img.height,
+              sources: [
+                { src: `${basePath}/video/${img.current_name}.mp4`, type: "video/mp4" },
+              ],
+            };
+          }
+          return { src: posterSrc };
+        })
+      );
+      setImagesIndex(0);
+    } catch (error) {
+      console.error("Failed to load images for lightbox:", error);
+    }
   }
   const closeImagesLightbox = () => {
     setImagesIndex(-1);
@@ -131,7 +153,7 @@ const JourneyAdmin = () => {
         open={imagesIndex >= 0}
         index={imagesIndex}
         close={() => closeImagesLightbox()}
-        plugins={[Thumbnails, Fullscreen, Zoom, Counter, Slideshow, Captions]}
+        plugins={[Thumbnails, Fullscreen, Zoom, Counter, Slideshow, Captions, Video]}
         thumbnails={{
           position: "bottom",
           width: 100,
@@ -139,6 +161,7 @@ const JourneyAdmin = () => {
           borderRadius: 4,
         }}
         slideshow={{ autoplay: false, delay: 3000 }}
+        video={{ controls: true, autoPlay: true }}
         captions={{
           descriptionTextAlign: "center",
           descriptionMaxLines: 2,

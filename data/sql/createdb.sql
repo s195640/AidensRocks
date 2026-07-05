@@ -224,7 +224,9 @@ CREATE TABLE public.journey_image (
     upload_order integer,
     show boolean DEFAULT false,
     width integer,
-    height integer
+    height integer,
+    media_type character varying(10) NOT NULL DEFAULT 'photo',
+    duration_seconds integer
 );
 
 

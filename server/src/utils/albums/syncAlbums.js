@@ -5,11 +5,10 @@ const db = require('../../db/pool');
 const ensureDir = require('../ensureDir');
 const convertToWebP = require('../convert-to-webp/convertToWebP');
 const createThumbnails = require('../convert-to-webp/createThumbnails');
-const processVideo = require('./processVideo');
+const processVideo = require('../processVideo');
+const isVideoFile = require('../isVideoFile');
 
 const baseDir = path.resolve('media', 'albums');
-
-const VIDEO_EXTENSIONS = /\.(mp4|mov|webm|m4v|avi|mkv)$/i;
 
 async function syncAlbums() {
   console.log('🔄 Starting incremental album sync...');
@@ -38,7 +37,7 @@ async function syncAlbums() {
     await ensureDir(videoPath);
 
     const files = (await fs.readdir(oPath)).filter(
-      (f) => /\.(jpg|jpeg|png)$/i.test(f) || VIDEO_EXTENSIONS.test(f)
+      (f) => /\.(jpg|jpeg|png)$/i.test(f) || isVideoFile(f)
     );
 
     // Ensure album exists
@@ -75,7 +74,7 @@ async function syncAlbums() {
     let photoOrder = orderRes.rows[0].max_order;
 
     for (const file of files) {
-      const isVideo = VIDEO_EXTENSIONS.test(file);
+      const isVideo = isVideoFile(file);
       const basename = path.parse(file).name;
       const webpFile = basename + '.webp';
 

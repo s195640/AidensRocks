@@ -5,6 +5,11 @@ import "./UploadRockForm.css";
 import { FaFacebookSquare } from "react-icons/fa";
 import heic2any from "heic2any";
 
+// Cloudflare (prod host) hard-caps request bodies at 100MB, so anything
+// bigger has to be staged client-side in chunks before the rock post itself
+// is created.
+const CHUNK_SIZE = 80 * 1024 * 1024;
+
 export default function UploadRockForm({ onClose }) {
   const { trackerData, rValue } = useARContext();
 
@@ -25,6 +30,8 @@ export default function UploadRockForm({ onClose }) {
   const [email, setEmail] = useState("");
   const [imageError, setImageError] = useState("");
   const [dialog, setDialog] = useState(null);
+  const [stageLabel, setStageLabel] = useState("");
+  const [stagingProgress, setStagingProgress] = useState(0);
   const fileInputRef = useRef(null);
   const isSubmitEnabled =
     rockNumber.trim() &&
@@ -42,12 +49,13 @@ export default function UploadRockForm({ onClose }) {
     // Filter invalid files (same as before)
     const invalidFiles = files.filter(file => {
       const isImageMime = file.type.startsWith("image/");
+      const isVideoMime = file.type.startsWith("video/");
       const isHeicExt = file.name.toLowerCase().endsWith(".heic") || file.name.toLowerCase().endsWith(".heif");
-      return !(isImageMime || isHeicExt);
+      return !(isImageMime || isVideoMime || isHeicExt);
     });
 
     if (invalidFiles.length > 0) {
-      setImageError("Only image files are allowed (.jpg, .png, .heic, etc).");
+      setImageError("Only image and video files are allowed (.jpg, .png, .heic, .mp4, .mov, etc).");
       e.target.value = null;
       return;
     }
@@ -121,27 +129,83 @@ export default function UploadRockForm({ onClose }) {
   };
 
 
+  const stageFileInChunks = async (file, onBytesUploaded) => {
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const stagingId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    let bytesDone = 0;
+
+    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+      const start = chunkIndex * CHUNK_SIZE;
+      const chunk = file.slice(start, start + CHUNK_SIZE);
+
+      const chunkData = new FormData();
+      chunkData.append("chunk", chunk);
+      chunkData.append("stagingId", stagingId);
+      chunkData.append("chunkIndex", chunkIndex);
+      chunkData.append("totalChunks", totalChunks);
+      chunkData.append("originalName", file.name);
+
+      await axios.post("/api/upload-rock/stage-chunk", chunkData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (evt) => onBytesUploaded(bytesDone + evt.loaded),
+      });
+      bytesDone += chunk.size;
+    }
+
+    return stagingId;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
-    const formData = new FormData();
-    formData.append("rockNumber", rockNumber);
-    formData.append("rockNumberQr", rockNumberQr);
-    formData.append("name", name);
-    formData.append("email", email);
-    formData.append("location", location);
-    formData.append("date", date);
-    formData.append("comment", comment);
-    images.forEach((imgObj) => {
-      formData.append("images", imgObj.file);
-    });
-
-    if (trackerData) {
-      formData.append("trackerData", JSON.stringify(trackerData));
-    }
+    setStagingProgress(0);
 
     try {
+      // Large files (e.g. video) are staged via chunked upload first, since
+      // Cloudflare hard-caps a single request body at 100MB. Everything else
+      // still rides along in the final multipart request as before.
+      const toStage = images
+        .map((imgObj, index) => ({ index, file: imgObj.file }))
+        .filter(({ file }) => file.size > CHUNK_SIZE);
+      const totalStageBytes = toStage.reduce((sum, { file }) => sum + file.size, 0);
+      let stagedBytesDone = 0;
+
+      const manifestByIndex = new Array(images.length).fill(null);
+
+      for (const { index, file } of toStage) {
+        setStageLabel(`Uploading ${file.name}...`);
+        const stagingId = await stageFileInChunks(file, (bytesUploaded) => {
+          setStagingProgress(
+            Math.round(((stagedBytesDone + bytesUploaded) / totalStageBytes) * 100)
+          );
+        });
+        stagedBytesDone += file.size;
+        manifestByIndex[index] = { type: "staged", stagingId, originalName: file.name };
+      }
+
+      setStageLabel("Submitting...");
+      setStagingProgress(0);
+
+      const formData = new FormData();
+      formData.append("rockNumber", rockNumber);
+      formData.append("rockNumberQr", rockNumberQr);
+      formData.append("name", name);
+      formData.append("email", email);
+      formData.append("location", location);
+      formData.append("date", date);
+      formData.append("comment", comment);
+
+      const fileManifest = images.map((imgObj, index) => {
+        if (manifestByIndex[index]) return manifestByIndex[index];
+        formData.append("images", imgObj.file);
+        return { type: "inline" };
+      });
+      formData.append("fileManifest", JSON.stringify(fileManifest));
+
+      if (trackerData) {
+        formData.append("trackerData", JSON.stringify(trackerData));
+      }
+
       await axios.post("/api/upload-rock", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -194,6 +258,8 @@ export default function UploadRockForm({ onClose }) {
       });
     } finally {
       setLoading(false);
+      setStageLabel("");
+      setStagingProgress(0);
     }
   };
 
@@ -230,7 +296,7 @@ export default function UploadRockForm({ onClose }) {
 
           <p className="upload-note">
             <strong>
-              Thank you for helping us remember our baby! Provide the rock number, location, comment, and at least 1 image.  After you submit check the Track the Rocks page for the post.
+              Thank you for helping us remember our baby! Provide the rock number, location, comment, and at least 1 image or video.  After you submit check the Track the Rocks page for the post.  Large videos may take a little time to upload.
             </strong>
           </p>
 
@@ -303,7 +369,7 @@ export default function UploadRockForm({ onClose }) {
 
             {/* Images */}
             <label htmlFor="images">
-              Images: <span className="required">*</span>
+              Photos/Videos: <span className="required">*</span>
             </label>
             <div className="images-input-row">
               {/* Hidden native file input */}
@@ -311,7 +377,7 @@ export default function UploadRockForm({ onClose }) {
                 id="images"
                 type="file"
                 multiple
-                accept="image/*"
+                accept="image/*,video/*"
                 onChange={handleImageChange}
                 ref={fileInputRef}
                 className="hidden-file-input"
@@ -325,7 +391,7 @@ export default function UploadRockForm({ onClose }) {
                   onClick={() => fileInputRef.current && fileInputRef.current.click()}
                   disabled={loading}
                 >
-                  Select Images
+                  Select Files
                 </button>
                 <span>{images.length} of 10</span>
               </div>
@@ -343,7 +409,11 @@ export default function UploadRockForm({ onClose }) {
               <div className="image-previews-flex">
                 {images.map((img, index) => (
                   <div className="image-container" key={index}>
-                    <img src={img.url} alt={`Preview ${index}`} />
+                    {img.file.type.startsWith("video/") ? (
+                      <video src={img.url} muted />
+                    ) : (
+                      <img src={img.url} alt={`Preview ${index}`} />
+                    )}
                     <button
                       type="button"
                       className="remove-image-btn"
@@ -367,13 +437,22 @@ export default function UploadRockForm({ onClose }) {
               >
                 {loading ? (
                   <>
-                    Uploading
+                    {stageLabel || "Uploading"}
+                    {stagingProgress > 0 ? ` ${stagingProgress}%` : ""}
                     <span className="spinner" />
                   </>
                 ) : (
                   "Submit"
                 )}
               </button>
+              {loading && stagingProgress > 0 && (
+                <div className="staging-progress-track">
+                  <div
+                    className="staging-progress-fill"
+                    style={{ width: `${stagingProgress}%` }}
+                  />
+                </div>
+              )}
             </div>
           </form>
         </div>

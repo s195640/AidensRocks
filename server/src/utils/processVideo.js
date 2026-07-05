@@ -1,14 +1,6 @@
-// utils/albums/processVideo.js
+// utils/processVideo.js
 const ffmpeg = require('fluent-ffmpeg');
-
-function probe(inputPath) {
-  return new Promise((resolve, reject) => {
-    ffmpeg.ffprobe(inputPath, (err, data) => {
-      if (err) return reject(err);
-      resolve(data);
-    });
-  });
-}
+const probeVideo = require('./probeVideo');
 
 function extractPosterFrame(inputPath, outputPath, timestampSeconds) {
   return new Promise((resolve, reject) => {
@@ -48,10 +40,7 @@ function remuxToMp4(inputPath, outputPath) {
 }
 
 async function processVideo(inputPath, { webpOutputPath, videoOutputPath }) {
-  const meta = await probe(inputPath);
-  const duration = meta.format?.duration
-    ? Math.round(meta.format.duration)
-    : null;
+  const { duration, width, height } = await probeVideo(inputPath);
 
   // Avoid seeking past the end of very short clips.
   const posterTimestamp = duration ? Math.min(1, duration / 2) : 0;
@@ -59,7 +48,7 @@ async function processVideo(inputPath, { webpOutputPath, videoOutputPath }) {
 
   await remuxToMp4(inputPath, videoOutputPath);
 
-  return { duration };
+  return { duration, width, height };
 }
 
 module.exports = processVideo;
