@@ -52,15 +52,15 @@ export default function UploadRockForm({ onClose }) {
       return;
     }
 
-    if (images.length + files.length > 5) {
-      setImageError("You can only upload up to 5 images.");
+    if (images.length + files.length > 10) {
+      setImageError("You can only upload up to 10 images.");
       e.target.value = null;
       return;
     } else {
       setImageError("");
     }
 
-    const allowedFiles = files.slice(0, 5 - images.length);
+    const allowedFiles = files.slice(0, 10 - images.length);
 
     setHeicLoading(true); // <-- SHOW HEIC LOADING SPINNER
 
@@ -109,7 +109,7 @@ export default function UploadRockForm({ onClose }) {
   const handleRemoveImage = (index) => {
     setImages((prev) => {
       const newImages = prev.filter((_, i) => i !== index);
-      if (newImages.length <= 5) {
+      if (newImages.length <= 10) {
         setImageError("");
       }
       return newImages;
@@ -327,7 +327,7 @@ export default function UploadRockForm({ onClose }) {
                 >
                   Select Images
                 </button>
-                <span>{images.length} of 5</span>
+                <span>{images.length} of 10</span>
               </div>
             </div>
 
