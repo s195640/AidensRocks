@@ -5,8 +5,11 @@ const db = require('../../db/pool');
 const ensureDir = require('../ensureDir');
 const convertToWebP = require('../convert-to-webp/convertToWebP');
 const createThumbnails = require('../convert-to-webp/createThumbnails');
+const processVideo = require('./processVideo');
 
 const baseDir = path.resolve('media', 'albums');
+
+const VIDEO_EXTENSIONS = /\.(mp4|mov|webm|m4v|avi|mkv)$/i;
 
 async function syncAlbums() {
   console.log('🔄 Starting incremental album sync...');
@@ -23,6 +26,7 @@ async function syncAlbums() {
     const oPath = path.join(albumPath, 'o');
     const webpPath = path.join(albumPath, 'webp');
     const webp300Path = path.join(albumPath, 'webp300x300');
+    const videoPath = path.join(albumPath, 'video');
 
     if (!(await fs.pathExists(oPath))) {
       console.log(`⚠️ Skipping ${album}: 'o' folder missing`);
@@ -31,9 +35,10 @@ async function syncAlbums() {
 
     await ensureDir(webpPath);
     await ensureDir(webp300Path);
+    await ensureDir(videoPath);
 
-    const files = (await fs.readdir(oPath)).filter((f) =>
-      /\.(jpg|jpeg|png)$/i.test(f)
+    const files = (await fs.readdir(oPath)).filter(
+      (f) => /\.(jpg|jpeg|png)$/i.test(f) || VIDEO_EXTENSIONS.test(f)
     );
 
     // Ensure album exists
@@ -70,6 +75,7 @@ async function syncAlbums() {
     let photoOrder = orderRes.rows[0].max_order;
 
     for (const file of files) {
+      const isVideo = VIDEO_EXTENSIONS.test(file);
       const basename = path.parse(file).name;
       const webpFile = basename + '.webp';
 
@@ -77,16 +83,30 @@ async function syncAlbums() {
       const webpOutputPath = path.join(webpPath, webpFile);
       const webp300OutputPath = path.join(webp300Path, webpFile);
 
-      const webpExists = await fs.pathExists(webpOutputPath);
-      const webp300Exists = await fs.pathExists(webp300OutputPath);
+      let duration = null;
 
-      if (!webpExists) {
-        console.log(`🖼️ Converting to webp: ${file}`);
-        await convertToWebP(inputPath, webpOutputPath);
+      if (isVideo) {
+        const videoOutputPath = path.join(videoPath, basename + '.mp4');
+        console.log(`🎬 Processing video: ${file}`);
+        const result = await processVideo(inputPath, {
+          webpOutputPath,
+          videoOutputPath,
+        });
+        duration = result.duration;
+        // Original was probed/remuxed into video/; the o/ copy is now redundant.
+        await fs.remove(inputPath);
       } else {
-        console.log(`✅ Webp exists: ${webpFile}`);
+        const webpExists = await fs.pathExists(webpOutputPath);
+
+        if (!webpExists) {
+          console.log(`🖼️ Converting to webp: ${file}`);
+          await convertToWebP(inputPath, webpOutputPath);
+        } else {
+          console.log(`✅ Webp exists: ${webpFile}`);
+        }
       }
 
+      const webp300Exists = await fs.pathExists(webp300OutputPath);
       if (!webp300Exists) {
         console.log(`🔧 Creating 300x300 version of ${webpFile}`);
         // Create 300x300 thumbnail
@@ -95,7 +115,7 @@ async function syncAlbums() {
         console.log(`✅ 300x300 exists: ${webpFile}`);
       }
 
-      // Add photo to DB if it doesn't exist
+      // Add photo/video to DB if it doesn't exist
       const existingPhoto = await db.query(
         `SELECT * FROM Photos WHERE name = $1 AND pa_key = $2`,
         [webpFile, pa_key]
@@ -105,12 +125,12 @@ async function syncAlbums() {
         const sharp = require('sharp');
         const { width, height } = await sharp(webpOutputPath).metadata();
         photoOrder += 1;
-        console.log(`📸 Adding photo to DB: ${webpFile} (order ${photoOrder})`);
+        console.log(`📸 Adding ${isVideo ? 'video' : 'photo'} to DB: ${webpFile} (order ${photoOrder})`);
 
         await db.query(
-          `INSERT INTO Photos (pa_key, name, display_name, "desc", order_num, show, width, height)
-           VALUES ($1, $2, '', '', $3, true, $4, $5)`,
-          [pa_key, webpFile, photoOrder, width, height]
+          `INSERT INTO Photos (pa_key, name, display_name, "desc", order_num, show, width, height, media_type, duration_seconds)
+           VALUES ($1, $2, '', '', $3, true, $4, $5, $6, $7)`,
+          [pa_key, webpFile, photoOrder, width, height, isVideo ? 'video' : 'photo', duration]
         );
       } else {
         console.log(`✅ Photo exists in DB: ${webpFile}`);

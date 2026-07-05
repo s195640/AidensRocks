@@ -327,7 +327,9 @@ CREATE TABLE public.photos (
     order_num integer,
     show boolean DEFAULT true,
     width integer,
-    height integer
+    height integer,
+    media_type character varying(10) NOT NULL DEFAULT 'photo',
+    duration_seconds integer
 );
 
 

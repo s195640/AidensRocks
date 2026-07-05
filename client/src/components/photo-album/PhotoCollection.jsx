@@ -8,6 +8,7 @@ import Counter from "yet-another-react-lightbox/plugins/counter";
 import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
 import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import Video from "yet-another-react-lightbox/plugins/video";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 
 import "react-photo-album/rows.css";
@@ -16,7 +17,7 @@ import "yet-another-react-lightbox/plugins/counter.css";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
 import "yet-another-react-lightbox/styles.css";
 
-import { X } from "lucide-react";
+import { Play, X } from "lucide-react";
 import styles from "./PhotoCollection.module.css";
 
 const PhotoCollection = ({ album, onBack }) => {
@@ -36,15 +37,35 @@ const PhotoCollection = ({ album, onBack }) => {
           width: 300,
           height: 300,
           title: photo.display_name,
+          isVideo: photo.media_type === "video",
         }));
 
-        const full = visible.map((photo) => ({
-          src: `/media/albums/${album.name}/webp/${photo.name}`,
-          width: photo.width,
-          height: photo.height,
-          alt: photo.display_name || "Photo",
-          description: photo.display_name || "",
-        }));
+        const full = visible.map((photo) => {
+          if (photo.media_type === "video") {
+            const basename = photo.name.replace(/\.webp$/i, "");
+            return {
+              type: "video",
+              poster: `/media/albums/${album.name}/webp/${photo.name}`,
+              width: photo.width,
+              height: photo.height,
+              description: photo.display_name || "",
+              sources: [
+                {
+                  src: `/media/albums/${album.name}/video/${basename}.mp4`,
+                  type: "video/mp4",
+                },
+              ],
+            };
+          }
+
+          return {
+            src: `/media/albums/${album.name}/webp/${photo.name}`,
+            width: photo.width,
+            height: photo.height,
+            alt: photo.display_name || "Photo",
+            description: photo.display_name || "",
+          };
+        });
 
         setThumbPhotos(thumb);
         setFullPhotos(full);
@@ -85,6 +106,11 @@ const PhotoCollection = ({ album, onBack }) => {
                 className={styles.photoImage}
                 onClick={onClick}
               />
+              {photo.isVideo && (
+                <div className={styles.playIconOverlay}>
+                  <Play size={40} fill="white" />
+                </div>
+              )}
               {photo.title && (
                 <div className={styles.photoTitle}>{photo.title}</div>
               )}
@@ -98,7 +124,7 @@ const PhotoCollection = ({ album, onBack }) => {
         open={index >= 0}
         index={index}
         close={() => setIndex(-1)}
-        plugins={[Thumbnails, Fullscreen, Zoom, Counter, Slideshow, Captions]}
+        plugins={[Thumbnails, Fullscreen, Zoom, Counter, Slideshow, Captions, Video]}
         thumbnails={{
           position: "bottom",
           width: 100,
@@ -106,6 +132,7 @@ const PhotoCollection = ({ album, onBack }) => {
           borderRadius: 4,
         }}
         slideshow={{ autoplay: false, delay: 3000 }}
+        video={{ controls: true, autoPlay: true }}
         captions={{
           descriptionTextAlign: "center",
           descriptionMaxLines: 2,

@@ -4,6 +4,7 @@ import Counter from "yet-another-react-lightbox/plugins/counter";
 import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
 import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import Video from "yet-another-react-lightbox/plugins/video";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import "react-photo-album/rows.css";
 import "yet-another-react-lightbox/plugins/captions.css";
@@ -21,7 +22,7 @@ export default function AlbumsMultiLightbox({ open, onClose, imageSrc, index = 0
       open={open}
       close={onClose}
       index={index}
-      plugins={[Thumbnails, Fullscreen, Zoom, Counter, Slideshow, Captions]}
+      plugins={[Thumbnails, Fullscreen, Zoom, Counter, Slideshow, Captions, Video]}
       thumbnails={{
         position: "bottom",
         width: 100,
@@ -29,6 +30,7 @@ export default function AlbumsMultiLightbox({ open, onClose, imageSrc, index = 0
         borderRadius: 4,
       }}
       slideshow={{ autoplay: false, delay: 3000 }}
+      video={{ controls: true, autoPlay: true }}
       captions={{
         descriptionTextAlign: "center",
         descriptionMaxLines: 2,

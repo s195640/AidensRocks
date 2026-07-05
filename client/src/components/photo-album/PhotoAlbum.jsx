@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { Play } from "lucide-react";
 import { RowsPhotoAlbum } from "react-photo-album";
 import "react-photo-album/rows.css";
 import "yet-another-react-lightbox/plugins/captions.css";
@@ -23,6 +24,7 @@ const PhotoAlbum = ({ onAlbumClick }) => {
           width: 300,
           height: 300,
           title: album.display_name || album.name,
+          isVideo: album.first_image_media_type === "video",
           album, // attach original album info
         }));
 
@@ -52,6 +54,11 @@ const PhotoAlbum = ({ onAlbumClick }) => {
                 alt={photo.title || "Photo"}
                 className={styles.photoImage}
               />
+              {photo.isVideo && (
+                <div className={styles.playIconOverlay}>
+                  <Play size={40} fill="white" />
+                </div>
+              )}
               {photo.title && (
                 <div className={styles.photoTitle}>{photo.title}</div>
               )}

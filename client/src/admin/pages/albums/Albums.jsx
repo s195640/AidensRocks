@@ -112,7 +112,27 @@ const Albums = () => {
 
   const openImagesLightbox = async (album, index = 0) => {
     const res = await axios.get(`/api/albums/${album.pa_key}/photos`);
-    setImagesLightbox(res.data.map(i => ({ src: `/media/albums/${album.name}/webp/${i.name}` })));
+    setImagesLightbox(
+      res.data.map((i) => {
+        const posterSrc = `/media/albums/${album.name}/webp/${i.name}`;
+        if (i.media_type === "video") {
+          const basename = i.name.replace(/\.webp$/i, "");
+          return {
+            type: "video",
+            poster: posterSrc,
+            width: i.width,
+            height: i.height,
+            sources: [
+              {
+                src: `/media/albums/${album.name}/video/${basename}.mp4`,
+                type: "video/mp4",
+              },
+            ],
+          };
+        }
+        return { src: posterSrc };
+      })
+    );
     setImagesIndex(index);
   }
 

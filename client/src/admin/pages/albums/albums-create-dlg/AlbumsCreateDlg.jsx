@@ -53,7 +53,7 @@ const AlbumsCreateDlg = ({
     const input = document.createElement("input");
     input.type = "file";
     input.multiple = true;
-    input.accept = "image/*";
+    input.accept = "image/*,video/*";
 
     input.onchange = async () => {
       const files = input.files;

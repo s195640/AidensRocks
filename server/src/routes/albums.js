@@ -34,7 +34,14 @@ router.get('/', async (req, res) => {
           WHERE p2.pa_key = pa.pa_key AND p2.show = TRUE
           ORDER BY p2.order_num ASC
           LIMIT 1
-        ) AS first_image_name
+        ) AS first_image_name,
+        (
+          SELECT p2.media_type
+          FROM Photos p2
+          WHERE p2.pa_key = pa.pa_key AND p2.show = TRUE
+          ORDER BY p2.order_num ASC
+          LIMIT 1
+        ) AS first_image_media_type
       FROM PhotoAlbums pa
       LEFT JOIN Photos p ON pa.pa_key = p.pa_key
       GROUP BY pa.pa_key
@@ -182,7 +189,7 @@ router.get('/:pa_key/photos', async (req, res) => {
 
   try {
     const result = await db.query(
-      `SELECT 
+      `SELECT
         p_key,
         name,
         display_name,
@@ -191,7 +198,9 @@ router.get('/:pa_key/photos', async (req, res) => {
         order_num,
         show,
         width,
-        height
+        height,
+        media_type,
+        duration_seconds
       FROM Photos
       WHERE pa_key = $1
       ORDER BY order_num`,
@@ -356,9 +365,9 @@ router.delete('/photos/:p_key', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // 1. Get photo name and album info before deletion
+    // 1. Get photo name, media type, and album info before deletion
     const result = await client.query(
-      `SELECT p.name, p.pa_key, a.name AS album_name
+      `SELECT p.name, p.media_type, p.pa_key, a.name AS album_name
        FROM Photos p
        JOIN PhotoAlbums a ON p.pa_key = a.pa_key
        WHERE p.p_key = $1`,
@@ -369,18 +378,29 @@ router.delete('/photos/:p_key', async (req, res) => {
       return res.status(404).json({ error: 'Photo not found' });
     }
 
-    const { name: photoName, album_name, pa_key } = result.rows[0];
-    const baseDir = `/media/albums/${album_name}`;
+    const { name: photoName, media_type, album_name, pa_key } = result.rows[0];
+    const baseDir = path.join('media', 'albums', album_name);
+    // photoName already carries the .webp extension used for both webp tiers.
+    const basename = path.parse(photoName).name;
 
     // 2. Delete photo from DB
     await client.query('DELETE FROM Photos WHERE p_key = $1', [p_key]);
 
-    // 3. Delete files
+    // 3. Delete files. The original in o/ keeps its source extension (jpg/png/etc),
+    // which isn't stored in the DB, so match it by basename instead of guessing.
+    const oDir = path.join(baseDir, 'o');
+    const originalFiles = (await fs.pathExists(oDir))
+      ? (await fs.readdir(oDir)).filter((f) => path.parse(f).name === basename)
+      : [];
+
     const pathsToDelete = [
-      path.join(baseDir, 'o', `${photoName}.jpg`),
-      path.join(baseDir, 'webp', `${photoName}.webp`),
-      path.join(baseDir, 'webp300x300', `${photoName}.webp`),
+      ...originalFiles.map((f) => path.join(oDir, f)),
+      path.join(baseDir, 'webp', photoName),
+      path.join(baseDir, 'webp300x300', photoName),
     ];
+    if (media_type === 'video') {
+      pathsToDelete.push(path.join(baseDir, 'video', `${basename}.mp4`));
+    }
     for (const filePath of pathsToDelete) {
       await fs.remove(filePath);
     }

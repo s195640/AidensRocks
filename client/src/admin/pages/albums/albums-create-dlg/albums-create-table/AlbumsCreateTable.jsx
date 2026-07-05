@@ -3,6 +3,7 @@ import axios from "axios";
 import Table from "../../../../../components/simple-components/table/Table";
 import PhotoEditDialog from "../photo-edit-dlg/PhotoEditDialog";
 import { FaEdit, FaTrash, FaEye, FaEyeSlash } from "react-icons/fa";
+import { Play } from "lucide-react";
 import styles from "./AlbumsCreateTable.module.css";
 
 export default function AlbumsCreateTable({ album, photos, setPhotos, onRefresh, openImagesLightbox }) {
@@ -84,6 +85,9 @@ export default function AlbumsCreateTable({ album, photos, setPhotos, onRefresh,
               onClick={() => openImagesLightbox(album, photo.order_num)}
               onError={(e) => (e.target.style.display = "none")}
             />
+            {photo.media_type === "video" && (
+              <Play className={styles.playIconOverlay} size={20} fill="white" />
+            )}
           </div>
         ) : (
           <div className={styles.thumbPlaceholder} />
