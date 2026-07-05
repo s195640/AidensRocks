@@ -10,6 +10,7 @@ import AlbumsMultiLightbox from "./albums-multi-lightbox/AlbumsMultiLightbox";
 const Albums = () => {
   const [albums, setAlbums] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [editingAlbum, setEditingAlbum] = useState(null);
   const [editingPhotos, setEditingPhotos] = useState([]);
   const [fullImage, setFullImage] = useState(null);
@@ -96,6 +97,19 @@ const Albums = () => {
     }
   };
 
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      await axios.post("/api/albums/sync");
+      await fetchAlbums();
+    } catch (err) {
+      console.error("Sync failed:", err);
+      alert("Sync failed. Check console for details.");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleReorder = async (order) => {
     setLoading(true);
     try {
@@ -142,10 +156,9 @@ const Albums = () => {
         <h2>Albums</h2>
         <div className={styles.actions}>
           <button onClick={fetchAlbums}>Refresh</button>
-          <button
-            onClick={() => axios.post("/api/albums/sync").then(fetchAlbums)}
-          >
-            Sync
+          <button onClick={handleSync} disabled={syncing}>
+            {syncing && <span className={styles.spinner} />}
+            {syncing ? "Syncing..." : "Sync"}
           </button>
           <button onClick={handleCreate}>Create</button>
         </div>

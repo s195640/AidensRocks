@@ -147,3 +147,17 @@
   background-color: #ddd;
   border-radius: 8px;
 }
+
+.actionIcon {
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.actionIcon:hover {
+  transform: scale(1.2);
+}
+
+.actionIcon:active {
+  transform: scale(0.9);
+  opacity: 0.75;
+}

@@ -39,10 +39,30 @@
   background-color: #fff;
   color: #2196f3;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
 }
 
 .imageButton:hover {
   background-color: #2196f3;
   color: #fff;
+}
+
+.imageButton:active {
+  background-color: #1769aa;
+  color: #fff;
+  transform: scale(0.95);
+}
+
+.actionIcon {
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.actionIcon:hover {
+  transform: scale(1.2);
+}
+
+.actionIcon:active {
+  transform: scale(0.9);
+  opacity: 0.75;
 }

@@ -51,30 +51,23 @@ const AlbumsTable = ({
           <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
             <FaEye
               size={20}
-              style={{
-                color: album.show ? "gray" : "#5cb85c",
-                cursor: "pointer",
-                transition: "transform 0.2s",
-              }}
+              className={styles.actionIcon}
+              style={{ color: album.show ? "gray" : "#5cb85c" }}
               onClick={() => handleToggleShow(album.pa_key)}
-              onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
               title={album.show ? "Disable" : "Enable"}
             />
             <FaEdit
               size={20}
-              style={{ color: "#5bc0de", cursor: "pointer", transition: "transform 0.2s" }}
+              className={styles.actionIcon}
+              style={{ color: "#5bc0de" }}
               onClick={() => handleEdit(album)}
-              onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
               title="Edit"
             />
             <FaTrash
               size={20}
-              style={{ color: "red", cursor: "pointer", transition: "transform 0.2s" }}
+              className={styles.actionIcon}
+              style={{ color: "red" }}
               onClick={() => handleDelete(album.pa_key)}
-              onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
               title="Delete"
             />
           </div>

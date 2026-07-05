@@ -19,11 +19,40 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .actions button:hover {
   background-color: #005fa3;
+}
+
+.actions button:active {
+  background-color: #004a80;
+  transform: scale(0.96);
+}
+
+.actions button:disabled {
+  background-color: #99c2e0;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top: 2px solid #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .albumTable {

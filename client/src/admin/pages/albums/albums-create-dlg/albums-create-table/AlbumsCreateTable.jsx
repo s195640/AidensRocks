@@ -98,36 +98,32 @@ export default function AlbumsCreateTable({ album, photos, setPhotos, onRefresh,
             {photo.show ? (
               <FaEye
                 size={20}
-                style={{ color: "gray", cursor: "pointer", transition: "transform 0.2s" }}
+                className={styles.actionIcon}
+                style={{ color: "gray" }}
                 onClick={() => togglePhotoShow(photo)}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                 title="Disable"
               />
             ) : (
               <FaEyeSlash
                 size={20}
-                style={{ color: "#5cb85c", cursor: "pointer", transition: "transform 0.2s" }}
+                className={styles.actionIcon}
+                style={{ color: "#5cb85c" }}
                 onClick={() => togglePhotoShow(photo)}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                 title="Enable"
               />
             )}
             <FaEdit
               size={20}
-              style={{ color: "#5bc0de", cursor: "pointer", transition: "transform 0.2s" }}
+              className={styles.actionIcon}
+              style={{ color: "#5bc0de" }}
               onClick={() => setEditingPhoto(photo)}
-              onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
               title="Edit"
             />
             <FaTrash
               size={20}
-              style={{ color: "red", cursor: "pointer", transition: "transform 0.2s" }}
+              className={styles.actionIcon}
+              style={{ color: "red" }}
               onClick={() => deletePhoto(photo)}
-              onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
               title="Delete"
             />
           </div>

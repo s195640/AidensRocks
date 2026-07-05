@@ -64,8 +64,101 @@
   transform: scale(1.1);
 }
 
+.iconBtn:active {
+  color: #003f6e;
+  transform: scale(0.9);
+}
+
 .iconBtn.disabled {
   color: #aaa;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+/* --- Upload progress --- */
+.uploadQueue {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.uploadRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.uploadName {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progressTrack {
+  flex: 0 0 160px;
+  height: 8px;
+  background: #eee;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: #5cb85c;
+  transition: width 0.2s ease;
+}
+
+.progressFill.progressError {
+  background-color: #d9534f;
+}
+
+.uploadStatus {
+  flex: 0 0 50px;
+  font-size: 0.75rem;
+  text-align: right;
+  color: #555;
+}
+
+/* --- Dialog action buttons (e.g. photo edit Save/Cancel) --- */
+.dialogBtnPrimary,
+.dialogBtnSecondary {
+  padding: 8px 16px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 8px;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.dialogBtnPrimary {
+  background-color: #0077cc;
+  color: white;
+}
+
+.dialogBtnPrimary:hover {
+  background-color: #005fa3;
+}
+
+.dialogBtnPrimary:active {
+  background-color: #004a80;
+  transform: scale(0.96);
+}
+
+.dialogBtnSecondary {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.dialogBtnSecondary:hover {
+  background-color: #cacaca;
+}
+
+.dialogBtnSecondary:active {
+  background-color: #b3b3b3;
+  transform: scale(0.96);
 }

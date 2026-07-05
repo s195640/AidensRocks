@@ -485,4 +485,42 @@ router.post('/:name/upload-images', upload.array('files'), async (req, res) => {
   }
 });
 
+// Large files (e.g. video) get split client-side into pieces under Cloudflare's
+// 100MB request limit. Chunks for the same file share an uploadId and are
+// appended in order into a temp file, which is promoted to the real filename
+// once the last chunk lands.
+router.post('/:name/upload-chunk', upload.single('chunk'), async (req, res) => {
+  try {
+    const albumName = req.params.name;
+    const { uploadId, originalName } = req.body;
+    const chunkIndex = Number(req.body.chunkIndex);
+    const totalChunks = Number(req.body.totalChunks);
+
+    if (!req.file || !uploadId || !originalName || Number.isNaN(chunkIndex) || Number.isNaN(totalChunks)) {
+      return res.status(400).json({ error: 'Missing chunk data' });
+    }
+
+    const safeName = path.basename(originalName);
+    const uploadDir = path.join(__dirname, `../../media/albums/${albumName}/o`);
+    const tmpDir = path.join(uploadDir, '.tmp');
+    await fs.ensureDir(tmpDir);
+
+    const tmpPath = path.join(tmpDir, path.basename(uploadId));
+    await fs.appendFile(tmpPath, req.file.buffer);
+
+    if (chunkIndex < totalChunks - 1) {
+      return res.json({ success: true, complete: false });
+    }
+
+    const finalPath = path.join(uploadDir, safeName);
+    await fs.move(tmpPath, finalPath, { overwrite: true });
+    console.log(`Saved chunked upload: ${finalPath}`);
+
+    res.json({ success: true, complete: true });
+  } catch (err) {
+    console.error('Chunk upload failed:', err);
+    res.status(500).json({ error: 'Chunk upload failed' });
+  }
+});
+
 module.exports = router;

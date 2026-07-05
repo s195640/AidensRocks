@@ -20,8 +20,10 @@ const PhotoEditDialog = ({ isOpen, photo, onClose, onUpdate }) => {
 
   const buttonPanel = (
     <>
-      <button onClick={handleSubmit}>Save</button>
-      <button onClick={onClose} className="cancel">
+      <button className={styles.dialogBtnPrimary} onClick={handleSubmit}>
+        Save
+      </button>
+      <button className={styles.dialogBtnSecondary} onClick={onClose}>
         Cancel
       </button>
     </>

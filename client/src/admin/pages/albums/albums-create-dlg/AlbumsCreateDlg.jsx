@@ -10,6 +10,10 @@ import {
 } from "react-icons/fa";
 import styles from "./AlbumsCreateDlg.module.css";
 
+// Cloudflare (prod host) hard-caps request bodies at 100MB, so anything
+// bigger has to be split client-side and reassembled on the server.
+const CHUNK_SIZE = 80 * 1024 * 1024;
+
 const AlbumsCreateDlg = ({
   albumData,
   photoData,
@@ -22,6 +26,7 @@ const AlbumsCreateDlg = ({
   const [photos, setPhotos] = useState(photoData);
   const [isValid, setIsValid] = useState(false);
   const [nameError, setNameError] = useState("");
+  const [uploadQueue, setUploadQueue] = useState([]);
   const fileInputRef = useRef(null);
 
   // Validate album name
@@ -49,27 +54,100 @@ const AlbumsCreateDlg = ({
     }
   };
 
+  const isUploading = uploadQueue.some(
+    (f) => f.status === "pending" || f.status === "uploading"
+  );
+
+  const uploadWhole = async (file, onProgress) => {
+    const formData = new FormData();
+    formData.append("files", file);
+    await axios.post(`/api/albums/${albumData.name}/upload-images`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      onUploadProgress: (evt) => {
+        onProgress(evt.total ? Math.round((evt.loaded / evt.total) * 100) : 0);
+      },
+    });
+  };
+
+  const uploadInChunks = async (file, onProgress) => {
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const uploadId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+      const start = chunkIndex * CHUNK_SIZE;
+      const chunk = file.slice(start, start + CHUNK_SIZE);
+
+      const chunkData = new FormData();
+      chunkData.append("chunk", chunk);
+      chunkData.append("uploadId", uploadId);
+      chunkData.append("chunkIndex", chunkIndex);
+      chunkData.append("totalChunks", totalChunks);
+      chunkData.append("originalName", file.name);
+
+      await axios.post(`/api/albums/${albumData.name}/upload-chunk`, chunkData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (evt) => {
+          const chunkFraction = evt.total ? evt.loaded / evt.total : 0;
+          onProgress(Math.round(((chunkIndex + chunkFraction) / totalChunks) * 100));
+        },
+      });
+    }
+  };
+
   const handleAddImagesClick = () => {
+    if (isUploading) return;
     const input = document.createElement("input");
     input.type = "file";
     input.multiple = true;
     input.accept = "image/*,video/*";
 
     input.onchange = async () => {
-      const files = input.files;
+      const files = Array.from(input.files);
       if (!files.length) return;
-      const formData = new FormData();
-      for (const file of files) formData.append("files", file);
 
-      try {
-        await axios.post(`/api/albums/${albumData.name}/upload-images`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+      setUploadQueue(
+        files.map((file) => ({ name: file.name, progress: 0, status: "pending" }))
+      );
+
+      let hadError = false;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setUploadQueue((prev) =>
+          prev.map((f, idx) => (idx === i ? { ...f, status: "uploading" } : f))
+        );
+
+        const onProgress = (progress) =>
+          setUploadQueue((prev) =>
+            prev.map((f, idx) => (idx === i ? { ...f, progress } : f))
+          );
+
+        try {
+          if (file.size > CHUNK_SIZE) {
+            await uploadInChunks(file, onProgress);
+          } else {
+            await uploadWhole(file, onProgress);
+          }
+          setUploadQueue((prev) =>
+            prev.map((f, idx) =>
+              idx === i ? { ...f, progress: 100, status: "done" } : f
+            )
+          );
+        } catch (err) {
+          console.error(`Upload failed for ${file.name}:`, err);
+          hadError = true;
+          setUploadQueue((prev) =>
+            prev.map((f, idx) => (idx === i ? { ...f, status: "error" } : f))
+          );
+        }
+      }
+
+      if (hadError) {
+        alert("Some files failed to upload. Check the list for details.");
+      } else {
         alert("Upload complete. Please run the SYNC tool.");
+        setUploadQueue([]);
         onClose();
-      } catch (err) {
-        console.error("Upload failed:", err);
-        alert("Upload failed. Check console for details.");
       }
     };
 
@@ -97,7 +175,7 @@ const AlbumsCreateDlg = ({
       {isEdit && (
         <>
           <FaPlus
-            className={styles.iconBtn}
+            className={`${styles.iconBtn} ${isUploading ? styles.disabled : ""}`}
             title="Add Images"
             onClick={handleAddImagesClick}
           />
@@ -177,6 +255,27 @@ const AlbumsCreateDlg = ({
           />
         </label>
       </div>
+
+      {uploadQueue.length > 0 && (
+        <div className={styles.uploadQueue}>
+          {uploadQueue.map((f) => (
+            <div key={f.name} className={styles.uploadRow}>
+              <div className={styles.uploadName}>{f.name}</div>
+              <div className={styles.progressTrack}>
+                <div
+                  className={`${styles.progressFill} ${
+                    f.status === "error" ? styles.progressError : ""
+                  }`}
+                  style={{ width: `${f.progress}%` }}
+                />
+              </div>
+              <div className={styles.uploadStatus}>
+                {f.status === "error" ? "Failed" : `${f.progress}%`}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <AlbumsCreateTable
         album={album}
