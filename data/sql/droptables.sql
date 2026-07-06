@@ -19,3 +19,7 @@ drop table journey cascade;
 
 drop table counter_tracking cascade;
 drop table counter cascade;
+
+/* Page Content */
+
+drop table page_content cascade;

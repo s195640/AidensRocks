@@ -3,9 +3,13 @@ import ContentBody from "../../components/content-body/ContentBody";
 import Counter from "../../components/counter/Counter";
 import FloatingRockLink from "../../components/floating-rock-link/FloatingRockLink";
 import InHeavenCounter from "../../components/in-heaven-counter/InHeavenCounter";
+import RichText from "../../adminContent/RichText";
+import { usePageContent } from "../../adminContent/usePageContent";
 
 const Home = () => {
   const backgroundImage = `/media/bkg/home_bkg.webp`;
+  const { body, loading } = usePageContent("home");
+  const useRichText = !loading && body;
 
   return (
     <div>
@@ -22,6 +26,10 @@ const Home = () => {
       </BkgImage>
 
       <ContentBody>
+        {useRichText ? (
+          <RichText html={body} />
+        ) : (
+          <>
         <h2>Journey Through the World With Aiden’s Rocks</h2>
         <p>
           On September 14, 2022 at a mere 5lbs4oz at 3:02 pm, Aiden Asher
@@ -89,6 +97,8 @@ const Home = () => {
           Aiden Asher Armitage, Mr. A …this is for you….we love you & miss you
           more than words can say.
         </p>
+          </>
+        )}
       </ContentBody>
     </div>
   );

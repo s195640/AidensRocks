@@ -1,0 +1,42 @@
+.visibilityIcon {
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.visibilityIcon:hover {
+  transform: scale(1.2);
+}
+
+.visibilityIcon:active {
+  transform: scale(0.9);
+}
+
+.actionsCol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actionsCol button {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #0077cc;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.actionsCol button:hover:not(:disabled) {
+  background-color: #005fa3;
+}
+
+.actionsCol button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.actionsCol button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}

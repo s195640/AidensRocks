@@ -1,13 +1,23 @@
+import ContentBody from "../../components/content-body/ContentBody";
+import RichText from "../../adminContent/RichText";
+import { usePageContent } from "../../adminContent/usePageContent";
 import styles from "./Sudc.module.css";
 
 const Sudc = () => {
+  const { body, loading } = usePageContent("sudc");
+  const useRichText = !loading && body;
+
   return (
     <div className={styles.sudcPage}>
       <div className={styles.sudcBannerWrapper}>
         <div className={styles.sudcBanner} />
       </div>
 
-      <div className={styles.sudcContainer}>
+      <ContentBody>
+        {useRichText ? (
+          <RichText html={body} />
+        ) : (
+          <>
         <p>
           Being a part of the medical community for over 15 years, I have never
           heard of Sudden Unexpected Death in Child. I wasn’t aware it was even
@@ -54,7 +64,9 @@ const Sudc = () => {
             https://sudc.org/donate/
           </a>
         </p>
-      </div>
+          </>
+        )}
+      </ContentBody>
     </div>
   );
 };

@@ -29,14 +29,14 @@
   max-width: 1000px;
 }
 
-.sudcContainer {
-  padding: 24px;
-  max-width: 800px;
-  margin: 0 auto;
-  margin-top: 20px;
-}
+/* ContentBody's own component styles (max-width/margin/padding) now supply
+   what .sudcContainer used to — see ContentBody.module.css. */
 
-.sudcLink {
+/* ContentBody's `.contentBodyInner a` rule (class + type selector) outranks
+   a plain `.sudcLink` class selector, so this needs the extra specificity
+   to keep the donate link gold instead of ContentBody's default link color. */
+.sudcLink:link,
+.sudcLink:visited {
   color: #ffd700;
   text-decoration: underline;
 }
@@ -46,10 +46,12 @@
   text-decoration: none;
 }
 
-.sudcContainer>ul {
+/* ContentBody has no built-in <ul> styling (only <ol>), so this page still
+   needs to set its own bullet-list indentation to avoid a layout shift. */
+.sudcPage ul {
   padding-left: 2em;
 }
 
-.sudcContainer ul ul {
+.sudcPage ul ul {
   padding-left: 2em;
 }

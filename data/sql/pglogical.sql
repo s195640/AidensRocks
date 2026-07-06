@@ -18,3 +18,6 @@ SELECT pglogical.replication_set_add_table('default', 'counter_tracking');
 
 -- Music
 SELECT pglogical.replication_set_add_table('default', 'music');
+
+-- Page Content
+SELECT pglogical.replication_set_add_table('default', 'page_content');

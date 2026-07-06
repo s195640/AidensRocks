@@ -1,0 +1,13 @@
+/* Chip mount points (stored as <div data-component="...">) default to
+   block display, which would break sentence flow for chips meant to sit
+   inline mid-text (upload-rock-link, facebook-link). inline-block is safe
+   for the standalone-button chip too, since its block-level neighbors
+   (h2/p) already force it onto its own line regardless.
+   vertical-align: baseline (the default) — middle aligns the box's center
+   against the parent's baseline + half x-height, which reads as "sitting
+   low" for plain text content like the link/Facebook chips; baseline lines
+   the chip's own text up with the surrounding sentence correctly. */
+.componentMount {
+  display: inline-block;
+  vertical-align: baseline;
+}

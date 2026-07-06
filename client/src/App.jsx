@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
+import axios from "axios";
 import styles from "./App.module.css";
 import Footer from "./components/footer/Footer.jsx";
 import NavBar from "./components/navbar/Navbar.jsx";
@@ -21,15 +23,9 @@ import TrackTheRocks from "./pages/track-the-rocks/TrackTheRocks.jsx";
 import JourneyAdmin from "./admin/pages/journey/JourneyAdmin.jsx";
 import AllRocks from "./pages/all-rocks/AllRocks.jsx";
 import MusicAdmin from "./admin/pages/music/MusicAdmin.jsx";
-
-const publicNavItems = [
-  { path: "/", label: "Home" },
-  { path: "/share-your-rock", label: "Share Your Rock" },
-  { path: "/photos", label: "Photos" },
-  { path: "/track-the-rocks", label: "Track The Rocks" },
-  { path: "/map", label: "Map" },
-  { path: "/sudc", label: "SUDC" },
-];
+import PagesAdmin from "./admin/pages/pages/PagesAdmin.jsx";
+import PAGE_PATHS from "./adminContent/pagePaths.js";
+import { PreviewProvider } from "./adminContent/PreviewContext.jsx";
 
 const adminNavItems = [
   { path: "/admin", label: "Dashboard" },
@@ -39,12 +35,28 @@ const adminNavItems = [
   { path: "/admin/albums", label: "Albums" },
   { path: "/admin/journey", label: "Journey" },
   { path: "/admin/music", label: "Music" },
+  { path: "/admin/pages", label: "Page Details" },
   { path: "/", label: "Exit Admin" },
 ];
 
 function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
+  const [publicNavItems, setPublicNavItems] = useState([]);
+
+  useEffect(() => {
+    axios
+      .get("/api/pages")
+      .then((res) => {
+        setPublicNavItems(
+          res.data.map((p) => ({
+            path: PAGE_PATHS[p.slug] || `/${p.slug}`,
+            label: p.nav_label,
+          }))
+        );
+      })
+      .catch((err) => console.error("Failed to load nav pages:", err));
+  }, []);
 
   return (
     <div className={styles.appContainer}>
@@ -118,6 +130,14 @@ function AppContent() {
             </PrivateRoute>
           }
         />
+        <Route
+          path="/admin/pages"
+          element={
+            <PrivateRoute>
+              <PagesAdmin />
+            </PrivateRoute>
+          }
+        />
       </Routes>
       <Footer />
     </div>
@@ -127,7 +147,9 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <PreviewProvider>
+        <AppContent />
+      </PreviewProvider>
     </AuthProvider>
   );
 }

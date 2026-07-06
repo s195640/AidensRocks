@@ -1,0 +1,22 @@
+.socialLink {
+  color: rgba(110, 183, 216, 1);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.socialLink:hover,
+.socialLink:focus {
+  color: rgba(90, 163, 196, 1);
+  text-decoration: underline;
+}
+
+.socialIcon {
+  vertical-align: middle;
+  position: relative;
+  top: 2px;
+  flex-shrink: 0;
+}

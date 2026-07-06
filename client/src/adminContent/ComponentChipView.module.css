@@ -1,0 +1,20 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  margin: 0 2px;
+  background-color: #eef6fa;
+  border: 1px solid rgba(110, 183, 216, 1);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(70, 130, 160, 1);
+  cursor: grab;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.chip.selected {
+  outline: 2px solid rgba(110, 183, 216, 1);
+  outline-offset: 2px;
+}
