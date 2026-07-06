@@ -1,6 +1,8 @@
 -- Photo Albums
 SELECT pglogical.replication_set_add_table('default', 'photoalbums');
 SELECT pglogical.replication_set_add_table('default', 'photos');
+-- New table, zero rows at creation time (no backfill/seed) — explicit false.
+SELECT pglogical.replication_set_add_table('default', 'photoalbum_tags', synchronize_data := false);
 
 -- Rock / Artist
 SELECT pglogical.replication_set_add_table('default', 'catalog');

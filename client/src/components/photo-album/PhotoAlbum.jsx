@@ -14,7 +14,7 @@ const PhotoAlbum = ({ onAlbumClick }) => {
 
   useEffect(() => {
     const fetchAlbums = async () => {
-      const res = await axios.get("/api/albums/");
+      const res = await axios.get("/api/albums/?tag=main");
       const albums = res.data;
 
       const formattedPhotos = albums

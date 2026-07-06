@@ -1,6 +1,7 @@
 /* PhotoAlbums*/
 
 drop table Photos cascade;
+drop table photoalbum_tags cascade;
 drop table PhotoAlbums cascade;
 
 /* Rock/Artist Details*/

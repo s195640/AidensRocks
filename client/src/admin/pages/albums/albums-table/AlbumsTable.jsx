@@ -18,6 +18,7 @@ const AlbumsTable = ({
     { key: "name", label: "Name", sortable: false, defaultWidth: 120 },
     { key: "display_name", label: "Display Name", sortable: false, defaultWidth: 150 },
     { key: "desc", label: "Description", sortable: false, defaultWidth: 200 },
+    { key: "tags", label: "Tags", sortable: false, defaultWidth: 140 },
     { key: "show", label: "Show", sortable: false, defaultWidth: 60 },
     { key: "count", label: "Count", sortable: false, defaultWidth: 60 },
     { key: "actions", label: "Actions", sortable: false, defaultWidth: 120 },
@@ -45,6 +46,9 @@ const AlbumsTable = ({
 
       case "show":
         return album.show ? "Yes" : "No";
+
+      case "tags":
+        return album.tags && album.tags.length > 0 ? album.tags.join(", ") : "—";
 
       case "actions":
         return (

@@ -47,6 +47,7 @@ const Albums = () => {
       display_name: "",
       desc: "",
       show: true,
+      tags: [],
     });
     setEditingPhotos([]);
   };

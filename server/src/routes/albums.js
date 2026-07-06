@@ -5,6 +5,7 @@ const db = require('../db/pool');
 const path = require('path');
 const fs = require('fs-extra');
 const upload = require('../middleware/multer');
+const normalizeTags = require('../utils/normalizeTags');
 
 router.post('/sync', async (req, res) => {
   try {
@@ -19,8 +20,24 @@ router.post('/sync', async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const result = await db.query(`
-      SELECT 
+    // Same endpoint the admin list and the public Photos page both use.
+    // ?tag=<value> is opt-in filtering (used by the public page); absent
+    // entirely preserves current unfiltered behavior for the admin list or
+    // any other consumer.
+    const { tag } = req.query;
+    const params = [];
+    let tagFilter = '';
+    if (tag) {
+      params.push(String(tag).toLowerCase());
+      tagFilter = `AND EXISTS (
+          SELECT 1 FROM photoalbum_tags t
+          WHERE t.pa_key = pa.pa_key AND t.tag = $${params.length}
+        )`;
+    }
+
+    const result = await db.query(
+      `
+      SELECT
         pa.pa_key,
         pa.name,
         pa.display_name,
@@ -41,12 +58,20 @@ router.get('/', async (req, res) => {
           WHERE p2.pa_key = pa.pa_key AND p2.show = TRUE
           ORDER BY p2.order_num ASC
           LIMIT 1
-        ) AS first_image_media_type
+        ) AS first_image_media_type,
+        (
+          SELECT COALESCE(array_agg(pt.tag ORDER BY pt.tag), '{}')
+          FROM photoalbum_tags pt
+          WHERE pt.pa_key = pa.pa_key
+        ) AS tags
       FROM PhotoAlbums pa
       LEFT JOIN Photos p ON pa.pa_key = p.pa_key
+      WHERE 1=1 ${tagFilter}
       GROUP BY pa.pa_key
       ORDER BY pa.order_num;
-    `);
+    `,
+      params
+    );
 
     res.json(result.rows);
   } catch (err) {
@@ -142,10 +167,13 @@ router.post('/reorder-all', async (req, res) => {
 
 router.put('/:pa_key', async (req, res) => {
   const { pa_key } = req.params;
-  const { name, display_name, desc, show } = req.body;
+  const { name, display_name, desc, show, tags } = req.body;
 
+  const client = await db.connect();
   try {
-    await db.query(
+    await client.query('BEGIN');
+
+    await client.query(
       `UPDATE PhotoAlbums
    SET display_name = $1,
        "desc" = $2,
@@ -155,10 +183,25 @@ router.put('/:pa_key', async (req, res) => {
       [display_name, desc, show, pa_key]
     );
 
+    await client.query('DELETE FROM photoalbum_tags WHERE pa_key = $1', [pa_key]);
+
+    const normalizedTags = normalizeTags(tags);
+    if (normalizedTags.length > 0) {
+      const values = normalizedTags.map((_, i) => `($1, $${i + 2})`).join(', ');
+      await client.query(
+        `INSERT INTO photoalbum_tags (pa_key, tag) VALUES ${values}`,
+        [pa_key, ...normalizedTags]
+      );
+    }
+
+    await client.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Album update failed:', err);
     res.status(500).json({ error: 'Failed to update album' });
+  } finally {
+    client.release();
   }
 });
 
@@ -167,9 +210,14 @@ router.get('/:pa_key', async (req, res) => {
 
   try {
     const result = await db.query(
-      `SELECT pa_key, name, display_name, "desc", show
-       FROM PhotoAlbums
-       WHERE pa_key = $1`,
+      `SELECT pa.pa_key, pa.name, pa.display_name, pa."desc", pa.show,
+        (
+          SELECT COALESCE(array_agg(pt.tag ORDER BY pt.tag), '{}')
+          FROM photoalbum_tags pt
+          WHERE pt.pa_key = pa.pa_key
+        ) AS tags
+       FROM PhotoAlbums pa
+       WHERE pa.pa_key = $1`,
       [pa_key]
     );
 
@@ -215,34 +263,53 @@ router.get('/:pa_key/photos', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { name, display_name, desc, show } = req.body;
+  const { name, display_name, desc, show, tags } = req.body;
 
+  const client = await db.connect();
   try {
-    const existing = await db.query(
+    await client.query('BEGIN');
+
+    const existing = await client.query(
       'SELECT * FROM PhotoAlbums WHERE name = $1',
       [name]
     );
     if (existing.rows.length > 0) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ error: 'Album name already exists' });
     }
 
-    const { rows } = await db.query(
+    const { rows } = await client.query(
       'SELECT COALESCE(MAX(order_num), 0) + 1 AS next_order FROM PhotoAlbums'
     );
     const order_num = rows[0].next_order;
 
-    await db.query(
+    const insertRes = await client.query(
       `
       INSERT INTO PhotoAlbums (name, display_name, "desc", order_num, show)
       VALUES ($1, $2, $3, $4, $5)
+      RETURNING pa_key
     `,
       [name, display_name, desc, order_num, show]
     );
+    const pa_key = insertRes.rows[0].pa_key;
 
-    res.status(200).json({ success: true });
+    const normalizedTags = normalizeTags(tags);
+    if (normalizedTags.length > 0) {
+      const values = normalizedTags.map((_, i) => `($1, $${i + 2})`).join(', ');
+      await client.query(
+        `INSERT INTO photoalbum_tags (pa_key, tag) VALUES ${values}`,
+        [pa_key, ...normalizedTags]
+      );
+    }
+
+    await client.query('COMMIT');
+    res.status(200).json({ success: true, pa_key });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Error creating album:', err);
     res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
   }
 });
 

@@ -9,6 +9,7 @@ import {
   FaTimes,
 } from "react-icons/fa";
 import styles from "./AlbumsCreateDlg.module.css";
+import normalizeTags from "../normalizeTags";
 
 // Cloudflare (prod host) hard-caps request bodies at 100MB, so anything
 // bigger has to be split client-side and reassembled on the server.
@@ -27,7 +28,15 @@ const AlbumsCreateDlg = ({
   const [isValid, setIsValid] = useState(false);
   const [nameError, setNameError] = useState("");
   const [uploadQueue, setUploadQueue] = useState([]);
+  const [tagsInput, setTagsInput] = useState((albumData.tags || []).join(", "));
   const fileInputRef = useRef(null);
+
+  // Resync the raw text field when album data is (re)loaded from the server
+  // (initial load, or handleFullRefresh) — but not on every keystroke, since
+  // album.tags itself only changes on those loads, not while typing.
+  useEffect(() => {
+    setTagsInput((album.tags || []).join(", "));
+  }, [album.tags]);
 
   // Validate album name
   useEffect(() => {
@@ -156,12 +165,13 @@ const AlbumsCreateDlg = ({
 
   const handleSubmit = async () => {
     if (!isValid) return;
+    const tags = normalizeTags(tagsInput.split(","));
     try {
       if (!isEdit) {
-        await axios.post("/api/albums", album);
+        await axios.post("/api/albums", { ...album, tags });
         await axios.post(`/api/albums/${album.name}/init-folder`);
       } else {
-        await axios.put(`/api/albums/${album.pa_key}`, album);
+        await axios.put(`/api/albums/${album.pa_key}`, { ...album, tags });
       }
       onSubmit();
     } catch (err) {
@@ -241,6 +251,15 @@ const AlbumsCreateDlg = ({
             onChange={(e) =>
               setAlbum({ ...album, desc: e.target.value })
             }
+          />
+        </label>
+
+        <label>
+          Tags:
+          <input
+            value={tagsInput}
+            onChange={(e) => setTagsInput(e.target.value)}
+            placeholder="e.g. main, featured"
           />
         </label>
 

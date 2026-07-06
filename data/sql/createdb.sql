@@ -477,6 +477,18 @@ ALTER TABLE ONLY public.photos
     ADD CONSTRAINT fk_photo_album FOREIGN KEY (pa_key) REFERENCES public.photoalbums(pa_key) ON DELETE CASCADE;
 
 
+-- Multi-value tags per album (e.g. "main"), so specific pages can filter to
+-- just tagged albums. No seed data — every album starts with zero tags.
+CREATE TABLE public.photoalbum_tags (
+    pa_key    integer NOT NULL REFERENCES public.photoalbums(pa_key) ON DELETE CASCADE,
+    tag       varchar(100) NOT NULL,
+    create_dt timestamptz DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (pa_key, tag)
+);
+
+ALTER TABLE public.photoalbum_tags OWNER TO postgres;
+
+
 CREATE TABLE music (
   m_key SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
