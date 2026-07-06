@@ -5,6 +5,7 @@ const PAGE_PATHS = {
   home: "/",
   "share-your-rock": "/share-your-rock",
   photos: "/photos",
+  birthdays: "/birthdays",
   "track-the-rocks": "/track-the-rocks",
   map: "/map",
   sudc: "/sudc",

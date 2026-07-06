@@ -12,7 +12,7 @@ import styles from "./PagesAdmin.module.css";
 // 100% DB-driven — those pages keep their own hardcoded JSX, so editing
 // their (always-empty) body would silently do nothing. Visibility toggling
 // and Preview still apply to every page, since those affect the nav.
-const EDITABLE_SLUGS = new Set(["home", "share-your-rock", "sudc"]);
+const EDITABLE_SLUGS = new Set(["home", "share-your-rock", "sudc", "birthdays"]);
 
 const PagesAdmin = () => {
   const [pages, setPages] = useState([]);

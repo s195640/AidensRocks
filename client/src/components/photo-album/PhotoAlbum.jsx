@@ -9,12 +9,12 @@ import "yet-another-react-lightbox/plugins/thumbnails.css";
 import "yet-another-react-lightbox/styles.css";
 import styles from "./PhotoAlbum.module.css";
 
-const PhotoAlbum = ({ onAlbumClick }) => {
+const PhotoAlbum = ({ onAlbumClick, tag = "main", title = "Photo Albums" }) => {
   const [photos, setPhotos] = useState([]);
 
   useEffect(() => {
     const fetchAlbums = async () => {
-      const res = await axios.get("/api/albums/?tag=main");
+      const res = await axios.get(`/api/albums/?tag=${tag}`);
       const albums = res.data;
 
       const formattedPhotos = albums
@@ -36,7 +36,7 @@ const PhotoAlbum = ({ onAlbumClick }) => {
 
   return (
     <div className={styles.galleryContainer}>
-      <h1 className={styles.galleryTitle}>Photo Albums</h1>
+      <h1 className={styles.galleryTitle}>{title}</h1>
       <RowsPhotoAlbum
         photos={photos}
         targetRowHeight={300}

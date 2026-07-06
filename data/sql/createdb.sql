@@ -590,7 +590,7 @@ WITH body AS (
 <p>Please, if possible, help us share and spread awareness to the communities. Our hope is that no parents will ever have to go through this agony. Hopefully this website will bring some awareness, but if you would like to impact the SUDC Foundation — who help other families directly impacted by SUDC and support research studies to stop it from happening — you can donate at the following website: <a href="https://sudc.org/donate/" target="_blank" rel="noopener noreferrer">https://sudc.org/donate/</a></p>$html$::text AS content
 )
 INSERT INTO public.page_content (page_slug, nav_label, order_num, visible, draft_body, published_body)
-SELECT 'sudc', 'SUDC', 5, true, content, content FROM body;
+SELECT 'sudc', 'SUDC', 6, true, content, content FROM body;
 
 -- Nav-only rows for pages with no rich-text content to convert — the navbar
 -- now reads entirely from GET /api/pages, so these still need a row for
@@ -599,5 +599,14 @@ SELECT 'sudc', 'SUDC', 5, true, content, content FROM body;
 INSERT INTO public.page_content (page_slug, nav_label, order_num, visible)
 VALUES
   ('photos', 'Photos', 2, true),
-  ('track-the-rocks', 'Track The Rocks', 3, true),
-  ('map', 'Map', 4, true);
+  ('track-the-rocks', 'Track The Rocks', 4, true),
+  ('map', 'Map', 5, true);
+
+-- Birthdays: CMS-editable body like home/share-your-rock/sudc, inserted
+-- immediately after Photos (order_num 3) — track-the-rocks/map/sudc above
+-- were shifted up one slot to make room.
+WITH body AS (
+  SELECT $html$<p>Every year, we celebrate Aiden’s birthday by sending more of his rocks out into the world in his memory. These are the albums from those celebrations.</p>$html$::text AS content
+)
+INSERT INTO public.page_content (page_slug, nav_label, order_num, visible, draft_body, published_body)
+SELECT 'birthdays', 'Birthdays', 3, true, content, content FROM body;
