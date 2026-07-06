@@ -18,6 +18,36 @@ router.get("/", async (req, res) => {
   }
 });
 
+// -------------------- POST /api/admin/pages/reorder --------------------
+router.post("/reorder", async (req, res) => {
+  const { order } = req.body;
+
+  if (!Array.isArray(order) || order.length === 0) {
+    return res.status(400).json({ error: "Invalid or empty order array." });
+  }
+
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+
+    for (let i = 0; i < order.length; i++) {
+      await client.query(
+        `UPDATE page_content SET order_num = $1, updated_at = CURRENT_TIMESTAMP WHERE page_slug = $2`,
+        [i, order[i]]
+      );
+    }
+
+    await client.query("COMMIT");
+    res.json({ success: true });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Error reordering pages:", err);
+    res.status(500).json({ error: "Server error reordering pages." });
+  } finally {
+    client.release();
+  }
+});
+
 // -------------------- PATCH /api/admin/pages/:slug/visible --------------------
 router.patch("/:slug/visible", async (req, res) => {
   const { slug } = req.params;

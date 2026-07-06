@@ -93,11 +93,28 @@ const PagesAdmin = () => {
     window.open(`${path}${separator}preview=1`, "_blank", "noopener,noreferrer");
   };
 
+  const handleReorder = async (newData) => {
+    setLoading(true);
+    try {
+      await axios.post("/api/admin/pages/reorder", {
+        order: newData.map((p) => p.slug),
+      });
+      await fetchPages();
+    } catch (err) {
+      console.error("Failed to reorder pages:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // sortable off on every column, same as AlbumsTable's convention — sorting
+  // and drag-reorder both reshuffle the same displayed row order, and mixing
+  // the two would let a column sort silently become the new nav order.
   const columns = [
-    { key: "nav_label", label: "Page", sortable: true, defaultWidth: 160 },
+    { key: "nav_label", label: "Page", sortable: false, defaultWidth: 160 },
     { key: "visible", label: "Visible", sortable: false, defaultWidth: 80 },
-    { key: "updated_at", label: "Last Updated", sortable: true, defaultWidth: 180 },
-    { key: "published_at", label: "Last Published", sortable: true, defaultWidth: 180 },
+    { key: "updated_at", label: "Last Updated", sortable: false, defaultWidth: 180 },
+    { key: "published_at", label: "Last Published", sortable: false, defaultWidth: 180 },
     { key: "actions", label: "Actions", sortable: false, defaultWidth: 320 },
   ];
 
@@ -163,7 +180,14 @@ const PagesAdmin = () => {
   return (
     <AdminContainer>
       <h2>Page Details</h2>
-      <Table columns={columns} data={pages} renderCell={renderCell} loading={loading} />
+      <Table
+        columns={columns}
+        data={pages}
+        renderCell={renderCell}
+        loading={loading}
+        enableRowDrag
+        onRowReorder={handleReorder}
+      />
 
       {editingPage && (
         <PagesEditDialog
