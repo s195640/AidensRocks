@@ -9,6 +9,14 @@ import styles from "./RichText.module.css";
 // TipTap node type is added later — kept explicit rather than relying on
 // DOMPurify's broad defaults, since this is the one sanitization path shared
 // by both the public site and the admin preview.
+//
+// "img" (+ src/alt/style) isn't produced by TipTap itself — it's only ever
+// injected via {ROCK_IMAGE} template-placeholder substitution on
+// email-template rows (adminContent/emailPlaceholders.js) before reaching
+// here, so the preview can actually show it. `style` is intentionally
+// allowed on top of this app's usual avoidance of inline styles: HTML email
+// clients don't reliably support external/`<style>` CSS, so inline styles
+// are the standard way to size an embedded image.
 const PURIFY_CONFIG = {
   ALLOWED_TAGS: [
     "h1", "h2", "h3", "h4", "h5", "h6",
@@ -16,8 +24,9 @@ const PURIFY_CONFIG = {
     "ul", "ol", "li",
     "a",
     "div",
+    "img",
   ],
-  ALLOWED_ATTR: ["href", "target", "rel", "data-component", "data-props"],
+  ALLOWED_ATTR: ["href", "target", "rel", "data-component", "data-props", "src", "alt", "style"],
 };
 
 // Renders sanitized page body HTML, then walks the result for

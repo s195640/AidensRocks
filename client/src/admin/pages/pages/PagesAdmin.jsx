@@ -144,7 +144,7 @@ const PagesAdmin = () => {
   // the two would let a column sort silently become the new nav order.
   const columns = [
     { key: "nav_label", label: "Page", sortable: false, defaultWidth: 160 },
-    { key: "visible", label: "Visible", sortable: false, defaultWidth: 80 },
+    { key: "visible", label: "Active", sortable: false, defaultWidth: 80 },
     { key: "updated_at", label: "Last Updated", sortable: false, defaultWidth: 180 },
     { key: "published_at", label: "Last Published", sortable: false, defaultWidth: 180 },
     { key: "actions", label: "Actions", sortable: false, defaultWidth: 380 },
@@ -153,16 +153,17 @@ const PagesAdmin = () => {
   const renderCell = (page, key) => {
     switch (key) {
       case "visible": {
-        const locked = EMAIL_SLUGS.has(page.slug);
+        const isEmail = EMAIL_SLUGS.has(page.slug);
         return (
           <div style={{ display: "flex", justifyContent: "center" }}>
             <ToggleSwitch
               checked={page.visible}
               onChange={() => handleToggleVisible(page.slug)}
-              disabled={locked}
               title={
-                locked
-                  ? "Email templates are never shown publicly"
+                isEmail
+                  ? page.visible
+                    ? "Active — click to mark inactive"
+                    : "Inactive — click to mark active"
                   : page.visible
                     ? "Visible — click to hide"
                     : "Hidden — click to show"

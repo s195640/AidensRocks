@@ -4,6 +4,8 @@ import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import ComponentChip from "./ComponentChip";
 import componentRegistry from "./componentRegistry";
+import EMAIL_PLACEHOLDERS from "./emailPlaceholders";
+import EMAIL_SLUGS from "../admin/pages/pages/emailSlugs";
 import styles from "./PageContentEditor.module.css";
 
 // Reusable TipTap instance for editing a page's draft_body. `page` is the
@@ -32,9 +34,13 @@ export default function PageContentEditor({ page, content, onChange }) {
 
   if (!editor) return null;
 
+  const isEmail = EMAIL_SLUGS.has(page);
+
   const insertOptions = Object.entries(componentRegistry).filter(
     ([, entry]) => entry.pages === null || entry.pages?.includes(page)
   );
+  const placeholderOptions = isEmail ? EMAIL_PLACEHOLDERS : [];
+  const hasInsertMenu = insertOptions.length > 0 || placeholderOptions.length > 0;
 
   const insertChip = (key) => {
     editor
@@ -42,6 +48,11 @@ export default function PageContentEditor({ page, content, onChange }) {
       .focus()
       .insertContent({ type: "componentChip", attrs: { component: key, props: {} } })
       .run();
+    setShowInsertMenu(false);
+  };
+
+  const insertPlaceholder = (token) => {
+    editor.chain().focus().insertContent(token).run();
     setShowInsertMenu(false);
   };
 
@@ -83,7 +94,7 @@ export default function PageContentEditor({ page, content, onChange }) {
           Link
         </button>
 
-        {insertOptions.length > 0 && (
+        {hasInsertMenu && (
           <div className={styles.insertDropdown}>
             <button type="button" onClick={() => setShowInsertMenu((v) => !v)}>
               Insert ▾
@@ -93,6 +104,11 @@ export default function PageContentEditor({ page, content, onChange }) {
                 {insertOptions.map(([key, entry]) => (
                   <button key={key} type="button" onClick={() => insertChip(key)}>
                     {entry.label}
+                  </button>
+                ))}
+                {placeholderOptions.map(({ key, label, token }) => (
+                  <button key={key} type="button" onClick={() => insertPlaceholder(token)}>
+                    {label}
                   </button>
                 ))}
               </div>

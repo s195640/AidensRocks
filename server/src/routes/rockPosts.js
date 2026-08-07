@@ -31,7 +31,7 @@ router.get('/allrocks', async (req, res) => {
       LEFT JOIN artist_link ral ON rc.rc_key = ral.rc_key
       LEFT JOIN artist ra ON ral.ra_key = ra.ra_key
       GROUP BY rc.rock_number
-      ORDER BY rc.rock_number;
+      ORDER BY rc.rock_number DESC;
     `);
 
     res.json(result.rows);

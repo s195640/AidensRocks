@@ -3,16 +3,19 @@ const router = express.Router();
 const db = require("../db/pool");
 const requireAdminAuth = require("../middleware/requireAdminAuth");
 const sendEmail = require("../utils/sendEmail");
+const applyTemplateValues = require("../utils/applyTemplateValues");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 router.use(requireAdminAuth);
 
-// Slugs that represent an email template rather than a public page — their
-// visibility is permanently locked off (see PATCH /:slug/visible below).
+// Slugs that represent an email template rather than a public page. For
+// these rows, the `visible` column doesn't mean "shown on the public site"
+// (they have no public route) — it doubles as an Active/Inactive switch
+// gating whether POST /:slug/send is allowed to actually send (see below).
 // Client-side (PagesAdmin.jsx / PagesEditDialog.jsx / emailSlugs.js) mirrors
-// this list for the Subject field, locked toggle, and email-styled preview.
-const LOCKED_VISIBLE_SLUGS = new Set(["response-email"]);
+// this list for the Subject field, Send button, and email-styled preview.
+const EMAIL_SLUGS = new Set(["response-email"]);
 
 // -------------------- GET /api/admin/pages --------------------
 router.get("/", async (req, res) => {
@@ -63,14 +66,10 @@ router.post("/reorder", async (req, res) => {
 });
 
 // -------------------- PATCH /api/admin/pages/:slug/visible --------------------
+// For email-template rows (EMAIL_SLUGS) this doubles as Active/Inactive —
+// POST /:slug/send checks it and refuses to send while off.
 router.patch("/:slug/visible", async (req, res) => {
   const { slug } = req.params;
-
-  if (LOCKED_VISIBLE_SLUGS.has(slug)) {
-    return res.status(400).json({
-      error: "This page's visibility is locked and cannot be toggled.",
-    });
-  }
 
   try {
     const result = await db.query(
@@ -157,17 +156,31 @@ router.get("/:slug/preview", async (req, res) => {
 // Sends the *draft* content of an email-template row to a single recipient —
 // the same content GET /:slug/preview shows, so "what you previewed is what
 // gets sent" holds without requiring a Publish step first. Only usable for
-// LOCKED_VISIBLE_SLUGS rows; normal pages have no sensible "send".
+// EMAIL_SLUGS rows; normal pages have no sensible "send". This is a manual
+// test-send — deliberately NOT gated on the row's `visible` (Active/
+// Inactive) flag, which is reserved for a future automated-send trigger.
 router.post("/:slug/send", async (req, res) => {
   const { slug } = req.params;
-  const { to } = req.body;
+  const { to, values } = req.body;
 
-  if (!LOCKED_VISIBLE_SLUGS.has(slug)) {
+  if (!EMAIL_SLUGS.has(slug)) {
     return res.status(400).json({ error: "This page is not an email template." });
   }
 
   if (typeof to !== "string" || !EMAIL_RE.test(to.trim())) {
     return res.status(400).json({ error: "A valid recipient email address is required." });
+  }
+
+  const templateValues = values && typeof values === "object" ? { ...values } : {};
+
+  // {ROCK_IMAGE} is always derived server-side from ROCK_NUMBER — never
+  // trust a client-supplied ROCK_IMAGE — mirroring the same URL
+  // construction in EmailPreview.jsx so preview and actual send match.
+  // Public rock image convention (see routes/rocks.js's saveImage):
+  // media/catalog/<rock_number>/a.webp.
+  const rockNumber = parseInt(templateValues.ROCK_NUMBER, 10);
+  if (rockNumber > 0) {
+    templateValues.ROCK_IMAGE = `<img src="https://aidensrocks.com/media/catalog/${rockNumber}/a.webp" alt="Rock ${rockNumber}" style="max-width:100%;border-radius:8px;" />`;
   }
 
   try {
@@ -184,8 +197,8 @@ router.post("/:slug/send", async (req, res) => {
 
     await sendEmail({
       to: to.trim(),
-      subject: draft_email_subject || "(No subject)",
-      html: draft_body,
+      subject: applyTemplateValues(draft_email_subject, templateValues) || "(No subject)",
+      html: applyTemplateValues(draft_body, templateValues),
     });
 
     res.json({ success: true });

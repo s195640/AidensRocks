@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import RockTable from "../../components/rock-journey/rock-table/RockTable";
 import styles from "./TrackTheRocks.module.css";
 import RockMapPopup from "../../components/rock-map/rock-map-popup/RockMapPopup";
@@ -7,9 +7,21 @@ import TotalRocks from "../../components/total-rocks/TotalRocks";
 
 function TrackTheRocks() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [rockNumber, setRockNumber] = useState("");
   const [selectedRock, setSelectedRock] = useState(null);
+
+  // Deep-link support: /track-the-rocks?rock=123 opens straight to that
+  // rock's result dialog (same as typing 123 into Search and submitting),
+  // skipping the manual search step — for shareable links pointing someone
+  // straight to their own rock's journey.
+  useEffect(() => {
+    const num = parseInt(searchParams.get("rock"), 10);
+    if (num > 0) {
+      setSelectedRock(num);
+    }
+  }, [searchParams]);
 
   const handleSearchClick = () => {
     setIsDialogOpen(true);

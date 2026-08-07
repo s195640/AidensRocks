@@ -50,6 +50,10 @@
   margin-bottom: 4px;
 }
 
+.label:not(:first-child) {
+  margin-top: 1rem;
+}
+
 .input {
   width: 100%;
   padding: 8px 10px;

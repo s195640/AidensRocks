@@ -63,6 +63,11 @@ const PagesEditDialog = ({ page, onClose, onSaved }) => {
             onChange={(e) => setSubject(e.target.value)}
             placeholder="Email subject line"
           />
+          <p className={styles.placeholderHint}>
+            You can use <code>{"{ROCK_NUMBER}"}</code> and <code>{"{ROCK_IMAGE}"}</code> in
+            the subject or body (the editor&apos;s Insert ▾ menu below adds them for you) —
+            they get filled in with the real rock number and photo when you send.
+          </p>
         </div>
       )}
       <PageContentEditor page={page.slug} content={draft} onChange={setDraft} />
