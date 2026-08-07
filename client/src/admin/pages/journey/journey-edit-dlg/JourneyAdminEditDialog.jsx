@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import heic2any from "heic2any";
 import { Play } from "lucide-react";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
+import authFetch from "../../../utils/authFetch";
 import styles from "./JourneyAdminEditDialog.module.css";
 
 const MAX_NEW_IMAGES = 10;
@@ -44,7 +45,7 @@ const JourneyAdminEditDialog = ({
     const fetchImages = async () => {
       try {
         setLoadingImages(true);
-        const res = await fetch(`/api/journey-admin/${post.rps_key}/images`);
+        const res = await authFetch(`/api/journey-admin/${post.rps_key}/images`);
         if (!res.ok) throw new Error("Failed to load images");
         const data = await res.json();
         setImages(data);
@@ -68,7 +69,7 @@ const JourneyAdminEditDialog = ({
 
   const toggleImageShow = async (rpi_key, currentShow) => {
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `/api/journey-admin/images/${rpi_key}/toggle-show`,
         {
           method: "POST",
@@ -90,7 +91,7 @@ const JourneyAdminEditDialog = ({
   const deleteImage = async (rpi_key) => {
     if (!window.confirm("Are you sure you want to delete this image?")) return;
     try {
-      const res = await fetch(`/api/journey-admin/images/${rpi_key}`, {
+      const res = await authFetch(`/api/journey-admin/images/${rpi_key}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Delete image failed");
@@ -188,7 +189,7 @@ const JourneyAdminEditDialog = ({
       const formData = new FormData();
       newImages.forEach((imgObj) => formData.append("images", imgObj.file));
 
-      const res = await fetch(`/api/journey-admin/${post.rps_key}/images`, {
+      const res = await authFetch(`/api/journey-admin/${post.rps_key}/images`, {
         method: "POST",
         body: formData,
       });
@@ -222,7 +223,7 @@ const JourneyAdminEditDialog = ({
 
       const payload = { ...formData, latitude, longitude };
 
-      const res = await fetch(`/api/journey-admin/${post.rps_key}`, {
+      const res = await authFetch(`/api/journey-admin/${post.rps_key}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

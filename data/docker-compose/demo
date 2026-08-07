@@ -30,3 +30,16 @@ PROXIED=false
 UPDATE_INTERVAL=30
 QUIET=1
 IP6_PROVIDER=none
+
+# Admin auth (server/src/routes/auth.js + middleware/requireAdminAuth.js)
+# Generate your own JWT_SECRET per deployment, e.g.:
+#   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+# Must be identical across every node in the cluster.
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=1154
+JWT_SECRET=change-me-generate-a-random-hex-string
+JWT_EXPIRES_IN=12h
+
+# Outbound email (server/src/utils/sendEmail.js) — Gmail account + app password.
+EMAIL_USER=AidensRocks.AAA@gmail.com
+EMAIL_PASSWORD=qeilhnkjcqfnsepg

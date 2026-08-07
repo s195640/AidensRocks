@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import authFetch from "../../../../utils/authFetch";
 import Table from "../../../../../components/simple-components/table/Table";
 import PhotoEditDialog from "../photo-edit-dlg/PhotoEditDialog";
 import { FaEdit, FaTrash, FaEye, FaEyeSlash } from "react-icons/fa";
@@ -27,7 +28,7 @@ export default function AlbumsCreateTable({ album, photos, setPhotos, onRefresh,
 
   const togglePhotoShow = async (photo) => {
     try {
-      const res = await fetch(`/api/albums/photos/${photo.p_key}/toggle-show`, {
+      const res = await authFetch(`/api/albums/photos/${photo.p_key}/toggle-show`, {
         method: "POST",
       });
       const data = await res.json();
@@ -43,7 +44,7 @@ export default function AlbumsCreateTable({ album, photos, setPhotos, onRefresh,
     if (!window.confirm("Are you sure you want to delete this photo?")) return;
 
     try {
-      await fetch(`/api/albums/photos/${photo.p_key}`, { method: "DELETE" });
+      await authFetch(`/api/albums/photos/${photo.p_key}`, { method: "DELETE" });
       onRefresh();
     } catch (err) {
       console.error("Delete photo failed:", err);
@@ -52,7 +53,7 @@ export default function AlbumsCreateTable({ album, photos, setPhotos, onRefresh,
 
   const handlePhotoUpdate = async (updatedPhoto) => {
     try {
-      await fetch(`/api/albums/photos/${updatedPhoto.p_key}`, {
+      await authFetch(`/api/albums/photos/${updatedPhoto.p_key}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedPhoto),

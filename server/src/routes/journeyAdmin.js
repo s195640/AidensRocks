@@ -10,8 +10,10 @@ const convertToWebP = require('../utils/convert-to-webp/convertToWebP');
 const createThumbnails = require('../utils/convert-to-webp/createThumbnails');
 const processVideo = require('../utils/processVideo');
 const isVideoFile = require('../utils/isVideoFile');
+const requireAdminAuth = require('../middleware/requireAdminAuth');
 
 const router = express.Router();
+router.use(requireAdminAuth);
 
 const geocoder = NodeGeocoder({
   provider: "opencage",

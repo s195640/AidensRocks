@@ -16,6 +16,7 @@ app.use(morgan('dev'));
 app.use('/media', express.static('media'));
 
 // API Routes
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api', require('./routes/uploadRock'));
 app.use('/api', require('./routes/fileSystem'));
 app.use('/api/testdata', require('./routes/testData'));

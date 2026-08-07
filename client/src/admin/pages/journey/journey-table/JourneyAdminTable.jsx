@@ -28,6 +28,11 @@ const JourneyAdminTable = ({
         : u.comment,
   }));
 
+  const unprocessedData = _data.filter((u) => !(u.latitude && u.longitude));
+  const processedData = _data.filter((u) => u.latitude && u.longitude);
+
+  const defaultSort = { key: "date", direction: "desc" };
+
   const columns = useMemo(
     () => [
       { key: "image", label: "Image", defaultWidth: 50, sortable: false },
@@ -158,12 +163,28 @@ const JourneyAdminTable = ({
 
   return (
     <>
+      <h3 className={styles.sectionHeading}>
+        Unprocessed (No Coordinates)
+      </h3>
+      {unprocessedData.length === 0 ? (
+        <p className={styles.emptyMessage}>No unprocessed journey entries.</p>
+      ) : (
+        <Table
+          columns={columns}
+          data={unprocessedData}
+          renderCell={renderCell}
+          fontSize={"0.65rem"}
+          defaultSort={defaultSort}
+        />
+      )}
+
+      <h3 className={styles.sectionHeading}>Processed</h3>
       <Table
         columns={columns}
-        data={_data}
+        data={processedData}
         renderCell={renderCell}
         fontSize={"0.65rem"}
-        defaultSort={{ key: "coordinates", direction: "asc" }}
+        defaultSort={defaultSort}
       />
 
       <Dialog

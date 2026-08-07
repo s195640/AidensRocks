@@ -7,6 +7,7 @@ const upload = require("../middleware/upload"); // new multer
 const { v4: uuidv4 } = require("uuid");
 const ensureDir = require('../utils/ensureDir');
 const convertToWebP = require('../utils/convert-to-webp/convertToWebP');
+const requireAdminAuth = require('../middleware/requireAdminAuth');
 
 // -------------------- GET /api/music --------------------
 router.get("/", async (req, res) => {
@@ -46,7 +47,7 @@ router.get("/", async (req, res) => {
 });
 
 // -------------------- POST /api/music --------------------
-router.post("/", upload.fields([{ name: "music_file" }, { name: "image_file" }]), async (req, res) => {
+router.post("/", requireAdminAuth, upload.fields([{ name: "music_file" }, { name: "image_file" }]), async (req, res) => {
   console.log("START CREATE MUSIC");
   const { title, writer, lyrics } = req.body;
   const audioFile = req.files?.music_file?.[0];
@@ -120,7 +121,7 @@ router.post("/", upload.fields([{ name: "music_file" }, { name: "image_file" }])
 
 
 // -------------------- PUT /api/music/:m_key --------------------
-router.put("/:m_key", upload.fields([{ name: "music_file" }, { name: "image_file" }]), async (req, res) => {
+router.put("/:m_key", requireAdminAuth, upload.fields([{ name: "music_file" }, { name: "image_file" }]), async (req, res) => {
   const { m_key } = req.params;
   const { title, writer, lyrics } = req.body;
   const audioFile = req.files?.music_file?.[0];
@@ -193,7 +194,7 @@ router.put("/:m_key", upload.fields([{ name: "music_file" }, { name: "image_file
 
 
 // -------------------- PUT /api/music/:m_key/toggle-show --------------------
-router.put("/:m_key/toggle-show", async (req, res) => {
+router.put("/:m_key/toggle-show", requireAdminAuth, async (req, res) => {
   const { m_key } = req.params;
   const { show } = req.body;
 
@@ -224,7 +225,7 @@ router.put("/:m_key/toggle-show", async (req, res) => {
 });
 
 // -------------------- DELETE /api/music/:m_key --------------------
-router.delete("/:m_key", async (req, res) => {
+router.delete("/:m_key", requireAdminAuth, async (req, res) => {
   const { m_key } = req.params;
   const client = await db.connect();
 

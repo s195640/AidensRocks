@@ -9,9 +9,9 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (login(username, password)) {
+    if (await login(username, password)) {
       navigate("/admin");
     } else {
       alert("Invalid credentials");

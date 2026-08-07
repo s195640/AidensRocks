@@ -6,8 +6,9 @@ const path = require('path');
 const fs = require('fs-extra');
 const upload = require('../middleware/multer');
 const normalizeTags = require('../utils/normalizeTags');
+const requireAdminAuth = require('../middleware/requireAdminAuth');
 
-router.post('/sync', async (req, res) => {
+router.post('/sync', requireAdminAuth, async (req, res) => {
   try {
     console.log('ALBUM POST');
     const result = await syncAlbums();
@@ -80,7 +81,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.patch('/:pa_key/show', async (req, res) => {
+router.patch('/:pa_key/show', requireAdminAuth, async (req, res) => {
   const { pa_key } = req.params;
 
   try {
@@ -103,7 +104,7 @@ router.patch('/:pa_key/show', async (req, res) => {
   }
 });
 
-router.delete('/:pa_key', async (req, res) => {
+router.delete('/:pa_key', requireAdminAuth, async (req, res) => {
   const { pa_key } = req.params;
 
   try {
@@ -133,7 +134,7 @@ router.delete('/:pa_key', async (req, res) => {
   }
 });
 
-router.post('/reorder-all', async (req, res) => {
+router.post('/reorder-all', requireAdminAuth, async (req, res) => {
   try {
     const { rows } = await db.query(
       `SELECT pa_key FROM PhotoAlbums WHERE show = true ORDER BY order_num ASC, pa_key ASC`
@@ -165,7 +166,7 @@ router.post('/reorder-all', async (req, res) => {
   }
 });
 
-router.put('/:pa_key', async (req, res) => {
+router.put('/:pa_key', requireAdminAuth, async (req, res) => {
   const { pa_key } = req.params;
   const { name, display_name, desc, show, tags } = req.body;
 
@@ -205,7 +206,7 @@ router.put('/:pa_key', async (req, res) => {
   }
 });
 
-router.get('/:pa_key', async (req, res) => {
+router.get('/:pa_key', requireAdminAuth, async (req, res) => {
   const { pa_key } = req.params;
 
   try {
@@ -262,7 +263,7 @@ router.get('/:pa_key/photos', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requireAdminAuth, async (req, res) => {
   const { name, display_name, desc, show, tags } = req.body;
 
   const client = await db.connect();
@@ -313,7 +314,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.post('/:name/init-folder', (req, res) => {
+router.post('/:name/init-folder', requireAdminAuth, (req, res) => {
   const { name } = req.params;
   const albumDir = path.join('media', 'albums', name);
 
@@ -337,7 +338,7 @@ router.post('/:name/init-folder', (req, res) => {
   }
 });
 
-router.post("/reorder", async (req, res) => {
+router.post("/reorder", requireAdminAuth, async (req, res) => {
   const { order } = req.body;
 
   if (!Array.isArray(order) || order.length === 0) {
@@ -368,7 +369,7 @@ router.post("/reorder", async (req, res) => {
   }
 });
 
-router.post("/photos/reorder", async (req, res) => {
+router.post("/photos/reorder", requireAdminAuth, async (req, res) => {
   const { pa_key, order } = req.body;
 
   if (!Array.isArray(order) || order.length === 0) {
@@ -399,7 +400,7 @@ router.post("/photos/reorder", async (req, res) => {
   }
 });
 
-router.post('/photos/:p_key/toggle-show', async (req, res) => {
+router.post('/photos/:p_key/toggle-show', requireAdminAuth, async (req, res) => {
   const { p_key } = req.params;
 
   const client = await db.connect();
@@ -425,7 +426,7 @@ router.post('/photos/:p_key/toggle-show', async (req, res) => {
   }
 });
 
-router.delete('/photos/:p_key', async (req, res) => {
+router.delete('/photos/:p_key', requireAdminAuth, async (req, res) => {
   const { p_key } = req.params;
 
   const client = await db.connect();
@@ -497,7 +498,7 @@ router.delete('/photos/:p_key', async (req, res) => {
   }
 });
 
-router.put('/photos/:p_key', async (req, res) => {
+router.put('/photos/:p_key', requireAdminAuth, async (req, res) => {
   const { p_key } = req.params;
   const { display_name, desc, date, show } = req.body;
 
@@ -531,7 +532,7 @@ router.put('/photos/:p_key', async (req, res) => {
   }
 });
 
-router.post('/:name/upload-images', upload.array('files'), async (req, res) => {
+router.post('/:name/upload-images', requireAdminAuth, upload.array('files'), async (req, res) => {
   try {
     const albumName = req.params.name;
     const uploadDir = path.join(__dirname, `../../media/albums/${albumName}/o`);
@@ -556,7 +557,7 @@ router.post('/:name/upload-images', upload.array('files'), async (req, res) => {
 // 100MB request limit. Chunks for the same file share an uploadId and are
 // appended in order into a temp file, which is promoted to the real filename
 // once the last chunk lands.
-router.post('/:name/upload-chunk', upload.single('chunk'), async (req, res) => {
+router.post('/:name/upload-chunk', requireAdminAuth, upload.single('chunk'), async (req, res) => {
   try {
     const albumName = req.params.name;
     const { uploadId, originalName } = req.body;

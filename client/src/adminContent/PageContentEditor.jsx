@@ -14,7 +14,15 @@ export default function PageContentEditor({ page, content, onChange }) {
   const [showInsertMenu, setShowInsertMenu] = useState(false);
 
   const editor = useEditor({
-    extensions: [StarterKit, Link.configure({ openOnClick: false }), ComponentChip],
+    // StarterKit (v3) bundles its own Link extension internally, which
+    // collides with the explicit one below ("Duplicate extension names
+    // found: ['link']") — disable StarterKit's copy so ours is the only
+    // registration.
+    extensions: [
+      StarterKit.configure({ link: false }),
+      Link.configure({ openOnClick: false }),
+      ComponentChip,
+    ],
     content: content || "",
     immediatelyRender: true, // pure client-side rendering, no SSR
     onUpdate: ({ editor: current }) => {

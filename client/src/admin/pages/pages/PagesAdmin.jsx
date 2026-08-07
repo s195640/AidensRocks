@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
 import AdminContainer from "../../components/admin-base/AdminContainer";
 import Table from "../../../components/simple-components/table/Table";
+import ToggleSwitch from "../../../components/simple-components/toggle-switch/ToggleSwitch";
 import PagesEditDialog from "./pages-edit-dlg/PagesEditDialog";
+import SendEmailDialog from "./send-email-dlg/SendEmailDialog";
 import PAGE_PATHS from "../../../adminContent/pagePaths";
+import EMAIL_SLUGS from "./emailSlugs";
 import styles from "./PagesAdmin.module.css";
 
 // Only these pages were actually converted to CMS-driven body content
@@ -12,13 +14,22 @@ import styles from "./PagesAdmin.module.css";
 // 100% DB-driven — those pages keep their own hardcoded JSX, so editing
 // their (always-empty) body would silently do nothing. Visibility toggling
 // and Preview still apply to every page, since those affect the nav.
-const EDITABLE_SLUGS = new Set(["home", "share-your-rock", "sudc", "birthdays"]);
+// Email-template rows (EMAIL_SLUGS) are also editable — same draft/publish
+// workflow, just no live public page.
+const EDITABLE_SLUGS = new Set([
+  "home",
+  "share-your-rock",
+  "sudc",
+  "birthdays",
+  ...EMAIL_SLUGS,
+]);
 
 const PagesAdmin = () => {
   const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingPage, setEditingPage] = useState(null);
   const [publishingSlug, setPublishingSlug] = useState(null);
+  const [sendingPage, setSendingPage] = useState(null);
 
   const fetchPages = async () => {
     setLoading(true);
@@ -54,7 +65,12 @@ const PagesAdmin = () => {
       setPages((prev) =>
         prev.map((p) =>
           p.slug === slug
-            ? { ...p, published_body: res.data.published_body, published_at: res.data.published_at }
+            ? {
+              ...p,
+              published_body: res.data.published_body,
+              published_email_subject: res.data.published_email_subject,
+              published_at: res.data.published_at,
+            }
             : p
         )
       );
@@ -77,9 +93,14 @@ const PagesAdmin = () => {
     try {
       const res = await axios.put(`/api/admin/pages/${page.slug}/draft`, {
         body: page.published_body,
+        email_subject: page.published_email_subject,
       });
       setPages((prev) =>
-        prev.map((p) => (p.slug === page.slug ? { ...p, draft_body: res.data.body } : p))
+        prev.map((p) =>
+          p.slug === page.slug
+            ? { ...p, draft_body: res.data.body, draft_email_subject: res.data.email_subject }
+            : p
+        )
       );
     } catch (err) {
       console.error("Failed to discard draft:", err);
@@ -88,9 +109,20 @@ const PagesAdmin = () => {
   };
 
   const openPreview = (slug) => {
+    // Deliberately no "noopener"/"noreferrer" here: both sever the new
+    // tab's opener relationship, which is what lets a same-origin
+    // window.open() tab inherit a copy of sessionStorage — without it the
+    // new tab has no admin token and PrivateRoute bounces to /login (or,
+    // for a public-page preview, the draft silently fails to load and it
+    // falls back to published content). Safe to omit here since these URLs
+    // are always internal and hardcoded, never user-supplied.
+    if (EMAIL_SLUGS.has(slug)) {
+      window.open(`/admin/preview-email/${slug}`, "_blank");
+      return;
+    }
     const path = PAGE_PATHS[slug] || "/";
     const separator = path.includes("?") ? "&" : "?";
-    window.open(`${path}${separator}preview=1`, "_blank", "noopener,noreferrer");
+    window.open(`${path}${separator}preview=1`, "_blank");
   };
 
   const handleReorder = async (newData) => {
@@ -115,29 +147,30 @@ const PagesAdmin = () => {
     { key: "visible", label: "Visible", sortable: false, defaultWidth: 80 },
     { key: "updated_at", label: "Last Updated", sortable: false, defaultWidth: 180 },
     { key: "published_at", label: "Last Published", sortable: false, defaultWidth: 180 },
-    { key: "actions", label: "Actions", sortable: false, defaultWidth: 320 },
+    { key: "actions", label: "Actions", sortable: false, defaultWidth: 380 },
   ];
 
   const renderCell = (page, key) => {
     switch (key) {
-      case "visible":
-        return page.visible ? (
-          <FaEye
-            size={20}
-            className={styles.visibilityIcon}
-            style={{ color: "gray" }}
-            onClick={() => handleToggleVisible(page.slug)}
-            title="Visible — click to hide"
-          />
-        ) : (
-          <FaEyeSlash
-            size={20}
-            className={styles.visibilityIcon}
-            style={{ color: "#5cb85c" }}
-            onClick={() => handleToggleVisible(page.slug)}
-            title="Hidden — click to show"
-          />
+      case "visible": {
+        const locked = EMAIL_SLUGS.has(page.slug);
+        return (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <ToggleSwitch
+              checked={page.visible}
+              onChange={() => handleToggleVisible(page.slug)}
+              disabled={locked}
+              title={
+                locked
+                  ? "Email templates are never shown publicly"
+                  : page.visible
+                    ? "Visible — click to hide"
+                    : "Hidden — click to show"
+              }
+            />
+          </div>
         );
+      }
 
       case "updated_at":
         return page.updated_at ? new Date(page.updated_at).toLocaleString() : "-";
@@ -147,11 +180,15 @@ const PagesAdmin = () => {
 
       case "actions": {
         const isEditable = EDITABLE_SLUGS.has(page.slug);
-        const hasUnpublishedChanges = page.draft_body !== page.published_body;
+        const isEmail = EMAIL_SLUGS.has(page.slug);
+        const hasUnpublishedChanges =
+          page.draft_body !== page.published_body ||
+          page.draft_email_subject !== page.published_email_subject;
         return (
           <div className={styles.actionsCol}>
             {isEditable && <button onClick={() => setEditingPage(page)}>Edit</button>}
             <button onClick={() => openPreview(page.slug)}>Preview</button>
+            {isEmail && <button onClick={() => setSendingPage(page)}>Send</button>}
             {isEditable && (
               <>
                 <button
@@ -198,6 +235,10 @@ const PagesAdmin = () => {
             setEditingPage(null);
           }}
         />
+      )}
+
+      {sendingPage && (
+        <SendEmailDialog page={sendingPage} onClose={() => setSendingPage(null)} />
       )}
     </AdminContainer>
   );

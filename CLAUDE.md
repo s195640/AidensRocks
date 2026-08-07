@@ -19,6 +19,20 @@ Two independent apps, no root-level `package.json`/workspace — run commands fr
 
 There is no test suite in either app (`server`'s `npm test` is a placeholder; `client` has no test script at all). `client`'s only quality gate is ESLint.
 
+## Version & Git Conventions
+
+**VERSION file.** Repo root has a `VERSION` file (`X.Y.Z`), bumped as part of every change — a task is incomplete if it isn't:
+
+- **X (major):** manual only — never bump without explicit user instruction.
+- **Y (feature):** bump when starting work on a new feature folder under `data\ai-build-docs\<feature-slug>\`, reset Z to 0.
+- **Z (patch):** every other change not tied to the start of a new feature folder.
+
+**Git: read-only freely, never write.** `git status`, `git diff`, `git log`, `git show`, `git branch -l` are always fine to run. Never run any command that writes to the repo (`git add`, `git commit`, `git push`, `git merge`, `git rebase`, `git checkout`/`git switch` that changes branch or working-tree state) unless the user explicitly asks for that specific action in that session.
+
+## When Uncertain, Ask
+
+If a requirement is ambiguous, or a decision isn't covered by this file or the relevant feature's `data\ai-build-docs\<feature-slug>\` doc, stop and ask rather than assuming. Minor naming or ordering calls can be made and noted in that feature's `summary-issue-log.md`. Anything touching rock upload/visibility behavior, the data model, or existing behavior needs explicit approval before proceeding.
+
 ## Commands
 
 Client (`cd client`):

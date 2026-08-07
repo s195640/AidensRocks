@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import authFetch from "../../utils/authFetch";
 import styles from "./JourneyAdmin.module.css";
 import AdminContainer from "../../components/admin-base/AdminContainer";
 import JourneyAdminEditDialog from "./journey-edit-dlg/JourneyAdminEditDialog";
@@ -31,7 +32,7 @@ const JourneyAdmin = () => {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/journey-admin");
+      const res = await authFetch("/api/journey-admin");
       if (!res.ok) throw new Error("Failed to fetch journey posts");
       const data = await res.json();
       setPosts(data);
@@ -48,7 +49,7 @@ const JourneyAdmin = () => {
 
   const handleToggleShow = async (rps_key, currentShow) => {
     try {
-      const res = await fetch(`/api/journey-admin/${rps_key}/toggle-show`, {
+      const res = await authFetch(`/api/journey-admin/${rps_key}/toggle-show`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ show: !currentShow }),
@@ -67,7 +68,7 @@ const JourneyAdmin = () => {
   const handleDelete = async (rps_key) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
     try {
-      const res = await fetch(`/api/journey-admin/${rps_key}`, {
+      const res = await authFetch(`/api/journey-admin/${rps_key}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Delete failed");
@@ -91,7 +92,7 @@ const JourneyAdmin = () => {
 
   const openImagesLightbox = async (post) => {
     try {
-      const res = await fetch(`/api/journey-admin/${post.rps_key}/images`);
+      const res = await authFetch(`/api/journey-admin/${post.rps_key}/images`);
       if (!res.ok) throw new Error("Failed to load images");
       const data = await res.json();
       const basePath = `/media/rocks/${post.rock_number}/${post.uuid}`;

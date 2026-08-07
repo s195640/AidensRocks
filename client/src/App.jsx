@@ -25,6 +25,7 @@ import JourneyAdmin from "./admin/pages/journey/JourneyAdmin.jsx";
 import AllRocks from "./pages/all-rocks/AllRocks.jsx";
 import MusicAdmin from "./admin/pages/music/MusicAdmin.jsx";
 import PagesAdmin from "./admin/pages/pages/PagesAdmin.jsx";
+import EmailPreview from "./admin/pages/pages/email-preview/EmailPreview.jsx";
 import PAGE_PATHS from "./adminContent/pagePaths.js";
 import { PreviewProvider } from "./adminContent/PreviewContext.jsx";
 
@@ -137,6 +138,14 @@ function AppContent() {
           element={
             <PrivateRoute>
               <PagesAdmin />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/preview-email/:slug"
+          element={
+            <PrivateRoute>
+              <EmailPreview />
             </PrivateRoute>
           }
         />

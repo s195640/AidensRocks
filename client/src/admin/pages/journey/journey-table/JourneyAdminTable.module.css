@@ -1,3 +1,21 @@
+.sectionHeading {
+  margin: 1.5rem 0 0.5rem;
+}
+
+.sectionHeading:first-child {
+  margin-top: 0;
+}
+
+.emptyMessage {
+  text-align: center;
+  color: #777;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
 .checkboxCell {
   display: flex;
   justify-content: center;

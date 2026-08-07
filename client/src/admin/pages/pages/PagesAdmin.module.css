@@ -1,16 +1,3 @@
-.visibilityIcon {
-  cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.visibilityIcon:hover {
-  transform: scale(1.2);
-}
-
-.visibilityIcon:active {
-  transform: scale(0.9);
-}
-
 .actionsCol {
   display: flex;
   flex-wrap: wrap;

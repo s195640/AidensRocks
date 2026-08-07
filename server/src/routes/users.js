@@ -1,6 +1,9 @@
 const express = require('express');
 const pool = require('../db/pool');
+const requireAdminAuth = require('../middleware/requireAdminAuth');
 const router = express.Router();
+
+router.use(requireAdminAuth);
 
 // Get all users
 router.get('/', async (req, res, next) => {

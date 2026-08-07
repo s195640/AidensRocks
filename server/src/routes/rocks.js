@@ -8,6 +8,9 @@ const pool = require('../db/pool');
 const ensureDir = require('../utils/ensureDir');
 const convertToWebP = require('../utils/convert-to-webp/convertToWebP');
 const createThumbnails = require('../utils/convert-to-webp/createThumbnails');
+const requireAdminAuth = require('../middleware/requireAdminAuth');
+
+router.use(requireAdminAuth);
 
 // Multer setup
 const upload = multer({ dest: 'temp_uploads/' });
