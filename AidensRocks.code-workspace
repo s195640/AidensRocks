@@ -72,6 +72,18 @@
           "2"
         ],
         "problemMatcher": []
+      },
+      {
+        "label": "Push Git",
+        "type": "shell",
+        "command": "powershell.exe",
+        "args": [
+          "-ExecutionPolicy",
+          "Bypass",
+          "-Command",
+          "$version = (Get-Content '${workspaceFolder}/VERSION' -Raw).Trim(); git add .; git commit -m \"$version\"; git push"
+        ],
+        "problemMatcher": []
       }
     ]
   }
