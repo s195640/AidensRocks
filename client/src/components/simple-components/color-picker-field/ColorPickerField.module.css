@@ -1,0 +1,36 @@
+.row {
+  margin-bottom: 20px;
+}
+
+.row label {
+  display: block;
+  font-weight: bold;
+  color: #444;
+  margin-bottom: 8px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wheel {
+  width: 44px;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  background: none;
+}
+
+.hexInput {
+  width: 120px;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+  text-transform: lowercase;
+}

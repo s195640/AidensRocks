@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import Job from "../job/Job";
 import ToggleSwitch from "../../../components/simple-components/toggle-switch/ToggleSwitch";
+import ColorPickerField from "../../../components/simple-components/color-picker-field/ColorPickerField";
 import styles from "./CreateSingleQRCode.module.css";
 
 // Raster resolution target for the underlying QR image, not just its
@@ -38,13 +39,16 @@ export default function CreateSingleQRCode() {
   const [headerFontWeight, setHeaderFontWeight] = useState(700);
   const [footerFontWeight, setFooterFontWeight] = useState(400);
   const [transparentBackground, setTransparentBackground] = useState(false);
+  const [qrColor, setQrColor] = useState("#000000");
+  const [headerColor, setHeaderColor] = useState("#333333");
+  const [footerColor, setFooterColor] = useState("#333333");
   const [qrDataUrl, setQrDataUrl] = useState(null);
   const [qrError, setQrError] = useState("");
 
-  // Regenerates when the URL, size, or background transparency changes --
-  // header/footer text, spacing, and font size are pure overlay styling
-  // applied at render time, so they update the preview instantly without
-  // needing the (async) QR image itself to be rebuilt.
+  // Regenerates when the URL, size, dark-module color, or background
+  // transparency changes -- header/footer text, spacing, font size, and
+  // color are pure overlay styling applied at render time, so they update
+  // the preview instantly without needing the (async) QR image rebuilt.
   useEffect(() => {
     let cancelled = false;
     const trimmedUrl = url.trim();
@@ -63,8 +67,10 @@ export default function CreateSingleQRCode() {
     // 8-digit hex (RRGGBBAA) is what tells the qrcode library to render
     // with an alpha channel -- "00" alpha on the light modules is what
     // actually makes the background transparent, not just visually white.
+    // The dark modules (qrColor) always stay fully opaque -- only the
+    // background is ever transparent.
     const color = {
-      dark: "#000000ff",
+      dark: `${qrColor}ff`,
       light: transparentBackground ? "#ffffff00" : "#ffffffff",
     };
 
@@ -82,7 +88,7 @@ export default function CreateSingleQRCode() {
     return () => {
       cancelled = true;
     };
-  }, [url, sizeInches, transparentBackground]);
+  }, [url, sizeInches, qrColor, transparentBackground]);
 
   const handleDownload = () => {
     if (!qrDataUrl) return;
@@ -154,17 +160,18 @@ export default function CreateSingleQRCode() {
             transform: translateX(-50%);
             text-align: center;
             z-index: 2;
-            color: #333;
           }
           .header {
             bottom: calc(100% + ${headerGap}in);
             font-size: ${headerFontSize}pt;
             font-weight: ${headerFontWeight};
+            color: ${headerColor};
           }
           .footer {
             top: calc(100% + ${footerGap}in);
             font-size: ${footerFontSize}pt;
             font-weight: ${footerFontWeight};
+            color: ${footerColor};
           }
         </style>
       </head>
@@ -222,6 +229,13 @@ export default function CreateSingleQRCode() {
             className={styles.slider}
           />
 
+          <ColorPickerField
+            id="single-qr-color"
+            label="QR code color"
+            value={qrColor}
+            onChange={setQrColor}
+          />
+
           <label htmlFor="single-qr-header">Header (optional, printed above the code)</label>
           <input
             id="single-qr-header"
@@ -267,6 +281,13 @@ export default function CreateSingleQRCode() {
             value={headerFontWeight}
             onChange={(e) => setHeaderFontWeight(Number(e.target.value))}
             className={styles.slider}
+          />
+
+          <ColorPickerField
+            id="single-qr-header-color"
+            label="Header text color"
+            value={headerColor}
+            onChange={setHeaderColor}
           />
 
           <label htmlFor="single-qr-footer">Footer (optional, printed below the code)</label>
@@ -316,6 +337,13 @@ export default function CreateSingleQRCode() {
             className={styles.slider}
           />
 
+          <ColorPickerField
+            id="single-qr-footer-color"
+            label="Footer text color"
+            value={footerColor}
+            onChange={setFooterColor}
+          />
+
           <div className={styles.toggleRow}>
             <span className={styles.toggleLabel}>Transparent background</span>
             <ToggleSwitch
@@ -359,6 +387,7 @@ export default function CreateSingleQRCode() {
                       bottom: `calc(100% + ${headerGap * previewScale}in)`,
                       fontSize: `${headerFontSize * previewScale}pt`,
                       fontWeight: headerFontWeight,
+                      color: headerColor,
                     }}
                   >
                     {header}
@@ -371,6 +400,7 @@ export default function CreateSingleQRCode() {
                       top: `calc(100% + ${footerGap * previewScale}in)`,
                       fontSize: `${footerFontSize * previewScale}pt`,
                       fontWeight: footerFontWeight,
+                      color: footerColor,
                     }}
                   >
                     {footer}
