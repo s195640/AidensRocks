@@ -79,7 +79,11 @@ export default function RichText({ html }) {
 
   return (
     <>
-      <div ref={containerRef} dangerouslySetInnerHTML={{ __html: sanitized }} />
+      <div
+        ref={containerRef}
+        className={styles.richTextRoot}
+        dangerouslySetInnerHTML={{ __html: sanitized }}
+      />
       {mounts.map(({ node, Component, props, key }) =>
         createPortal(<Component {...props} />, node, key)
       )}

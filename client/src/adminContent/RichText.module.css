@@ -11,3 +11,23 @@
   display: inline-block;
   vertical-align: baseline;
 }
+
+/* This app's global reset (index.css: `* { margin: 0; padding: 0; }`)
+   zeroes out <p>'s default margin everywhere except inside the editor
+   itself (PageContentEditor.module.css restores it there). Without an
+   equivalent restore here, a blank line (an empty <p></p> the admin typed)
+   renders at literally 0px tall in Preview/the public site — confirmed via
+   getBoundingClientRect() during investigation. margin-bottom alone is not
+   enough to fix this: a completely empty block box (no content, no
+   margin-top) is a CSS "self-collapsing" box — its own top/bottom margins
+   collapse into each other and then into its neighbors' margins, so the
+   blank line would still contribute zero visible space even with
+   margin-bottom set. min-height on :empty gives the box real height,
+   which is what actually prevents that collapse. */
+.richTextRoot p {
+  margin-bottom: 0.75rem;
+}
+
+.richTextRoot p:empty {
+  min-height: 1em;
+}
