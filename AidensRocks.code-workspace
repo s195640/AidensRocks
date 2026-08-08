@@ -84,6 +84,13 @@
           "$version = (Get-Content '${workspaceFolder}/VERSION' -Raw).Trim(); git add .; git commit -m \"$version\"; git push"
         ],
         "problemMatcher": []
+      },
+      {
+        "label": "Git Status",
+        "type": "shell",
+        "command": "git",
+        "args": ["status"],
+        "problemMatcher": []
       }
     ]
   }
