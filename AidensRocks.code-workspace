@@ -1,8 +1,8 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
+  "folders": [
+    {
+      "path": "."
+    }
   ],
   "settings": {},
   "tasks": {
@@ -28,6 +28,50 @@
         "command": "docker compose -f ${workspaceFolder}/data/docker-compose/docker-compose-dev.yml restart",
         "problemMatcher": [],
         "group": "build"
+      },
+      {
+        "label": "Deploy: All Nodes",
+        "type": "shell",
+        "command": "powershell.exe",
+        "args": [
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "${workspaceFolder}/data/scripts/deploy.ps1"
+        ],
+        "problemMatcher": [],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        }
+      },
+      {
+        "label": "Deploy: AAA (1057)",
+        "type": "shell",
+        "command": "powershell.exe",
+        "args": [
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "${workspaceFolder}/data/scripts/deploy.ps1",
+          "-Node",
+          "1"
+        ],
+        "problemMatcher": []
+      },
+      {
+        "label": "Deploy: CNA (1067)",
+        "type": "shell",
+        "command": "powershell.exe",
+        "args": [
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "${workspaceFolder}/data/scripts/deploy.ps1",
+          "-Node",
+          "2"
+        ],
+        "problemMatcher": []
       }
     ]
   }
