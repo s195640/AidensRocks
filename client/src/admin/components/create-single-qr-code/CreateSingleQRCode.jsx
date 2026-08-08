@@ -25,30 +25,59 @@ const escapeHtml = (str) =>
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
   );
 
-export default function CreateSingleQRCode() {
-  const [url, setUrl] = useState("aidensrocks.com");
-  const [sizeInches, setSizeInches] = useState(6);
-  const [header, setHeader] = useState("");
-  const [footer, setFooter] = useState("");
-  const [headerGap, setHeaderGap] = useState(0.25);
-  const [footerGap, setFooterGap] = useState(0.25);
-  const [headerFontSize, setHeaderFontSize] = useState(18);
-  const [footerFontSize, setFooterFontSize] = useState(14);
+// Single source of truth for every control's starting value -- both the
+// initial useState calls and the Reset button read from here, so the two
+// can never drift apart.
+const DEFAULTS = {
+  url: "aidensrocks.com",
+  sizeInches: 6,
+  header: "",
+  footer: "",
+  headerGap: 0.25,
+  footerGap: 0.25,
+  headerShiftX: 0,
+  footerShiftX: 0,
+  headerFontSize: 18,
+  footerFontSize: 14,
   // Standard CSS font-weight scale (100=thin .. 900=black); matches this
   // job's previous fixed values (header bold, footer normal) as defaults.
-  const [headerFontWeight, setHeaderFontWeight] = useState(700);
-  const [footerFontWeight, setFooterFontWeight] = useState(400);
-  const [transparentBackground, setTransparentBackground] = useState(false);
-  const [qrColor, setQrColor] = useState("#000000");
-  const [headerColor, setHeaderColor] = useState("#333333");
-  const [footerColor, setFooterColor] = useState("#333333");
+  headerFontWeight: 700,
+  footerFontWeight: 400,
+  // Transparent by default -- most printed uses paste this onto colored
+  // paper/signage, where a stray white square looks worse than nothing.
+  transparentBackground: true,
+  qrColor: "#000000",
+  qrBackgroundColor: "#ffffff",
+  headerColor: "#333333",
+  footerColor: "#333333",
+};
+
+export default function CreateSingleQRCode() {
+  const [url, setUrl] = useState(DEFAULTS.url);
+  const [sizeInches, setSizeInches] = useState(DEFAULTS.sizeInches);
+  const [header, setHeader] = useState(DEFAULTS.header);
+  const [footer, setFooter] = useState(DEFAULTS.footer);
+  const [headerGap, setHeaderGap] = useState(DEFAULTS.headerGap);
+  const [footerGap, setFooterGap] = useState(DEFAULTS.footerGap);
+  const [headerShiftX, setHeaderShiftX] = useState(DEFAULTS.headerShiftX);
+  const [footerShiftX, setFooterShiftX] = useState(DEFAULTS.footerShiftX);
+  const [headerFontSize, setHeaderFontSize] = useState(DEFAULTS.headerFontSize);
+  const [footerFontSize, setFooterFontSize] = useState(DEFAULTS.footerFontSize);
+  const [headerFontWeight, setHeaderFontWeight] = useState(DEFAULTS.headerFontWeight);
+  const [footerFontWeight, setFooterFontWeight] = useState(DEFAULTS.footerFontWeight);
+  const [transparentBackground, setTransparentBackground] = useState(DEFAULTS.transparentBackground);
+  const [qrColor, setQrColor] = useState(DEFAULTS.qrColor);
+  const [qrBackgroundColor, setQrBackgroundColor] = useState(DEFAULTS.qrBackgroundColor);
+  const [headerColor, setHeaderColor] = useState(DEFAULTS.headerColor);
+  const [footerColor, setFooterColor] = useState(DEFAULTS.footerColor);
   const [qrDataUrl, setQrDataUrl] = useState(null);
   const [qrError, setQrError] = useState("");
 
-  // Regenerates when the URL, size, dark-module color, or background
-  // transparency changes -- header/footer text, spacing, font size, and
-  // color are pure overlay styling applied at render time, so they update
-  // the preview instantly without needing the (async) QR image rebuilt.
+  // Regenerates when the URL, size, dark-module color, background color, or
+  // background transparency changes -- header/footer text, spacing, font
+  // size, and color are pure overlay styling applied at render time, so
+  // they update the preview instantly without needing the (async) QR image
+  // rebuilt.
   useEffect(() => {
     let cancelled = false;
     const trimmedUrl = url.trim();
@@ -66,12 +95,12 @@ export default function CreateSingleQRCode() {
 
     // 8-digit hex (RRGGBBAA) is what tells the qrcode library to render
     // with an alpha channel -- "00" alpha on the light modules is what
-    // actually makes the background transparent, not just visually white.
-    // The dark modules (qrColor) always stay fully opaque -- only the
-    // background is ever transparent.
+    // actually makes the background transparent, not just visually
+    // whatever color is picked. The dark modules (qrColor) always stay
+    // fully opaque -- only the background ever goes transparent.
     const color = {
       dark: `${qrColor}ff`,
-      light: transparentBackground ? "#ffffff00" : "#ffffffff",
+      light: `${qrBackgroundColor}${transparentBackground ? "00" : "ff"}`,
     };
 
     QRCode.toDataURL(encodedUrl, { width: pixelSize, color })
@@ -88,7 +117,7 @@ export default function CreateSingleQRCode() {
     return () => {
       cancelled = true;
     };
-  }, [url, sizeInches, qrColor, transparentBackground]);
+  }, [url, sizeInches, qrColor, qrBackgroundColor, transparentBackground]);
 
   const handleDownload = () => {
     if (!qrDataUrl) return;
@@ -110,6 +139,26 @@ export default function CreateSingleQRCode() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+  };
+
+  const handleReset = () => {
+    setUrl(DEFAULTS.url);
+    setSizeInches(DEFAULTS.sizeInches);
+    setHeader(DEFAULTS.header);
+    setFooter(DEFAULTS.footer);
+    setHeaderGap(DEFAULTS.headerGap);
+    setFooterGap(DEFAULTS.footerGap);
+    setHeaderShiftX(DEFAULTS.headerShiftX);
+    setFooterShiftX(DEFAULTS.footerShiftX);
+    setHeaderFontSize(DEFAULTS.headerFontSize);
+    setFooterFontSize(DEFAULTS.footerFontSize);
+    setHeaderFontWeight(DEFAULTS.headerFontWeight);
+    setFooterFontWeight(DEFAULTS.footerFontWeight);
+    setTransparentBackground(DEFAULTS.transparentBackground);
+    setQrColor(DEFAULTS.qrColor);
+    setQrBackgroundColor(DEFAULTS.qrBackgroundColor);
+    setHeaderColor(DEFAULTS.headerColor);
+    setFooterColor(DEFAULTS.footerColor);
   };
 
   const handlePrint = () => {
@@ -157,18 +206,19 @@ export default function CreateSingleQRCode() {
             position: absolute;
             left: 50%;
             width: 100%;
-            transform: translateX(-50%);
             text-align: center;
             z-index: 2;
           }
           .header {
             bottom: calc(100% + ${headerGap}in);
+            transform: translateX(calc(-50% + ${headerShiftX}in));
             font-size: ${headerFontSize}pt;
             font-weight: ${headerFontWeight};
             color: ${headerColor};
           }
           .footer {
             top: calc(100% + ${footerGap}in);
+            transform: translateX(calc(-50% + ${footerShiftX}in));
             font-size: ${footerFontSize}pt;
             font-weight: ${footerFontWeight};
             color: ${footerColor};
@@ -208,150 +258,216 @@ export default function CreateSingleQRCode() {
     <Job title="Create Single QR Code">
       <div className={styles.layout}>
         <div className={styles.formColumn}>
-          <label htmlFor="single-qr-url">URL</label>
-          <input
-            id="single-qr-url"
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            className={styles.urlInput}
-          />
+          <fieldset className={styles.section}>
+            <legend>QR Code</legend>
 
-          <label htmlFor="single-qr-size">Size: {sizeInches}in (square)</label>
-          <input
-            id="single-qr-size"
-            type="range"
-            min="1"
-            max="11"
-            step="0.25"
-            value={sizeInches}
-            onChange={(e) => setSizeInches(Number(e.target.value))}
-            className={styles.slider}
-          />
-
-          <ColorPickerField
-            id="single-qr-color"
-            label="QR code color"
-            value={qrColor}
-            onChange={setQrColor}
-          />
-
-          <label htmlFor="single-qr-header">Header (optional, printed above the code)</label>
-          <input
-            id="single-qr-header"
-            type="text"
-            value={header}
-            onChange={(e) => setHeader(e.target.value)}
-            className={styles.urlInput}
-          />
-
-          <label htmlFor="single-qr-header-gap">
-            Header spacing: {headerGap}in{headerGap < 0 ? " (overlapping the code)" : ""}
-          </label>
-          <input
-            id="single-qr-header-gap"
-            type="range"
-            min="-2"
-            max="2"
-            step="0.05"
-            value={headerGap}
-            onChange={(e) => setHeaderGap(Number(e.target.value))}
-            className={styles.slider}
-          />
-
-          <label htmlFor="single-qr-header-font">Header font size: {headerFontSize}pt</label>
-          <input
-            id="single-qr-header-font"
-            type="range"
-            min="8"
-            max="48"
-            step="1"
-            value={headerFontSize}
-            onChange={(e) => setHeaderFontSize(Number(e.target.value))}
-            className={styles.slider}
-          />
-
-          <label htmlFor="single-qr-header-weight">Header boldness: {headerFontWeight}</label>
-          <input
-            id="single-qr-header-weight"
-            type="range"
-            min="100"
-            max="900"
-            step="100"
-            value={headerFontWeight}
-            onChange={(e) => setHeaderFontWeight(Number(e.target.value))}
-            className={styles.slider}
-          />
-
-          <ColorPickerField
-            id="single-qr-header-color"
-            label="Header text color"
-            value={headerColor}
-            onChange={setHeaderColor}
-          />
-
-          <label htmlFor="single-qr-footer">Footer (optional, printed below the code)</label>
-          <input
-            id="single-qr-footer"
-            type="text"
-            value={footer}
-            onChange={(e) => setFooter(e.target.value)}
-            className={styles.urlInput}
-          />
-
-          <label htmlFor="single-qr-footer-gap">
-            Footer spacing: {footerGap}in{footerGap < 0 ? " (overlapping the code)" : ""}
-          </label>
-          <input
-            id="single-qr-footer-gap"
-            type="range"
-            min="-2"
-            max="2"
-            step="0.05"
-            value={footerGap}
-            onChange={(e) => setFooterGap(Number(e.target.value))}
-            className={styles.slider}
-          />
-
-          <label htmlFor="single-qr-footer-font">Footer font size: {footerFontSize}pt</label>
-          <input
-            id="single-qr-footer-font"
-            type="range"
-            min="8"
-            max="48"
-            step="1"
-            value={footerFontSize}
-            onChange={(e) => setFooterFontSize(Number(e.target.value))}
-            className={styles.slider}
-          />
-
-          <label htmlFor="single-qr-footer-weight">Footer boldness: {footerFontWeight}</label>
-          <input
-            id="single-qr-footer-weight"
-            type="range"
-            min="100"
-            max="900"
-            step="100"
-            value={footerFontWeight}
-            onChange={(e) => setFooterFontWeight(Number(e.target.value))}
-            className={styles.slider}
-          />
-
-          <ColorPickerField
-            id="single-qr-footer-color"
-            label="Footer text color"
-            value={footerColor}
-            onChange={setFooterColor}
-          />
-
-          <div className={styles.toggleRow}>
-            <span className={styles.toggleLabel}>Transparent background</span>
-            <ToggleSwitch
-              checked={transparentBackground}
-              onChange={() => setTransparentBackground((v) => !v)}
-              title={transparentBackground ? "Transparent — click for white" : "White — click for transparent"}
+            <label htmlFor="single-qr-url">URL</label>
+            <input
+              id="single-qr-url"
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              className={styles.urlInput}
             />
-          </div>
+
+            <label htmlFor="single-qr-size">Size: {sizeInches}in (square)</label>
+            <input
+              id="single-qr-size"
+              type="range"
+              min="1"
+              max="11"
+              step="0.25"
+              value={sizeInches}
+              onChange={(e) => setSizeInches(Number(e.target.value))}
+              className={styles.slider}
+            />
+
+            <div className={styles.colorToggleRow}>
+              <ColorPickerField id="single-qr-color" label="Color" value={qrColor} onChange={setQrColor} />
+              <ColorPickerField
+                id="single-qr-bg-color"
+                label="Background"
+                value={qrBackgroundColor}
+                onChange={setQrBackgroundColor}
+              />
+              <div className={styles.toggleRow}>
+                <span className={styles.toggleLabel}>Transparent background</span>
+                <ToggleSwitch
+                  checked={transparentBackground}
+                  onChange={() => setTransparentBackground((v) => !v)}
+                  title={
+                    transparentBackground
+                      ? "Transparent — click for solid background"
+                      : "Solid background — click for transparent"
+                  }
+                />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset className={styles.section}>
+            <legend>Header</legend>
+
+            <div className={styles.textColorRow}>
+              <div className={styles.textField}>
+                <label htmlFor="single-qr-header">Text (optional, printed above the code)</label>
+                <input
+                  id="single-qr-header"
+                  type="text"
+                  value={header}
+                  onChange={(e) => setHeader(e.target.value)}
+                  className={styles.urlInput}
+                />
+              </div>
+              <ColorPickerField
+                id="single-qr-header-color"
+                label="Color"
+                value={headerColor}
+                onChange={setHeaderColor}
+              />
+            </div>
+
+            <div className={styles.sliderGrid}>
+              <div>
+                <label htmlFor="single-qr-header-gap">
+                  Gap: {headerGap}in{headerGap < 0 ? " (overlap)" : ""}
+                </label>
+                <input
+                  id="single-qr-header-gap"
+                  type="range"
+                  min="-2"
+                  max="2"
+                  step="0.05"
+                  value={headerGap}
+                  onChange={(e) => setHeaderGap(Number(e.target.value))}
+                  className={styles.slider}
+                />
+              </div>
+              <div>
+                <label htmlFor="single-qr-header-font">Size: {headerFontSize}pt</label>
+                <input
+                  id="single-qr-header-font"
+                  type="range"
+                  min="8"
+                  max="48"
+                  step="1"
+                  value={headerFontSize}
+                  onChange={(e) => setHeaderFontSize(Number(e.target.value))}
+                  className={styles.slider}
+                />
+              </div>
+              <div>
+                <label htmlFor="single-qr-header-weight">Bold: {headerFontWeight}</label>
+                <input
+                  id="single-qr-header-weight"
+                  type="range"
+                  min="100"
+                  max="900"
+                  step="100"
+                  value={headerFontWeight}
+                  onChange={(e) => setHeaderFontWeight(Number(e.target.value))}
+                  className={styles.slider}
+                />
+              </div>
+              <div>
+                <label htmlFor="single-qr-header-shift">
+                  Shift: {headerShiftX}in{headerShiftX ? (headerShiftX > 0 ? " (right)" : " (left)") : ""}
+                </label>
+                <input
+                  id="single-qr-header-shift"
+                  type="range"
+                  min="-4"
+                  max="4"
+                  step="0.05"
+                  value={headerShiftX}
+                  onChange={(e) => setHeaderShiftX(Number(e.target.value))}
+                  className={styles.slider}
+                />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset className={styles.section}>
+            <legend>Footer</legend>
+
+            <div className={styles.textColorRow}>
+              <div className={styles.textField}>
+                <label htmlFor="single-qr-footer">Text (optional, printed below the code)</label>
+                <input
+                  id="single-qr-footer"
+                  type="text"
+                  value={footer}
+                  onChange={(e) => setFooter(e.target.value)}
+                  className={styles.urlInput}
+                />
+              </div>
+              <ColorPickerField
+                id="single-qr-footer-color"
+                label="Color"
+                value={footerColor}
+                onChange={setFooterColor}
+              />
+            </div>
+
+            <div className={styles.sliderGrid}>
+              <div>
+                <label htmlFor="single-qr-footer-gap">
+                  Gap: {footerGap}in{footerGap < 0 ? " (overlap)" : ""}
+                </label>
+                <input
+                  id="single-qr-footer-gap"
+                  type="range"
+                  min="-2"
+                  max="2"
+                  step="0.05"
+                  value={footerGap}
+                  onChange={(e) => setFooterGap(Number(e.target.value))}
+                  className={styles.slider}
+                />
+              </div>
+              <div>
+                <label htmlFor="single-qr-footer-font">Size: {footerFontSize}pt</label>
+                <input
+                  id="single-qr-footer-font"
+                  type="range"
+                  min="8"
+                  max="48"
+                  step="1"
+                  value={footerFontSize}
+                  onChange={(e) => setFooterFontSize(Number(e.target.value))}
+                  className={styles.slider}
+                />
+              </div>
+              <div>
+                <label htmlFor="single-qr-footer-weight">Bold: {footerFontWeight}</label>
+                <input
+                  id="single-qr-footer-weight"
+                  type="range"
+                  min="100"
+                  max="900"
+                  step="100"
+                  value={footerFontWeight}
+                  onChange={(e) => setFooterFontWeight(Number(e.target.value))}
+                  className={styles.slider}
+                />
+              </div>
+              <div>
+                <label htmlFor="single-qr-footer-shift">
+                  Shift: {footerShiftX}in{footerShiftX ? (footerShiftX > 0 ? " (right)" : " (left)") : ""}
+                </label>
+                <input
+                  id="single-qr-footer-shift"
+                  type="range"
+                  min="-4"
+                  max="4"
+                  step="0.05"
+                  value={footerShiftX}
+                  onChange={(e) => setFooterShiftX(Number(e.target.value))}
+                  className={styles.slider}
+                />
+              </div>
+            </div>
+          </fieldset>
 
           <div className={styles.actions}>
             <button onClick={handleDownload} className={styles.button} disabled={!qrDataUrl}>
@@ -359,6 +475,9 @@ export default function CreateSingleQRCode() {
             </button>
             <button onClick={handlePrint} className={styles.button} disabled={!qrDataUrl}>
               Print
+            </button>
+            <button onClick={handleReset} className={`${styles.button} ${styles.resetButton}`}>
+              Reset
             </button>
           </div>
         </div>
@@ -385,6 +504,7 @@ export default function CreateSingleQRCode() {
                     className={`${styles.previewLabel} ${styles.previewHeader}`}
                     style={{
                       bottom: `calc(100% + ${headerGap * previewScale}in)`,
+                      transform: `translateX(calc(-50% + ${headerShiftX * previewScale}in))`,
                       fontSize: `${headerFontSize * previewScale}pt`,
                       fontWeight: headerFontWeight,
                       color: headerColor,
@@ -398,6 +518,7 @@ export default function CreateSingleQRCode() {
                     className={`${styles.previewLabel} ${styles.previewFooter}`}
                     style={{
                       top: `calc(100% + ${footerGap * previewScale}in)`,
+                      transform: `translateX(calc(-50% + ${footerShiftX * previewScale}in))`,
                       fontSize: `${footerFontSize * previewScale}pt`,
                       fontWeight: footerFontWeight,
                       color: footerColor,

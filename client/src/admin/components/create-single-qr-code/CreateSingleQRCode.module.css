@@ -1,6 +1,6 @@
 .layout {
   display: flex;
-  gap: 30px;
+  gap: 20px;
   flex-wrap: wrap;
   text-align: left;
   align-items: flex-start;
@@ -15,39 +15,108 @@
   display: block;
   font-weight: bold;
   color: #444;
-  margin-bottom: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
 }
 
 .urlInput {
   width: 100%;
   max-width: 400px;
-  padding: 10px;
-  font-size: 1rem;
+  padding: 6px 8px;
+  font-size: 0.9rem;
   border: 1px solid #ccc;
-  border-radius: 6px;
-  margin-bottom: 20px;
+  border-radius: 5px;
+  margin-bottom: 8px;
   box-sizing: border-box;
 }
 
 .slider {
   width: 100%;
   max-width: 400px;
-  margin-bottom: 20px;
+  height: 18px;
+  margin-bottom: 8px;
   display: block;
+}
+
+/* Groups the QR/Header/Footer controls into visually distinct blocks so the
+   long flat stack of inputs reads as three short groups instead of one. */
+.section {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 12px 4px;
+  margin-bottom: 10px;
+}
+
+.section legend {
+  padding: 0 6px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+/* Puts a text input and its adjacent color picker on one line instead of
+   stacking them -- ColorPickerField's own internal layout is untouched,
+   this just constrains how much horizontal room it takes here. */
+.textColorRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.textField {
+  flex: 1 1 240px;
+}
+
+/* QR section's color picker + transparency toggle, side by side. */
+.colorToggleRow {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.colorToggleRow .toggleRow {
+  margin-bottom: 0;
+}
+
+/* Gap/size/boldness/shift sliders for a header or footer, packed into a row
+   instead of each taking a full-width line. */
+.sliderGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px 14px;
+}
+
+.sliderGrid .slider {
+  max-width: none;
+  margin-bottom: 6px;
+}
+
+@media (max-width: 620px) {
+  .sliderGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 360px) {
+  .sliderGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .button {
   background-color: rgba(110, 183, 216, 1);
   border: none;
   color: white;
-  padding: 10px 20px;
-  font-size: 1rem;
-  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 0.9rem;
+  border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
@@ -61,15 +130,28 @@
   cursor: not-allowed;
 }
 
+/* Muted/neutral variant so Reset doesn't compete visually with the primary
+   Download/Print actions -- it's a destructive-ish action (discards
+   everything typed), not the main call to action. */
+.resetButton {
+  background-color: #e3e3e3;
+  color: #333;
+}
+
+.resetButton:hover:not(:disabled) {
+  background-color: #d0d0d0;
+}
+
 .toggleRow {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .toggleLabel {
   font-weight: bold;
+  font-size: 0.85rem;
   color: #444;
 }
 
