@@ -1,15 +1,22 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db/pool");
+const EMAIL_SLUGS = require("../utils/emailSlugs");
 
 // -------------------- GET /api/pages --------------------
+// Excludes EMAIL_SLUGS rows unconditionally, regardless of `visible` — for
+// those rows `visible` is repurposed as an Active/Inactive send switch (see
+// routes/pagesAdmin.js), not "show this in the nav", and they have no
+// public route (PAGE_PATHS entry) to link to in the first place.
 router.get("/", async (req, res) => {
   try {
     const result = await db.query(
       `SELECT page_slug AS slug, nav_label, order_num, visible
        FROM page_content
        WHERE visible = true
-       ORDER BY order_num`
+         AND page_slug != ALL($1)
+       ORDER BY order_num`,
+      [Array.from(EMAIL_SLUGS)]
     );
     res.json(result.rows);
   } catch (err) {

@@ -5,19 +5,11 @@ const requireAdminAuth = require("../middleware/requireAdminAuth");
 const sendEmail = require("../utils/sendEmail");
 const applyTemplateValues = require("../utils/applyTemplateValues");
 const buildRockImageTag = require("../utils/buildRockImageTag");
+const EMAIL_SLUGS = require("../utils/emailSlugs");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 router.use(requireAdminAuth);
-
-// Slugs that represent an email template rather than a public page. For
-// these rows, the `visible` column doesn't mean "shown on the public site"
-// (they have no public route) — it's an Active/Inactive switch consumed by
-// utils/rock-upload/sendRockResponseEmail.js's automated send. The "Send"
-// button below is a manual test-send and is deliberately independent of it.
-// Client-side (PagesAdmin.jsx / PagesEditDialog.jsx / emailSlugs.js) mirrors
-// this list for the Subject field, Send button, and email-styled preview.
-const EMAIL_SLUGS = new Set(["response-email"]);
 
 // -------------------- GET /api/admin/pages --------------------
 router.get("/", async (req, res) => {
