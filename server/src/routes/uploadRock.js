@@ -10,6 +10,7 @@ const saveOriginalImages = require('../utils/rock-upload/saveOriginalImages');
 const handleTracking = require('../utils/rock-upload/handleTracking');
 const saveMetadataFile = require('../utils/rock-upload/saveMetadataFile');
 const processImagesInBackground = require('../utils/rock-upload/processImagesInBackground'); // Import the function
+const sendRockResponseEmail = require('../utils/rock-upload/sendRockResponseEmail');
 
 const router = express.Router();
 
@@ -188,6 +189,15 @@ router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
 
     // ✅ Run the image processing in the background
     setImmediate(() => processImagesInBackground(baseDir, name, safeRockNumber, commentSafe, locationSafe, rpsKey));
+
+    // ✅ If they gave a real rock number and an email, fire the (optional,
+    // admin-controlled) Response Email — no-ops internally if that template
+    // is currently Inactive. Independent of the background processing above.
+    const rockNumberInt = parseInt(safeRockNumber, 10);
+    const emailTrimmed = email?.trim();
+    if (rockNumberInt > 0 && emailTrimmed) {
+      setImmediate(() => sendRockResponseEmail(rockNumberInt, emailTrimmed));
+    }
   } catch (err) {
     await client.query('ROLLBACK');
     console.error(err);

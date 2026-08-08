@@ -17,6 +17,11 @@ import styles from "./RichText.module.css";
 // allowed on top of this app's usual avoidance of inline styles: HTML email
 // clients don't reliably support external/`<style>` CSS, so inline styles
 // are the standard way to size an embedded image.
+//
+// "span" is the chip mount point going forward (ComponentChip.js) — "div"
+// stays allowed too purely for already-stored content saved before that
+// tag switch (a <div> mid-sentence isn't valid inside <p> and gets the
+// paragraph auto-split by the browser's HTML parser; new saves emit span).
 const PURIFY_CONFIG = {
   ALLOWED_TAGS: [
     "h1", "h2", "h3", "h4", "h5", "h6",
@@ -24,6 +29,7 @@ const PURIFY_CONFIG = {
     "ul", "ol", "li",
     "a",
     "div",
+    "span",
     "img",
   ],
   ALLOWED_ATTR: ["href", "target", "rel", "data-component", "data-props", "src", "alt", "style"],

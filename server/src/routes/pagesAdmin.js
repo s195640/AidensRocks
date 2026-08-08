@@ -4,6 +4,7 @@ const db = require("../db/pool");
 const requireAdminAuth = require("../middleware/requireAdminAuth");
 const sendEmail = require("../utils/sendEmail");
 const applyTemplateValues = require("../utils/applyTemplateValues");
+const buildRockImageTag = require("../utils/buildRockImageTag");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -11,8 +12,9 @@ router.use(requireAdminAuth);
 
 // Slugs that represent an email template rather than a public page. For
 // these rows, the `visible` column doesn't mean "shown on the public site"
-// (they have no public route) — it doubles as an Active/Inactive switch
-// gating whether POST /:slug/send is allowed to actually send (see below).
+// (they have no public route) — it's an Active/Inactive switch consumed by
+// utils/rock-upload/sendRockResponseEmail.js's automated send. The "Send"
+// button below is a manual test-send and is deliberately independent of it.
 // Client-side (PagesAdmin.jsx / PagesEditDialog.jsx / emailSlugs.js) mirrors
 // this list for the Subject field, Send button, and email-styled preview.
 const EMAIL_SLUGS = new Set(["response-email"]);
@@ -176,11 +178,9 @@ router.post("/:slug/send", async (req, res) => {
   // {ROCK_IMAGE} is always derived server-side from ROCK_NUMBER — never
   // trust a client-supplied ROCK_IMAGE — mirroring the same URL
   // construction in EmailPreview.jsx so preview and actual send match.
-  // Public rock image convention (see routes/rocks.js's saveImage):
-  // media/catalog/<rock_number>/a.webp.
   const rockNumber = parseInt(templateValues.ROCK_NUMBER, 10);
   if (rockNumber > 0) {
-    templateValues.ROCK_IMAGE = `<img src="https://aidensrocks.com/media/catalog/${rockNumber}/a.webp" alt="Rock ${rockNumber}" style="max-width:100%;border-radius:8px;" />`;
+    templateValues.ROCK_IMAGE = buildRockImageTag(rockNumber);
   }
 
   try {

@@ -5,6 +5,7 @@ import Link from "@tiptap/extension-link";
 import ComponentChip from "./ComponentChip";
 import componentRegistry from "./componentRegistry";
 import EMAIL_PLACEHOLDERS from "./emailPlaceholders";
+import EMAIL_STATIC_INSERTS from "./emailStaticInserts";
 import EMAIL_SLUGS from "../admin/pages/pages/emailSlugs";
 import styles from "./PageContentEditor.module.css";
 
@@ -40,7 +41,9 @@ export default function PageContentEditor({ page, content, onChange }) {
     ([, entry]) => entry.pages === null || entry.pages?.includes(page)
   );
   const placeholderOptions = isEmail ? EMAIL_PLACEHOLDERS : [];
-  const hasInsertMenu = insertOptions.length > 0 || placeholderOptions.length > 0;
+  const staticInsertOptions = isEmail ? EMAIL_STATIC_INSERTS : [];
+  const hasInsertMenu =
+    insertOptions.length > 0 || placeholderOptions.length > 0 || staticInsertOptions.length > 0;
 
   const insertChip = (key) => {
     editor
@@ -51,8 +54,11 @@ export default function PageContentEditor({ page, content, onChange }) {
     setShowInsertMenu(false);
   };
 
-  const insertPlaceholder = (token) => {
-    editor.chain().focus().insertContent(token).run();
+  // Shared by placeholder tokens ({ROCK_NUMBER}, plain text — nothing to
+  // parse either way) and static HTML inserts (real <a> markup, which
+  // TipTap's insertContent parses as HTML, not literal text).
+  const insertRaw = (content) => {
+    editor.chain().focus().insertContent(content).run();
     setShowInsertMenu(false);
   };
 
@@ -107,7 +113,12 @@ export default function PageContentEditor({ page, content, onChange }) {
                   </button>
                 ))}
                 {placeholderOptions.map(({ key, label, token }) => (
-                  <button key={key} type="button" onClick={() => insertPlaceholder(token)}>
+                  <button key={key} type="button" onClick={() => insertRaw(token)}>
+                    {label}
+                  </button>
+                ))}
+                {staticInsertOptions.map(({ key, label, html }) => (
+                  <button key={key} type="button" onClick={() => insertRaw(html)}>
                     {label}
                   </button>
                 ))}
