@@ -1,5 +1,6 @@
 import CreateImages from "../../components/create-images/CreateImages";
 import CreateQRCodes from "../../components/create-qr-codes/CreateQRCodes";
+import CreateSingleQRCode from "../../components/create-single-qr-code/CreateSingleQRCode";
 import PrintMultiImages from "../../components/print-multi-images/PrintMultiImages";
 import styles from "./Jobs.module.css";
 
@@ -9,6 +10,7 @@ const Jobs = () => {
       <div className={styles.jobsStack}>
         <CreateImages />
         <CreateQRCodes />
+        <CreateSingleQRCode />
         <PrintMultiImages />
       </div>
     </div>

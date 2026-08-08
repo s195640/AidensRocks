@@ -170,8 +170,9 @@ router.put('/:pa_key', requireAdminAuth, async (req, res) => {
   const { pa_key } = req.params;
   const { name, display_name, desc, show, tags } = req.body;
 
-  const client = await db.connect();
+  let client;
   try {
+    client = await db.connect();
     await client.query('BEGIN');
 
     await client.query(
@@ -198,11 +199,11 @@ router.put('/:pa_key', requireAdminAuth, async (req, res) => {
     await client.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) await client.query('ROLLBACK');
     console.error('Album update failed:', err);
     res.status(500).json({ error: 'Failed to update album' });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 
@@ -266,8 +267,9 @@ router.get('/:pa_key/photos', async (req, res) => {
 router.post('/', requireAdminAuth, async (req, res) => {
   const { name, display_name, desc, show, tags } = req.body;
 
-  const client = await db.connect();
+  let client;
   try {
+    client = await db.connect();
     await client.query('BEGIN');
 
     const existing = await client.query(
@@ -306,11 +308,11 @@ router.post('/', requireAdminAuth, async (req, res) => {
     await client.query('COMMIT');
     res.status(200).json({ success: true, pa_key });
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) await client.query('ROLLBACK');
     console.error('Error creating album:', err);
     res.status(500).json({ error: 'Internal server error' });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 
@@ -345,8 +347,9 @@ router.post("/reorder", requireAdminAuth, async (req, res) => {
     return res.status(400).json({ error: "Invalid or empty order array." });
   }
 
-  const client = await db.connect();
+  let client;
   try {
+    client = await db.connect();
     await client.query("BEGIN");
 
     // Loop through array and update each record
@@ -361,11 +364,11 @@ router.post("/reorder", requireAdminAuth, async (req, res) => {
     await client.query("COMMIT");
     res.json({ success: true });
   } catch (err) {
-    await client.query("ROLLBACK");
+    if (client) await client.query("ROLLBACK");
     console.error("Error reordering albums:", err);
     res.status(500).json({ error: "Failed to reorder albums." });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 
@@ -376,8 +379,9 @@ router.post("/photos/reorder", requireAdminAuth, async (req, res) => {
     return res.status(400).json({ error: "Invalid or empty order array." });
   }
 
-  const client = await db.connect();
+  let client;
   try {
+    client = await db.connect();
     await client.query("BEGIN");
 
     // Loop through array and update each record
@@ -392,19 +396,20 @@ router.post("/photos/reorder", requireAdminAuth, async (req, res) => {
     await client.query("COMMIT");
     res.json({ success: true });
   } catch (err) {
-    await client.query("ROLLBACK");
+    if (client) await client.query("ROLLBACK");
     console.error("Error reordering albums:", err);
     res.status(500).json({ error: "Failed to reorder albums." });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 
 router.post('/photos/:p_key/toggle-show', requireAdminAuth, async (req, res) => {
   const { p_key } = req.params;
 
-  const client = await db.connect();
+  let client;
   try {
+    client = await db.connect();
     const result = await client.query(
       `UPDATE Photos
        SET show = NOT show, update_dt = NOW()
@@ -422,15 +427,16 @@ router.post('/photos/:p_key/toggle-show', requireAdminAuth, async (req, res) => 
     console.error('Toggle show error:', err);
     res.status(500).json({ error: 'Failed to toggle show' });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 
 router.delete('/photos/:p_key', requireAdminAuth, async (req, res) => {
   const { p_key } = req.params;
 
-  const client = await db.connect();
+  let client;
   try {
+    client = await db.connect();
     await client.query('BEGIN');
 
     // 1. Get photo name, media type, and album info before deletion
@@ -490,11 +496,11 @@ router.delete('/photos/:p_key', requireAdminAuth, async (req, res) => {
     await client.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) await client.query('ROLLBACK');
     console.error('Photo delete failed:', err);
     res.status(500).json({ error: 'Failed to delete photo' });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 

@@ -57,8 +57,9 @@ router.post("/", requireAdminAuth, upload.fields([{ name: "music_file" }, { name
     return res.status(400).json({ error: "All fields are required." });
   }
 
-  const client = await db.connect();
+  let client;
   try {
+    client = await db.connect();
     // Start transaction
     await client.query("BEGIN");
 
@@ -111,11 +112,11 @@ router.post("/", requireAdminAuth, upload.fields([{ name: "music_file" }, { name
       message: "Music created successfully.",
     });
   } catch (err) {
-    await client.query("ROLLBACK");
+    if (client) await client.query("ROLLBACK");
     console.error("Error creating music:", err);
     res.status(500).json({ error: "Server error creating music." });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 
@@ -227,9 +228,10 @@ router.put("/:m_key/toggle-show", requireAdminAuth, async (req, res) => {
 // -------------------- DELETE /api/music/:m_key --------------------
 router.delete("/:m_key", requireAdminAuth, async (req, res) => {
   const { m_key } = req.params;
-  const client = await db.connect();
+  let client;
 
   try {
+    client = await db.connect();
     await client.query("BEGIN");
 
     // Verify record exists
@@ -262,11 +264,11 @@ router.delete("/:m_key", requireAdminAuth, async (req, res) => {
 
     res.json({ success: true, m_key, message: "Music deleted and order updated successfully." });
   } catch (err) {
-    await client.query("ROLLBACK");
+    if (client) await client.query("ROLLBACK");
     console.error("Error deleting music:", err);
     res.status(500).json({ error: "Server error deleting music." });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 

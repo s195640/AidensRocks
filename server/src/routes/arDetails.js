@@ -4,8 +4,10 @@ const db = require('../db/pool');
 
 // GET /api/ar-details
 router.get("/", async (req, res) => {
-  const client = await db.connect();
+  let client;
   try {
+    client = await db.connect();
+
     // --- Summary counts ---
     const rocksRes = await client.query("SELECT COUNT(*) AS count FROM Catalog");
     const rocksFoundRes = await client.query("select count(distinct rock_number) from journey");
@@ -74,7 +76,7 @@ router.get("/", async (req, res) => {
     console.error("Error fetching AR Details:", err);
     res.status(500).json({ error: "Failed to fetch AR details" });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 

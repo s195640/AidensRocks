@@ -51,8 +51,9 @@ router.get('/', async (req, res, next) => {
 
 // CREATE new rock with comment
 router.post('/', upload.single('image'), async (req, res, next) => {
-  const client = await pool.connect();
+  let client;
   try {
+    client = await pool.connect();
     const { rock_number, artist_keys = '[]', comment = '' } = req.body;
     const artists = JSON.parse(artist_keys);
 
@@ -78,18 +79,19 @@ router.post('/', upload.single('image'), async (req, res, next) => {
     await client.query('COMMIT');
     res.status(201).json({ success: true });
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) await client.query('ROLLBACK');
     next(err);
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 
 // UPDATE existing rock with comment
 router.put('/:rc_key', upload.single('image'), async (req, res, next) => {
   const { rc_key } = req.params;
-  const client = await pool.connect();
+  let client;
   try {
+    client = await pool.connect();
     const { artist_keys = '[]', comment = '' } = req.body;
     const artists = JSON.parse(artist_keys);
 
@@ -128,10 +130,10 @@ router.put('/:rc_key', upload.single('image'), async (req, res, next) => {
     await client.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) await client.query('ROLLBACK');
     next(err);
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 

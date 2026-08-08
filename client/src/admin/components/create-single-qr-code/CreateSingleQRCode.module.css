@@ -1,0 +1,164 @@
+.layout {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+  text-align: left;
+  align-items: flex-start;
+}
+
+.formColumn {
+  flex: 1 1 320px;
+  min-width: 280px;
+}
+
+.formColumn label {
+  display: block;
+  font-weight: bold;
+  color: #444;
+  margin-bottom: 8px;
+}
+
+.urlInput {
+  width: 100%;
+  max-width: 400px;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+
+.slider {
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.button {
+  background-color: rgba(110, 183, 216, 1);
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.button:hover:not(:disabled) {
+  background-color: rgba(90, 160, 190, 1);
+}
+
+.button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.toggleLabel {
+  font-weight: bold;
+  color: #444;
+}
+
+/* Preview column: not gated behind a button -- always rendered, so it's
+   visible at a glance while adjusting the sliders. */
+.previewColumn {
+  flex: 0 0 auto;
+  min-width: 260px;
+}
+
+.previewTitle {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.previewError {
+  color: #c0392b;
+}
+
+.previewPlaceholder {
+  color: #888;
+  font-style: italic;
+}
+
+/* Bounds how far the header/footer gap can visually escape the preview.
+   Without this, a large negative gap could pull the header up far enough to
+   sit underneath the app's fixed navbar (z-index ~1100) -- a different,
+   globally-fixed stacking layer that no z-index on this component could
+   ever out-rank. Padding covers the slider's full range (2in) plus font
+   height headroom; overflow: hidden clips anything beyond that instead of
+   letting it leak into the rest of the page. */
+.previewFrame {
+  overflow: hidden;
+  padding: 2.5in 0;
+  box-sizing: border-box;
+}
+
+.previewWrapper {
+  position: relative;
+  margin: 0 auto;
+}
+
+.previewImage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  border: 1px solid #eee;
+}
+
+/* Shown behind the QR image only when "Transparent background" is on, so a
+   transparent PNG doesn't just look identical to a plain white one against
+   this page's own light background -- the classic image-editor checkered
+   pattern makes the transparency itself visible at a glance. */
+.checkerboard {
+  background-image:
+    linear-gradient(45deg, #ccc 25%, transparent 25%),
+    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ccc 75%),
+    linear-gradient(-45deg, transparent 75%, #ccc 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+}
+
+/* Positioned, not margin-pushed, so these always paint on top of
+   .previewImage (z-index 2 vs 1) -- matches the print template's approach
+   (see handlePrint) so the on-screen preview accurately represents what
+   will print, including negative-gap overlap. */
+.previewLabel {
+  position: absolute;
+  left: 50%;
+  width: 100%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 2;
+  color: #333;
+  white-space: pre-wrap;
+}
+
+/* font-weight (and font-size) are now controlled by the boldness/font-size
+   sliders via inline style on the element itself, which always wins over
+   these -- kept defined (even empty) rather than removed, since JSX still
+   composes classNames with styles.previewHeader/styles.previewFooter; an
+   undefined CSS Modules export renders as the literal class "undefined"
+   (bit us once already, see git history). */
+.previewHeader {
+}
+
+.previewFooter {
+}

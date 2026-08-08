@@ -37,8 +37,9 @@ router.post("/reorder", async (req, res) => {
     return res.status(400).json({ error: "Invalid or empty order array." });
   }
 
-  const client = await db.connect();
+  let client;
   try {
+    client = await db.connect();
     await client.query("BEGIN");
 
     for (let i = 0; i < order.length; i++) {
@@ -51,11 +52,11 @@ router.post("/reorder", async (req, res) => {
     await client.query("COMMIT");
     res.json({ success: true });
   } catch (err) {
-    await client.query("ROLLBACK");
+    if (client) await client.query("ROLLBACK");
     console.error("Error reordering pages:", err);
     res.status(500).json({ error: "Server error reordering pages." });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 

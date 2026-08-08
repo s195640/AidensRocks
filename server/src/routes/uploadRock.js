@@ -72,9 +72,11 @@ router.post('/upload-rock/stage-chunk', upload.single('chunk'), async (req, res)
 });
 
 router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
-  const client = await pool.connect();
+  let client;
 
   try {
+    client = await pool.connect();
+
     const {
       rockNumber,
       rockNumberQr,
@@ -199,11 +201,11 @@ router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
       setImmediate(() => sendRockResponseEmail(rockNumberInt, emailTrimmed));
     }
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) await client.query('ROLLBACK');
     console.error(err);
     next(err);
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 

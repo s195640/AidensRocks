@@ -20,9 +20,10 @@ router.post('/rock-count', async (req, res) => {
     geo,
   } = req.body;
 
-  const client = await pool.connect();
+  let client;
 
   try {
+    client = await pool.connect();
     await client.query('BEGIN');
 
     // 1. Insert or get rcs_key from counter
@@ -65,11 +66,11 @@ router.post('/rock-count', async (req, res) => {
     await client.query('COMMIT');
     res.status(200).json({ message: 'Tracking recorded.' });
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (client) await client.query('ROLLBACK');
     console.error('Rock tracking error:', error);
     res.status(500).json({ error: 'Failed to track rock visit' });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 
