@@ -15,6 +15,14 @@ const JourneyAdminTable = ({
   const [commentDialog, setCommentDialog] = useState({ open: false, text: "" });
   const [searchTerm, setSearchTerm] = useState("");
 
+  const rockTotals = useMemo(() => {
+    const totals = {};
+    posts.forEach((p) => {
+      totals[p.rock_number] = (totals[p.rock_number] || 0) + 1;
+    });
+    return totals;
+  }, [posts]);
+
   const _data = posts.map((u) => ({
     ...u,
     _coordinates:
@@ -27,6 +35,7 @@ const JourneyAdminTable = ({
       u.comment && u.comment.length > 150
         ? `${u.comment.substring(0, 150)} (...)`
         : u.comment,
+    _rockTotal: rockTotals[u.rock_number] || 0,
   }));
 
   const searchedData = useMemo(() => {
@@ -49,6 +58,13 @@ const JourneyAdminTable = ({
     () => [
       { key: "image", label: "Image", defaultWidth: 50, sortable: false },
       { key: "rock_number", label: "Rock", defaultWidth: 60, sortable: true },
+      {
+        key: "rock_total",
+        label: "Rock Total",
+        defaultWidth: 80,
+        sortable: true,
+        sortValue: (row) => row._rockTotal,
+      },
       { key: "location", label: "Location", sortable: true },
       {
         key: "coordinates",
@@ -124,6 +140,9 @@ const JourneyAdminTable = ({
 
       case "coordinates":
         return post._coordinates;
+
+      case "rock_total":
+        return post._rockTotal;
 
       case "comment":
         return (
@@ -203,17 +222,18 @@ const JourneyAdminTable = ({
 
   return (
     <>
-      <input
-        type="text"
-        placeholder="Search rock #, location, comment, name, email..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className={styles.searchInput}
-      />
-
-      <h3 className={styles.sectionHeading}>
-        Unprocessed (No Coordinates)
-      </h3>
+      <div className={styles.sectionHeadingRow}>
+        <h3 className={styles.sectionHeading}>
+          Unprocessed (No Coordinates)
+        </h3>
+        <input
+          type="text"
+          placeholder="Search rock #, location, comment, name, email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className={styles.searchInput}
+        />
+      </div>
       {unprocessedData.length === 0 ? (
         <p className={styles.emptyMessage}>No unprocessed journey entries.</p>
       ) : (

@@ -138,8 +138,10 @@ const JourneyAdmin = () => {
       {editingPost &&
         <JourneyAdminEditDialog
           post={editingPost}
+          posts={posts}
           isOpen={editingPost}
           onClose={() => setEditingPost(null)}
+          onNavigate={setEditingPost}
           onSave={() => {
             fetchPosts();
             setEditingPost(null);

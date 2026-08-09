@@ -8,6 +8,7 @@ export default function Dialog({
   buttonPanel,
   children,
   closeOnOutsideClick = false,
+  className,
 }) {
   const [visible, setVisible] = useState(isOpen);
 
@@ -48,7 +49,7 @@ export default function Dialog({
       onAnimationEnd={handleAnimationEnd}
     >
       <div
-        className={`${styles.dialog} ${isOpen ? styles.show : styles.hide}`}
+        className={`${styles.dialog} ${isOpen ? styles.show : styles.hide} ${className || ""}`}
         onClick={(e) => e.stopPropagation()}
       >
         {(title || buttonPanel) && (

@@ -1,9 +1,15 @@
+.sectionHeadingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .searchInput {
-  display: block;
   width: 100%;
   max-width: 400px;
   padding: 0.6rem;
-  margin-bottom: 1rem;
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 0.9rem;
@@ -19,6 +25,10 @@
 
 .sectionHeading {
   margin: 1.5rem 0 0.5rem;
+}
+
+.sectionHeadingRow .sectionHeading {
+  margin: 0;
 }
 
 .sectionHeading:first-child {

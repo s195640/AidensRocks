@@ -1,32 +1,58 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import heic2any from "heic2any";
-import { Play } from "lucide-react";
+import { Play, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-react";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import authFetch from "../../../utils/authFetch";
 import styles from "./JourneyAdminEditDialog.module.css";
 
 const MAX_NEW_IMAGES = 10;
 
+const buildFormData = (post) => ({
+  rock_number: post.rock_number || "",
+  location: post.location || "",
+  date: post.date ? post.date.slice(0, 16) : "",
+  comment: post.comment || "",
+  name: post.name || "",
+  email: post.email || "",
+  show: post.show || false,
+  coordinates:
+    post.latitude && post.longitude
+      ? `${post.latitude}, ${post.longitude}`
+      : "",
+});
+
 const JourneyAdminEditDialog = ({
   post,
+  posts,
   isOpen,
   onClose,
+  onNavigate,
   onSave,
   openImagesLightbox,
 }) => {
-  const [formData, setFormData] = useState({
-    rock_number: post.rock_number || "",
-    location: post.location || "",
-    date: post.date ? post.date.slice(0, 16) : "",
-    comment: post.comment || "",
-    name: post.name || "",
-    email: post.email || "",
-    show: post.show || false,
-    coordinates:
-      post.latitude && post.longitude
-        ? `${post.latitude}, ${post.longitude}`
-        : "",
-  });
+  const [formData, setFormData] = useState(() => buildFormData(post));
+
+  // Other journeys posted for this same rock, oldest to newest, so the nav
+  // buttons below can step through them in date order.
+  const siblingPosts = useMemo(
+    () =>
+      (posts || [])
+        .filter((p) => p.rock_number === post.rock_number)
+        .slice()
+        .sort((a, b) => new Date(a.date) - new Date(b.date)),
+    [posts, post.rock_number]
+  );
+  const currentIndex = siblingPosts.findIndex((p) => p.rps_key === post.rps_key);
+  const totalJourneys = siblingPosts.length;
+
+  const goToSibling = (index) => {
+    if (index < 0 || index >= siblingPosts.length) return;
+    onNavigate(siblingPosts[index]);
+  };
+
+  useEffect(() => {
+    setFormData(buildFormData(post));
+  }, [post]);
 
   const [images, setImages] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -244,13 +270,59 @@ const JourneyAdminEditDialog = ({
   const getThumbnailUrl = (img) =>
     `/media/rocks/${formData.rock_number}/${post.uuid}/sm/${img.current_name}.webp`;
 
+  const missingCoordinates = !formData.coordinates;
+
   return (
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
-      title="Edit Journey Post"
+      className={styles.editDialog}
+      title={
+        <>
+          Edit Journey Post — Rock #{post.rock_number}
+          {totalJourneys > 0 && (
+            <span className={styles.journeyCount}>
+              ({totalJourneys} journey{totalJourneys === 1 ? "" : "s"})
+            </span>
+          )}
+        </>
+      }
       buttonPanel={
         <>
+          <div className={styles.navButtons}>
+            <button
+              type="button"
+              onClick={() => goToSibling(0)}
+              disabled={saving || currentIndex <= 0}
+              title="First journey"
+            >
+              <ChevronsLeft size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => goToSibling(currentIndex - 1)}
+              disabled={saving || currentIndex <= 0}
+              title="Previous journey"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => goToSibling(currentIndex + 1)}
+              disabled={saving || currentIndex === -1 || currentIndex >= totalJourneys - 1}
+              title="Next journey"
+            >
+              <ChevronRight size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => goToSibling(totalJourneys - 1)}
+              disabled={saving || currentIndex === -1 || currentIndex >= totalJourneys - 1}
+              title="Last journey"
+            >
+              <ChevronsRight size={16} />
+            </button>
+          </div>
           <button onClick={handleSave} disabled={saving}>
             Save
           </button>
@@ -261,6 +333,10 @@ const JourneyAdminEditDialog = ({
       }
     >
       {error && <div className={styles.errorMessage}>{error}</div>}
+
+      {missingCoordinates && (
+        <div className={styles.missingCoordinatesBanner}>Missing Coordinates</div>
+      )}
 
       <form className={styles.dialogForm} onSubmit={(e) => e.preventDefault()}>
         <label htmlFor="rock_number">Rock Number</label>
@@ -282,13 +358,19 @@ const JourneyAdminEditDialog = ({
           onChange={handleChange}
         />
 
-        <label htmlFor="coordinates">Coordinates</label>
+        <label
+          htmlFor="coordinates"
+          className={missingCoordinates ? styles.missingCoordinatesLabel : undefined}
+        >
+          Coordinates
+        </label>
         <input
           type="text"
           id="coordinates"
           name="coordinates"
           value={formData.coordinates}
           onChange={handleChange}
+          className={missingCoordinates ? styles.missingCoordinatesInput : undefined}
         />
 
         <label htmlFor="date">Date</label>
@@ -342,49 +424,51 @@ const JourneyAdminEditDialog = ({
       ) : images.length === 0 ? (
         <p>No images found.</p>
       ) : (
-        <table className={styles.imagesTable}>
-          <thead>
-            <tr>
-              <th>Image</th>
-              <th>Original Name</th>
-              <th>Show</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {images.map((img) => (
-              <tr key={img.rpi_key}>
-                <td className={styles.thumbCell}>
-                  <img
-                    src={getThumbnailUrl(img)}
-                    alt={img.original_name}
-                    className={styles.imagePreview}
-                    onClick={() => openImagesLightbox(post)}
-                  />
-                  {img.media_type === "video" && (
-                    <Play size={20} fill="white" className={styles.playIconOverlay} />
-                  )}
-                </td>
-                <td>{img.original_name}</td>
-                <td>{img.show ? "Yes" : "No"}</td>
-                <td className={styles.actionsCol}>
-                  <button
-                    onClick={() => toggleImageShow(img.rpi_key, img.show)}
-                    type="button"
-                  >
-                    {img.show ? "Disable" : "Enable"}
-                  </button>
-                  <button
-                    onClick={() => deleteImage(img.rpi_key)}
-                    type="button"
-                  >
-                    Delete
-                  </button>
-                </td>
+        <div className={styles.imagesTableWrapper}>
+          <table className={styles.imagesTable}>
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Original Name</th>
+                <th>Show</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {images.map((img) => (
+                <tr key={img.rpi_key}>
+                  <td className={styles.thumbCell}>
+                    <img
+                      src={getThumbnailUrl(img)}
+                      alt={img.original_name}
+                      className={styles.imagePreview}
+                      onClick={() => openImagesLightbox(post)}
+                    />
+                    {img.media_type === "video" && (
+                      <Play size={20} fill="white" className={styles.playIconOverlay} />
+                    )}
+                  </td>
+                  <td>{img.original_name}</td>
+                  <td>{img.show ? "Yes" : "No"}</td>
+                  <td className={styles.actionsCol}>
+                    <button
+                      onClick={() => toggleImageShow(img.rpi_key, img.show)}
+                      type="button"
+                    >
+                      {img.show ? "Disable" : "Enable"}
+                    </button>
+                    <button
+                      onClick={() => deleteImage(img.rpi_key)}
+                      type="button"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <h3>Add New Images</h3>

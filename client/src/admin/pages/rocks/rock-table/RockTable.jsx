@@ -1,9 +1,22 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import Table from "../../../../components/simple-components/table/Table";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import styles from "./RockTable.module.css";
 
 export default function RockTable({ rocks, onEdit, onDelete, openImageDialog }) {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredRocks = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return rocks;
+    return rocks.filter((row) => {
+      const artistNames = (row.artists || []).map((a) => a.display_name).join(", ");
+      return [row.rock_number, artistNames, row.comment].some((field) =>
+        String(field ?? "").toLowerCase().includes(term)
+      );
+    });
+  }, [rocks, searchTerm]);
+
   const columns = [
     { key: "rock_number", label: "Rock", defaultWidth: 80, sortable: true, },
     { key: "artists", label: "Artists", defaultWidth: 120, sortable: true, },
@@ -51,5 +64,18 @@ export default function RockTable({ rocks, onEdit, onDelete, openImageDialog }) 
     return row[key];
   };
 
-  return <Table columns={columns} data={rocks} renderCell={renderCell} enableRowDrag={false} />;
+  return (
+    <>
+      <div className={styles.searchRow}>
+        <input
+          type="text"
+          placeholder="Search rock #, artists, comment..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className={styles.searchInput}
+        />
+      </div>
+      <Table columns={columns} data={filteredRocks} renderCell={renderCell} enableRowDrag={false} />
+    </>
+  );
 }
