@@ -122,23 +122,122 @@ export default function CreateSingleQRCode() {
   const handleDownload = () => {
     if (!qrDataUrl) return;
 
-    // Derives a readable filename from the URL rather than a generic
-    // "qr-code.png" every time, e.g. "aidensrocks-com.png" -- falls back to
-    // a fixed name if the URL doesn't leave anything usable.
-    const safeName =
-      url
-        .trim()
-        .replace(/^https?:\/\//i, "")
-        .replace(/[^a-z0-9]+/gi, "-")
-        .replace(/^-+|-+$/g, "")
-        .toLowerCase() || "qr-code";
+    const trimmedHeader = header.trim();
+    const trimmedFooter = footer.trim();
+    const qrPx = Math.round(sizeInches * PRINT_DPI);
+    // 1pt = 1/72in, so this converts a pt font size into px at PRINT_DPI --
+    // keeps header/footer text sized consistently with the QR raster.
+    const ptToPx = PRINT_DPI / 72;
 
-    const a = document.createElement("a");
-    a.href = qrDataUrl;
-    a.download = `${safeName}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    // The composed PNG is built on an offscreen canvas rather than just
+    // downloading `qrDataUrl` as-is, so the header/footer text -- and the
+    // transparent/solid background behind them -- are baked into the file
+    // itself instead of only existing in the on-screen preview/print.
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // Word-wraps text to the QR's width (mirrors the print template's
+      // `width: 100%` header/footer boxes) and reports the space it'll
+      // need, so the canvas can be sized to fit it before anything is drawn.
+      const measure = (text, fontSize, fontWeight) => {
+        if (!text) return { lines: [], lineHeight: 0, height: 0, fontPx: 0 };
+        const fontPx = fontSize * ptToPx;
+        const lineHeight = fontPx * 1.2;
+        ctx.font = `${fontWeight} ${fontPx}px Verdana, Arial, sans-serif`;
+        const words = text.split(/\s+/).filter(Boolean);
+        const lines = [];
+        let current = words[0];
+        for (let i = 1; i < words.length; i++) {
+          const attempt = `${current} ${words[i]}`;
+          if (ctx.measureText(attempt).width <= qrPx) {
+            current = attempt;
+          } else {
+            lines.push(current);
+            current = words[i];
+          }
+        }
+        lines.push(current);
+        return { lines, lineHeight, height: lines.length * lineHeight, fontPx };
+      };
+
+      const headerInfo = measure(trimmedHeader, headerFontSize, headerFontWeight);
+      const footerInfo = measure(trimmedFooter, footerFontSize, footerFontWeight);
+      const headerGapPx = headerGap * PRINT_DPI;
+      const footerGapPx = footerGap * PRINT_DPI;
+      const headerShiftPx = headerShiftX * PRINT_DPI;
+      const footerShiftPx = footerShiftX * PRINT_DPI;
+
+      // Vertical extent of the composite, measured from the QR's own
+      // top-left (0,0) -- mirrors the print template's
+      // `bottom: calc(100% + gap)` / `top: calc(100% + gap)`. Only expands
+      // past the QR's own bounds when there's actual text to draw, so an
+      // empty header/footer with a leftover gap value doesn't add blank
+      // canvas space.
+      let minY = 0;
+      let maxY = qrPx;
+      let headerTop = 0;
+      let footerTop = qrPx;
+      if (headerInfo.lines.length) {
+        headerTop = -headerGapPx - headerInfo.height;
+        minY = Math.min(minY, headerTop);
+      }
+      if (footerInfo.lines.length) {
+        footerTop = qrPx + footerGapPx;
+        maxY = Math.max(maxY, footerTop + footerInfo.height);
+      }
+
+      const originY = -minY;
+      canvas.width = qrPx;
+      canvas.height = Math.ceil(maxY - minY);
+
+      // Extends the transparent/solid background across the full canvas --
+      // including the header/footer space -- not just the QR square.
+      if (!transparentBackground) {
+        ctx.fillStyle = qrBackgroundColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      ctx.drawImage(img, 0, originY, qrPx, qrPx);
+
+      const drawLines = (info, color, fontWeight, top, shiftPx) => {
+        if (!info.lines.length) return;
+        ctx.font = `${fontWeight} ${info.fontPx}px Verdana, Arial, sans-serif`;
+        ctx.fillStyle = color;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        const x = qrPx / 2 + shiftPx;
+        info.lines.forEach((line, i) => {
+          // Centers the glyphs within their line box, approximating how
+          // CSS line-height centers a single line of text.
+          const y = originY + top + i * info.lineHeight + (info.lineHeight - info.fontPx) / 2;
+          ctx.fillText(line, x, y);
+        });
+      };
+
+      drawLines(headerInfo, headerColor, headerFontWeight, headerTop, headerShiftPx);
+      drawLines(footerInfo, footerColor, footerFontWeight, footerTop, footerShiftPx);
+
+      // Derives a readable filename from the URL rather than a generic
+      // "qr-code.png" every time, e.g. "aidensrocks-com.png" -- falls back
+      // to a fixed name if the URL doesn't leave anything usable.
+      const safeName =
+        url
+          .trim()
+          .replace(/^https?:\/\//i, "")
+          .replace(/[^a-z0-9]+/gi, "-")
+          .replace(/^-+|-+$/g, "")
+          .toLowerCase() || "qr-code";
+
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = `${safeName}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
+    img.src = qrDataUrl;
   };
 
   const handleReset = () => {
@@ -494,17 +593,25 @@ export default function CreateSingleQRCode() {
             // sibling within this component. Containing it here instead of
             // fighting that z-index is the reliable fix.
             <div className={styles.previewFrame}>
+              {/* previewComposite stacks header/QR/footer as normal flow
+                  items (gap = margin, which can go negative to overlap) so
+                  the transparent-checkerboard/solid background painted on
+                  *this* element -- not just the QR square -- visually
+                  extends across the header/footer text, matching what
+                  handleDownload/handlePrint actually produce. */}
               <div
-                className={`${styles.previewWrapper} ${transparentBackground ? styles.checkerboard : ""}`}
-                style={{ width: `${previewSize}in`, height: `${previewSize}in` }}
+                className={`${styles.previewComposite} ${transparentBackground ? styles.checkerboard : ""}`}
+                style={{
+                  width: `${previewSize}in`,
+                  backgroundColor: transparentBackground ? undefined : qrBackgroundColor,
+                }}
               >
-                <img src={qrDataUrl} alt="QR code preview" className={styles.previewImage} />
                 {header.trim() && (
                   <div
-                    className={`${styles.previewLabel} ${styles.previewHeader}`}
+                    className={styles.previewLabel}
                     style={{
-                      bottom: `calc(100% + ${headerGap * previewScale}in)`,
-                      transform: `translateX(calc(-50% + ${headerShiftX * previewScale}in))`,
+                      marginBottom: `${headerGap * previewScale}in`,
+                      transform: `translateX(${headerShiftX * previewScale}in)`,
                       fontSize: `${headerFontSize * previewScale}pt`,
                       fontWeight: headerFontWeight,
                       color: headerColor,
@@ -513,12 +620,18 @@ export default function CreateSingleQRCode() {
                     {header}
                   </div>
                 )}
+                <div
+                  className={styles.previewImageWrapper}
+                  style={{ width: `${previewSize}in`, height: `${previewSize}in` }}
+                >
+                  <img src={qrDataUrl} alt="QR code preview" className={styles.previewImage} />
+                </div>
                 {footer.trim() && (
                   <div
-                    className={`${styles.previewLabel} ${styles.previewFooter}`}
+                    className={styles.previewLabel}
                     style={{
-                      top: `calc(100% + ${footerGap * previewScale}in)`,
-                      transform: `translateX(calc(-50% + ${footerShiftX * previewScale}in))`,
+                      marginTop: `${footerGap * previewScale}in`,
+                      transform: `translateX(${footerShiftX * previewScale}in)`,
                       fontSize: `${footerFontSize * previewScale}pt`,
                       fontWeight: footerFontWeight,
                       color: footerColor,

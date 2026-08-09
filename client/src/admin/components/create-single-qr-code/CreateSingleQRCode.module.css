@@ -189,19 +189,32 @@
   box-sizing: border-box;
 }
 
-.previewWrapper {
-  position: relative;
+/* Wraps header + QR + footer as a single flow column so the
+   transparent-checkerboard/solid background applied to *this* element
+   extends across the header/footer text too, not just the QR square --
+   this is what makes the preview represent the composited PNG that
+   handleDownload actually produces (see that function for why). Header/
+   footer "gap" is a margin here (negative = overlap), same semantics as
+   the slider. */
+.previewComposite {
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.previewImageWrapper {
+  position: relative;
+  /* Paints below .previewLabel (z-index 2) when a negative gap makes them
+     overlap -- matches the print template's approach (see handlePrint). */
+  z-index: 1;
 }
 
 .previewImage {
-  position: absolute;
-  top: 0;
-  left: 0;
+  display: block;
   width: 100%;
   height: 100%;
-  z-index: 1;
   border: 1px solid #eee;
+  box-sizing: border-box;
 }
 
 /* Shown behind the QR image only when "Transparent background" is on, so a
@@ -218,29 +231,15 @@
   background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
 }
 
-/* Positioned, not margin-pushed, so these always paint on top of
-   .previewImage (z-index 2 vs 1) -- matches the print template's approach
-   (see handlePrint) so the on-screen preview accurately represents what
-   will print, including negative-gap overlap. */
+/* Relatively positioned (not absolutely) so a negative gap's margin can
+   pull it over the QR image while still letting z-index 2 paint it on top
+   -- matches the print template's approach (see handlePrint) so the
+   on-screen preview accurately represents what will print/download,
+   including negative-gap overlap. */
 .previewLabel {
-  position: absolute;
-  left: 50%;
-  width: 100%;
-  transform: translateX(-50%);
-  text-align: center;
+  position: relative;
   z-index: 2;
-  color: #333;
+  width: 100%;
+  text-align: center;
   white-space: pre-wrap;
-}
-
-/* font-weight (and font-size) are now controlled by the boldness/font-size
-   sliders via inline style on the element itself, which always wins over
-   these -- kept defined (even empty) rather than removed, since JSX still
-   composes classNames with styles.previewHeader/styles.previewFooter; an
-   undefined CSS Modules export renders as the literal class "undefined"
-   (bit us once already, see git history). */
-.previewHeader {
-}
-
-.previewFooter {
 }
