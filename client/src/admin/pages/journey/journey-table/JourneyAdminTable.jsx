@@ -13,6 +13,7 @@ const JourneyAdminTable = ({
   openImagesLightbox,
 }) => {
   const [commentDialog, setCommentDialog] = useState({ open: false, text: "" });
+  const [searchTerm, setSearchTerm] = useState("");
 
   const _data = posts.map((u) => ({
     ...u,
@@ -28,8 +29,19 @@ const JourneyAdminTable = ({
         : u.comment,
   }));
 
-  const unprocessedData = _data.filter((u) => !(u.latitude && u.longitude));
-  const processedData = _data.filter((u) => u.latitude && u.longitude);
+  const searchedData = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return _data;
+    return _data.filter((u) =>
+      [u.rock_number, u.location, u.comment, u.name, u.email].some((field) =>
+        String(field ?? "").toLowerCase().includes(term)
+      )
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, posts]);
+
+  const unprocessedData = searchedData.filter((u) => !(u.latitude && u.longitude));
+  const processedData = searchedData.filter((u) => u.latitude && u.longitude);
 
   const defaultSort = { key: "date", direction: "desc" };
 
@@ -54,6 +66,18 @@ const JourneyAdminTable = ({
       { key: "name", label: "Name", sortable: true },
       { key: "email", label: "Email", sortable: true },
       { key: "show", label: "Show", defaultWidth: 50, sortable: true },
+      {
+        key: "email_sent",
+        label: "Email Sent",
+        defaultWidth: 80,
+        sortable: true,
+      },
+      {
+        key: "email_dt",
+        label: "Email Date",
+        defaultWidth: 120,
+        sortable: true,
+      },
       {
         key: "total_images",
         label: "Images",
@@ -128,6 +152,22 @@ const JourneyAdminTable = ({
           </div>
         );
 
+      case "email_dt":
+        return post.email_dt ? post.email_dt.replace("T", " ").slice(0, 16) : "-";
+
+      case "email_sent":
+        return (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <input
+              type="checkbox"
+              checked={!!post.email_sent}
+              disabled
+              readOnly
+              className={styles.checkboxCell}
+            />
+          </div>
+        );
+
       case "actions":
         return (
           <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
@@ -163,6 +203,14 @@ const JourneyAdminTable = ({
 
   return (
     <>
+      <input
+        type="text"
+        placeholder="Search rock #, location, comment, name, email..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className={styles.searchInput}
+      />
+
       <h3 className={styles.sectionHeading}>
         Unprocessed (No Coordinates)
       </h3>

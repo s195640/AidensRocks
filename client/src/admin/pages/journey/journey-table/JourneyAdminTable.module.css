@@ -1,3 +1,22 @@
+.searchInput {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  padding: 0.6rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.searchInput:focus {
+  border-color: #4caf50;
+  box-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
+  outline: none;
+}
+
 .sectionHeading {
   margin: 1.5rem 0 0.5rem;
 }

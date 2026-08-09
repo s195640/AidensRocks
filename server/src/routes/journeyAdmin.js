@@ -38,6 +38,8 @@ router.get("/", async (req, res) => {
         rps.email,
         rps.uuid,
         rps.show,
+        rps.email_sent,
+        rps.email_dt,
         rps.latitude,
 		    rps.longitude,
         COUNT(rpi.rpi_key) AS total_images
