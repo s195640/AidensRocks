@@ -190,7 +190,9 @@ CREATE TABLE public.journey (
     latitude numeric(18,15),
     longitude numeric(18,15),
     country character varying(255),
-    state character varying(255)
+    state character varying(255),
+    email_sent boolean NOT NULL DEFAULT false,
+    email_dt timestamp with time zone
 );
 
 

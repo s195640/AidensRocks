@@ -198,7 +198,7 @@ router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
     const rockNumberInt = parseInt(safeRockNumber, 10);
     const emailTrimmed = email?.trim();
     if (rockNumberInt > 0 && emailTrimmed) {
-      setImmediate(() => sendRockResponseEmail(rockNumberInt, emailTrimmed));
+      setImmediate(() => sendRockResponseEmail(rockNumberInt, emailTrimmed, rpsKey));
     }
   } catch (err) {
     if (client) await client.query('ROLLBACK');

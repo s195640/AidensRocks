@@ -20,7 +20,12 @@ const RESPONSE_EMAIL_SLUG = 'response-email';
 // Independent of processImagesInBackground.js's journey-photo processing:
 // {ROCK_IMAGE} is the rock's catalog reference photo (routes/rocks.js),
 // not a photo from this upload, so there's nothing to wait on.
-async function sendRockResponseEmail(rockNumber, email) {
+//
+// `rpsKey` identifies the journey row this submission created (see
+// insertRockSummary.js) -- once the send actually succeeds, that row's
+// email_sent/email_dt get stamped so /admin/journey can show whether (and
+// when) a submitter was actually emailed.
+async function sendRockResponseEmail(rockNumber, email, rpsKey) {
   try {
     const { rows } = await db.query(
       `SELECT published_body, published_email_subject, visible
@@ -45,6 +50,11 @@ async function sendRockResponseEmail(rockNumber, email) {
     });
 
     console.log(`✅ Sent response email to ${email} for rock ${rockNumber}`);
+
+    await db.query(
+      `UPDATE journey SET email_sent = true, email_dt = CURRENT_TIMESTAMP WHERE rps_key = $1`,
+      [rpsKey]
+    );
   } catch (err) {
     // Best-effort: a failure here shouldn't be visible to the submitter —
     // their upload already succeeded and got its own response.
