@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const recordAppVersion = require('./utils/recordAppVersion');
 
 require('dotenv').config();
 
@@ -47,4 +48,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running at http://localhost:${PORT}`);
+  recordAppVersion();
 });

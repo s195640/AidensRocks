@@ -612,3 +612,18 @@ WITH body AS (
 )
 INSERT INTO public.page_content (page_slug, nav_label, order_num, visible, draft_body, published_body)
 SELECT 'birthdays', 'Birthdays', 3, true, content, content FROM body;
+
+-- app_version: per-node record of which app VERSION is currently running,
+-- written by the server itself once at every process startup (see
+-- server/src/utils/recordAppVersion.js). Deliberately NOT part of the
+-- pglogical replication set -- see data/sql/migrations/add_app_version_table.sql
+-- for the full rationale; do not add a replication_set_add_table line for it.
+
+CREATE TABLE IF NOT EXISTS public.app_version (
+    id          smallint PRIMARY KEY DEFAULT 1,
+    version     character varying(50) NOT NULL,
+    updated_dt  timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT app_version_singleton CHECK (id = 1)
+);
+
+ALTER TABLE public.app_version OWNER TO postgres;

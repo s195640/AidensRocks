@@ -32,6 +32,7 @@ services:
     command: bash -c "npm start"
     volumes:
       - volume-media:/app/media
+      - ../../VERSION:/app/VERSION:ro
     depends_on:
       postgres:
         condition: service_healthy

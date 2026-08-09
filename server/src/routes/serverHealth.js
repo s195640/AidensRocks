@@ -58,7 +58,12 @@ function getMasterOrBackup() {
   }
 }
 
-// Query DB counts
+// Query DB counts, plus the app_version row -- read over this same direct
+// per-node Postgres connection (never over HTTP to the other node's app),
+// so each node reports its OWN actual locally-running version (see
+// server/src/utils/recordAppVersion.js, which writes it there once per
+// startup). app_version is intentionally NOT in the pglogical replication
+// set, so this genuinely differs per node instead of always matching.
 async function getDbCounts(host) {
   const client = new Client({
     host,
@@ -73,6 +78,7 @@ async function getDbCounts(host) {
   for (const table of TABLES) {
     results[table] = 0;
   }
+  let version = 'unknown';
 
   try {
     await client.connect();
@@ -86,13 +92,23 @@ async function getDbCounts(host) {
         results[table] = 0; // keep 0 if query fails
       }
     }
+
+    try {
+      const versionRes = await client.query('SELECT version FROM app_version WHERE id = 1');
+      if (versionRes.rows.length > 0) {
+        version = versionRes.rows[0].version;
+      }
+    } catch (err) {
+      console.error(`Error querying app_version on ${host}:`, err.message);
+      // keep 'unknown' if the table doesn't exist yet or the query fails
+    }
   } catch (err) {
     console.error(`DB connection failed for ${host}:`, err.message);
-    // results already initialized to 0
+    // results/version already defaulted above
   } finally {
     await client.end().catch(() => { });
   }
-  return results;
+  return { tableCounts: results, version };
 }
 
 // Compare table counts between nodes
@@ -119,10 +135,11 @@ router.get("/", async (req, res) => {
   await Promise.all(
     dbIps.map(async (ip, idx) => {
       const nodeName = `node${idx + 1}`;
-      const counts = await getDbCounts(ip.trim());
+      const { tableCounts, version } = await getDbCounts(ip.trim());
       dbTables[nodeName] = {
+        version,
         ip_addr: ip.trim(),
-        ...counts,
+        ...tableCounts,
       };
     })
   );
