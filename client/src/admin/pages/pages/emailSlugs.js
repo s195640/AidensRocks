@@ -5,6 +5,6 @@
 // deliberately independent of it (works regardless of Active/Inactive). The
 // edit dialog also shows a Subject field, and "Preview" renders an email
 // mockup instead of opening a live route.
-const EMAIL_SLUGS = new Set(["response-email"]);
+const EMAIL_SLUGS = new Set(["response-email", "response-email-multi"]);
 
 export default EMAIL_SLUGS;

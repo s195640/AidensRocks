@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import PageContentEditor from "../../../../adminContent/PageContentEditor";
+import EMAIL_PLACEHOLDERS from "../../../../adminContent/emailPlaceholders";
 import EMAIL_SLUGS from "../emailSlugs";
 import styles from "./PagesEditDialog.module.css";
 
@@ -11,6 +12,12 @@ const PagesEditDialog = ({ page, onClose, onSaved }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const isEmail = EMAIL_SLUGS.has(page.slug);
+  // Only the tokens this specific template actually supports (see
+  // emailPlaceholders.js's `pages` filter) — "Response Email" and "Response
+  // Email Multi" each get their own set.
+  const placeholders = EMAIL_PLACEHOLDERS.filter(
+    (entry) => entry.pages === null || entry.pages?.includes(page.slug)
+  );
 
   const handleSave = async () => {
     setSaving(true);
@@ -64,9 +71,19 @@ const PagesEditDialog = ({ page, onClose, onSaved }) => {
             placeholder="Email subject line"
           />
           <p className={styles.placeholderHint}>
-            You can use <code>{"{ROCK_NUMBER}"}</code> and <code>{"{ROCK_IMAGE}"}</code> in
-            the subject or body (the editor&apos;s Insert ▾ menu below adds them for you) —
-            they get filled in with the real rock number and photo when you send.
+            You can use{" "}
+            {placeholders.map(({ key, token }, i) => (
+              <span key={key}>
+                <code>{token}</code>
+                {i < placeholders.length - 2
+                  ? ", "
+                  : i === placeholders.length - 2
+                    ? " and "
+                    : " "}
+              </span>
+            ))}
+            in the subject or body (the editor&apos;s Insert ▾ menu below adds them for you) —
+            they get filled in with the real values when you send.
           </p>
         </div>
       )}

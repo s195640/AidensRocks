@@ -5,6 +5,8 @@ const requireAdminAuth = require("../middleware/requireAdminAuth");
 const sendEmail = require("../utils/sendEmail");
 const applyTemplateValues = require("../utils/applyTemplateValues");
 const buildRockImageTag = require("../utils/buildRockImageTag");
+const buildRockImagesTag = require("../utils/buildRockImagesTag");
+const buildRockNumbersWithLinksTag = require("../utils/buildRockNumbersWithLinksTag");
 const EMAIL_SLUGS = require("../utils/emailSlugs");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -174,6 +176,25 @@ router.post("/:slug/send", async (req, res) => {
   const rockNumber = parseInt(templateValues.ROCK_NUMBER, 10);
   if (rockNumber > 0) {
     templateValues.ROCK_IMAGE = buildRockImageTag(rockNumber);
+  }
+
+  // Same idea for {ROCK_NUMBERS}/{ROCK_IMAGES}/{ROCK_NUMBERS_WITH_LINKS}
+  // ("Response Email Multi"): the client sends the raw list it collected
+  // (comma/space-separated), the server parses it and re-derives the
+  // display string, the image gallery, and the linked-numbers list — never
+  // trust client-supplied HTML for any of these, and this also normalizes
+  // whatever separators the admin typed into a consistent "X, Y, Z" for
+  // display.
+  if (typeof templateValues.ROCK_NUMBERS === "string") {
+    const rockNumbers = templateValues.ROCK_NUMBERS
+      .split(/[,\s]+/)
+      .map((n) => parseInt(n, 10))
+      .filter((n) => n > 0);
+    if (rockNumbers.length > 0) {
+      templateValues.ROCK_NUMBERS = rockNumbers.join(", ");
+      templateValues.ROCK_IMAGES = buildRockImagesTag(rockNumbers);
+      templateValues.ROCK_NUMBERS_WITH_LINKS = buildRockNumbersWithLinksTag(rockNumbers);
+    }
   }
 
   try {

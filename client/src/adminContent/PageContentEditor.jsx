@@ -40,7 +40,9 @@ export default function PageContentEditor({ page, content, onChange }) {
   const insertOptions = Object.entries(componentRegistry).filter(
     ([, entry]) => entry.pages === null || entry.pages?.includes(page)
   );
-  const placeholderOptions = isEmail ? EMAIL_PLACEHOLDERS : [];
+  const placeholderOptions = isEmail
+    ? EMAIL_PLACEHOLDERS.filter((entry) => entry.pages === null || entry.pages?.includes(page))
+    : [];
   const staticInsertOptions = isEmail ? EMAIL_STATIC_INSERTS : [];
   const hasInsertMenu =
     insertOptions.length > 0 || placeholderOptions.length > 0 || staticInsertOptions.length > 0;
