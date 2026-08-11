@@ -118,50 +118,6 @@
   background-color: #bbb;
 }
 
-/* --- Large Dialog (for map) --- */
-.largeDialog {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 12px;
-  width: 75%;
-  height: 75%;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
-}
-
-.largeDialog h2 {
-  margin-bottom: 10px;
-  font-size: 1.2rem;
-  text-align: center;
-}
-
-.largeDialogContent {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.largeDialogHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.largeDialogHeader h2 {
-  margin: 0;
-  font-size: 1.2rem;
-}
-
-.largeDialogFooter {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 10px;
-}
-
 /* --- Responsive adjustments --- */
 @media (max-width: 600px) {
   .title {

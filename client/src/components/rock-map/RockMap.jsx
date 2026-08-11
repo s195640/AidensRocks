@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import styles from "./RockMap.module.css";
-import RockMapPopup from "./rock-map-popup/RockMapPopup";
+import RockJourneyDialog from "./rock-journey-dialog/RockJourneyDialog";
 import Dialog from "../simple-components/dialog/Dialog";
 
 // Fix default marker icons (needed for React + Webpack/Vite)
@@ -178,22 +178,10 @@ export default function RockMap({ pins = [] }) {
         </label>
       </Dialog>
 
-      {selectedRock && (
-        <div
-          className={styles.modalBackdrop}
-          onClick={() => setSelectedRock(null)}
-        >
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <RockMapPopup rockNumber={selectedRock} />
-            <button
-              className={styles.closeBtn}
-              onClick={() => setSelectedRock(null)}
-            >
-              ✖
-            </button>
-          </div>
-        </div>
-      )}
+      <RockJourneyDialog
+        rockNumber={selectedRock}
+        onClose={() => setSelectedRock(null)}
+      />
     </div>
   );
 }

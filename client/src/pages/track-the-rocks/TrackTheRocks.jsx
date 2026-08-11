@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import RockTable from "../../components/rock-journey/rock-table/RockTable";
 import styles from "./TrackTheRocks.module.css";
-import RockMapPopup from "../../components/rock-map/rock-map-popup/RockMapPopup";
+import RockJourneyDialog from "../../components/rock-map/rock-journey-dialog/RockJourneyDialog";
 import TotalRocks from "../../components/total-rocks/TotalRocks";
 
 function TrackTheRocks() {
@@ -82,6 +82,10 @@ function TrackTheRocks() {
               min="1"
               value={rockNumber}
               onChange={(e) => setRockNumber(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSearchSubmit();
+              }}
+              autoFocus
             />
             <div className={styles.dialogButtons}>
               <button
@@ -101,24 +105,8 @@ function TrackTheRocks() {
         </div>
       )}
 
-      {/* 🗺️ Rock Map Dialog */}
-      {selectedRock && (
-        <div className={styles.dialogOverlay}>
-          <div className={styles.largeDialog}>
-            <div className={styles.largeDialogContent}>
-              <RockMapPopup rockNumber={selectedRock} />
-            </div>
-            <div className={styles.largeDialogFooter}>
-              <button
-                className={styles.button}
-                onClick={handleClosePopup}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 🗺️ Rock Journey Dialog (same dialog used on the map page) */}
+      <RockJourneyDialog rockNumber={selectedRock} onClose={handleClosePopup} />
     </div>
   );
 }
