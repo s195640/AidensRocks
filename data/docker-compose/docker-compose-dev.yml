@@ -30,6 +30,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
+    networks:
+      - app-network
+  mailpit:
+    container_name: mailpit
+    image: axllent/mailpit:latest
+    ports:
+      - '8025:8025' # web UI — view caught dev emails at http://localhost:8025
+      - '1025:1025' # SMTP
     networks:
       - app-network
   client:
