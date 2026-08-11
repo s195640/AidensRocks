@@ -42,8 +42,41 @@ router.get('/allrocks', async (req, res) => {
 });
 
 router.get('/', async (req, res) => {
+  // Paginated by distinct rock (not by raw journey row), since Track the
+  // Rocks renders one card per rock_number grouping together all of that
+  // rock's journey stops. Defaults preserve the old "give me everything"
+  // shape for any caller that doesn't pass page/pageSize.
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const pageSize = Math.max(1, parseInt(req.query.pageSize, 10) || 25);
+  const offset = (page - 1) * pageSize;
+
   try {
-    const result = await pool.query(`
+    const rockNumbersResult = await pool.query(
+      `
+      SELECT rock_number, COUNT(*) OVER() AS total_count
+      FROM (
+        SELECT rock_number, MAX(date) AS latest_date, MAX(create_dt) AS latest_create_dt
+        FROM journey
+        WHERE show = TRUE
+        GROUP BY rock_number
+      ) latest
+      ORDER BY latest_date DESC, latest_create_dt DESC
+      LIMIT $1 OFFSET $2;
+      `,
+      [pageSize, offset]
+    );
+
+    const totalRocks = rockNumbersResult.rows[0]
+      ? parseInt(rockNumbersResult.rows[0].total_count, 10)
+      : 0;
+    const rockNumbers = rockNumbersResult.rows.map((r) => r.rock_number);
+
+    if (rockNumbers.length === 0) {
+      return res.json({ rows: [], totalRocks, page, pageSize });
+    }
+
+    const result = await pool.query(
+      `
 WITH images AS (
     SELECT rps_key, json_agg(json_build_object('name', current_name, 'media_type', media_type) ORDER BY upload_order) AS imageNames
     FROM journey_image
@@ -51,14 +84,14 @@ WITH images AS (
     GROUP BY rps_key
 ),
 artists AS (
-    SELECT rc.rock_number, 
+    SELECT rc.rock_number,
            ARRAY_AGG(ra.display_name || ' (' || ra.relation || ')') AS artists
     FROM artist_link ral
     JOIN artist ra ON ra.ra_key = ral.ra_key
     JOIN catalog rc ON rc.rc_key = ral.rc_key
     GROUP BY rc.rock_number
 )
-SELECT 
+SELECT
     rps.rps_key,
     rps.rock_number,
     TO_CHAR(rps.date, 'MM/DD/YYYY') AS date,
@@ -73,10 +106,13 @@ FROM journey rps
 JOIN images img ON img.rps_key = rps.rps_key
 LEFT JOIN artists a ON a.rock_number = rps.rock_number
 WHERE rps.show = TRUE
+  AND rps.rock_number = ANY($1::int[])
 ORDER BY rps.date DESC, rps.create_dt DESC;
-    `);
+      `,
+      [rockNumbers]
+    );
 
-    res.json(result.rows);
+    res.json({ rows: result.rows, totalRocks, page, pageSize });
   } catch (err) {
     console.error('Error fetching rock post data:', err);
     res.status(500).json({ error: 'Internal Server Error' });

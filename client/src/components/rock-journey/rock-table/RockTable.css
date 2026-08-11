@@ -8,3 +8,16 @@
   padding: 8px;
   background-color: #f4f4f4;
 }
+
+.rock-table-sentinel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 8px;
+  min-height: 1px;
+}
+
+.rock-table-loading {
+  font-weight: 500;
+  color: #555;
+}
