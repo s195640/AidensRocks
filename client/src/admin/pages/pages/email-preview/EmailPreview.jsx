@@ -1,28 +1,38 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import RichText from "../../../../adminContent/RichText";
 import applyTemplateValues from "../../../../adminContent/applyTemplateValues";
 import styles from "./EmailPreview.module.css";
 
 // Standalone admin-only route (not part of the public nav) opened via
-// PagesAdmin's "Preview" button for email-template rows (see emailSlugs.js).
-// Reuses the same admin preview endpoint as real pages (draft_body, here
-// alongside draft_email_subject) so it always reflects unsaved-but-draft
-// content, just rendered inside an email-styled mockup instead of the site.
+// PagesAdmin's "Preview" button for email-template rows (see emailSlugs.js),
+// and also by the "Send Emails - Catch-up" job (SendEmailsCatchup.jsx) for a
+// specific pending recipient. Reuses the same admin preview endpoint as real
+// pages (draft_body, here alongside draft_email_subject) so it always
+// reflects unsaved-but-draft content, just rendered inside an email-styled
+// mockup instead of the site.
 //
 // {ROCK_NUMBER} etc. are substituted live, client-side, as the value is
 // typed — leaving a field blank shows the raw placeholder text, same as
 // what an unfilled value looks like if actually sent. Add more fields here
 // (and to `values` below) alongside SendEmailDialog.jsx as more
 // placeholders get introduced.
+//
+// `rock`/`rocks`/`to` query params seed the rock number field(s) and the
+// displayed recipient -- used by SendEmailsCatchup.jsx to open this already
+// populated instead of requiring the numbers to be re-typed. Plain
+// PagesAdmin "Preview" links omit them and get the same blank fields as
+// before. The fields stay editable either way.
 const MULTI_SLUG = "response-email-multi";
 const EmailPreview = () => {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
   const [data, setData] = useState(null);
   const [error, setError] = useState(false);
-  const [rockNumber, setRockNumber] = useState("");
-  const [rockNumbers, setRockNumbers] = useState("");
+  const [rockNumber, setRockNumber] = useState(searchParams.get("rock") || "");
+  const [rockNumbers, setRockNumbers] = useState(searchParams.get("rocks") || "");
+  const to = searchParams.get("to") || "";
   const isMulti = slug === MULTI_SLUG;
 
   useEffect(() => {
@@ -112,6 +122,11 @@ const EmailPreview = () => {
             <span className={styles.headerLabel}>From:</span> Aiden&apos;s Rocks
             &lt;AidensRocks.AAA@gmail.com&gt;
           </div>
+          {to && (
+            <div>
+              <span className={styles.headerLabel}>To:</span> {to}
+            </div>
+          )}
           <div>
             <span className={styles.headerLabel}>Subject:</span>{" "}
             {subject || <em>(no subject)</em>}

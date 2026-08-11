@@ -1,0 +1,113 @@
+.dialogFixedHeight {
+  /* Fixed regardless of content -- see the comment at its call site in
+     SendEmailsCatchup.jsx. Stays within Dialog.module.css's own
+     `max-height: 90%` cap. */
+  height: 70vh;
+}
+
+/* Dialog.module.css's `.dialogButtons button` always paints a green
+   background -- this overrides it specifically when disabled (0 selected)
+   so "Send N" visibly greys out instead of just silently stopping clicks. */
+.sendAllButton:disabled {
+  background-color: #ccc;
+  color: #777;
+  cursor: not-allowed;
+}
+
+.progressWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.spinner {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #ccc;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.progressBarTrack {
+  flex: 1 1 auto;
+  height: 10px;
+  background: #e0e0e0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background: #4caf50;
+  transition: width 0.2s ease;
+}
+
+.progressLabel {
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #444;
+  white-space: nowrap;
+}
+
+.description {
+  color: #555;
+  margin: 0 0 16px;
+}
+
+.button {
+  background-color: rgba(110, 183, 216, 1);
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.button:hover {
+  background-color: rgba(90, 160, 190, 1);
+}
+
+.error {
+  color: #b00020;
+  margin-bottom: 12px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #6eb7d8;
+}
+
+.summary {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 8px;
+}
+
+.actionIcons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}

@@ -35,6 +35,7 @@ app.use("/api/music", require("./routes/music"));
 app.use("/api/statistics", require("./routes/statistics"));
 app.use("/api/pages", require("./routes/pages"));
 app.use("/api/admin/pages", require("./routes/pagesAdmin"));
+app.use("/api/admin/jobs", require("./routes/jobsAdmin"));
 
 // Health Check
 app.get('/health', (req, res) => res.send('OK'));
