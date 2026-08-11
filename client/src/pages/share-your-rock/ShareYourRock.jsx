@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { FaFacebookSquare, FaInstagram } from "react-icons/fa";
 
 import BkgImage from "../../components/bkgimage/BkgImage";
@@ -17,6 +19,21 @@ const ShareYourRockContent = () => {
   const { open } = useUploadRockModal();
   const { body, loading } = usePageContent("share-your-rock");
   const useRichText = !loading && body;
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Deep-link support: the floating "Share Your Rock" button (shown on
+  // other pages) sends visitors here with ?openUpload=1 so they land past
+  // the header picture and straight in the upload dialog, instead of
+  // having to scroll down and find the button themselves.
+  useEffect(() => {
+    if (!searchParams.get("openUpload")) return;
+    document
+      .querySelector(".additional-content")
+      ?.scrollIntoView({ behavior: "smooth" });
+    open();
+    setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   return (
     <ContentBody>

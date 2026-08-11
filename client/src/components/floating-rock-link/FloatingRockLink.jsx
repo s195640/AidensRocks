@@ -21,10 +21,7 @@ const FloatingRockLink = () => {
         {!isSharePage && (
           <button
             className={styles.button}
-            onClick={() => {
-              navigate("/share-your-rock");
-              window.scrollTo(0, 0);
-            }}
+            onClick={() => navigate("/share-your-rock?openUpload=1")}
           >
             Share Your Rock
           </button>
