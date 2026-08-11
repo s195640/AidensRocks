@@ -21,6 +21,12 @@ router.use(requireAdminAuth);
 // one unsent rock, "response-email" for exactly one -- mirroring the same
 // single/multi split SendEmailDialog.jsx and EmailPreview.jsx already use
 // for those two templates.
+//
+// Grouped case-insensitively (lower(email)): "Foo@Bar.com" and
+// "foo@bar.com" are the same mailbox, so two submissions that only differ
+// by casing must land in one row (one email, one combined rock list)
+// instead of silently splitting into two separate catch-up entries. The
+// lowercased form is what's returned and re-sent below.
 router.get("/send-emails-catchup", async (req, res) => {
   try {
     const result = await db.query(
@@ -28,7 +34,7 @@ router.get("/send-emails-catchup", async (req, res) => {
               string_agg(rock_number::text, ', ' ORDER BY rock_number) AS rocks,
               count(*) AS rock_count
        FROM (
-         SELECT DISTINCT rock_number, email
+         SELECT DISTINCT rock_number, lower(email) AS email
          FROM journey
          WHERE email != '' AND rock_number > 0 AND email_sent = false
        ) t
@@ -124,11 +130,14 @@ router.post("/send-emails-catchup/send", async (req, res) => {
       html: applyTemplateValues(published_body, templateValues),
     });
 
+    // Case-insensitive match: GET /send-emails-catchup lowercases email for
+    // grouping/display, so the row this came from may not be spelled the
+    // same as it's stored on individual journey rows (e.g. "Foo@Bar.com").
     const updateRes = await db.query(
       `UPDATE journey
        SET email_sent = true, email_dt = CURRENT_TIMESTAMP
-       WHERE email = $1 AND rock_number = ANY($2::int[]) AND email_sent = false`,
-      [trimmedEmail, rockNumbers]
+       WHERE lower(email) = $1 AND rock_number = ANY($2::int[]) AND email_sent = false`,
+      [trimmedEmail.toLowerCase(), rockNumbers]
     );
 
     res.json({ success: true, updated: updateRes.rowCount });
