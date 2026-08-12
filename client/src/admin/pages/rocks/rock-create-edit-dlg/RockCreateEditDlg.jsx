@@ -47,6 +47,40 @@ const decodeQrFromFile = (file) =>
     img.src = url;
   });
 
+// Rotates the image file itself (not just its on-screen preview) so the
+// rotated pixels are what actually gets uploaded.
+const rotateImageFile = (file, degrees) =>
+  new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const swapDimensions = degrees % 180 !== 0;
+      const canvas = document.createElement("canvas");
+      canvas.width = swapDimensions ? img.height : img.width;
+      canvas.height = swapDimensions ? img.width : img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate((degrees * Math.PI) / 180);
+      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("Failed to rotate image."));
+            return;
+          }
+          resolve(new File([blob], file.name, { type: file.type || blob.type }));
+        },
+        file.type || "image/jpeg"
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load image for rotation."));
+    };
+    img.src = url;
+  });
+
 const rockNumberFromQrText = (qrText) => {
   try {
     return new URL(qrText).searchParams.get("r");
@@ -205,6 +239,20 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
       if (target) URL.revokeObjectURL(target.previewUrl);
       return prev.filter((entry) => entry.id !== id);
     });
+  };
+
+  const rotateEntry = async (id) => {
+    const entry = entries.find((e2) => e2.id === id);
+    if (!entry) return;
+    try {
+      const rotatedFile = await rotateImageFile(entry.file, 90);
+      const newPreviewUrl = URL.createObjectURL(rotatedFile);
+      URL.revokeObjectURL(entry.previewUrl);
+      updateEntry(id, { file: rotatedFile, previewUrl: newPreviewUrl });
+    } catch (err) {
+      console.error(err);
+      updateEntry(id, { error: "Error rotating image. Please try again." });
+    }
   };
 
   const handleSaveAll = async (e) => {
@@ -380,6 +428,16 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
                     aria-label="Remove image"
                   >
                     ×
+                  </button>
+
+                  <button
+                    type="button"
+                    className={styles.batchCardRotate}
+                    onClick={() => rotateEntry(entry.id)}
+                    disabled={isSaving}
+                    aria-label="Rotate image 90 degrees"
+                  >
+                    ⟳
                   </button>
 
                   <img src={entry.previewUrl} alt="preview" className={styles.batchCardImage} />
