@@ -8,6 +8,7 @@ import QRRedirect from "./components/qrredirect/QRRedirect.jsx";
 import Home from "./pages/home/Home.jsx";
 import Photos from "./pages/photos/Photos.jsx";
 import Birthdays from "./pages/birthdays/Birthdays.jsx";
+import HonoringAiden from "./pages/honoring-aiden/HonoringAiden.jsx";
 import ShareYourRock from "./pages/share-your-rock/ShareYourRock.jsx";
 import Map from "./pages/map/Map.jsx";
 
@@ -70,6 +71,7 @@ function AppContent() {
         <Route path="/share-your-rock" element={<ShareYourRock />} />
         <Route path="/photos" element={<Photos />} />
         <Route path="/birthdays" element={<Birthdays />} />
+        <Route path="/honoring-aiden" element={<HonoringAiden />} />
         <Route path="/track-the-rocks" element={<TrackTheRocks />} />
         <Route path="/all-rocks" element={<AllRocks />} />
         <Route path="/map" element={<Map />} />

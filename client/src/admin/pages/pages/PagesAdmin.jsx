@@ -21,6 +21,7 @@ const EDITABLE_SLUGS = new Set([
   "share-your-rock",
   "sudc",
   "birthdays",
+  "honoring-aiden",
   ...EMAIL_SLUGS,
 ]);
 
