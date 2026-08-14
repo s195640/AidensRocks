@@ -41,24 +41,29 @@
     flex-direction: column;
   }
 
-  /* Order: 1. Statistics, 2. ARDetails, 3. ServerHealth */
+  /* Order: 1. Music, 2. Statistics, 3. ARDetails, 4. ServerHealth */
   .leftColumn {
     display: contents;
     /* Flattens the div so we can reorder children */
   }
 
-  .leftColumn>div:first-child {
+  .leftColumn>div:nth-child(1) {
     order: 1;
+  }
+
+  /* Music */
+  .leftColumn>div:nth-child(2) {
+    order: 2;
   }
 
   /* Statistics */
   .rightColumn {
-    order: 2;
+    order: 3;
   }
 
   /* ARDetails */
-  .leftColumn>div:last-child {
-    order: 3;
+  .leftColumn>div:nth-child(3) {
+    order: 4;
   }
 
   /* ServerHealth */

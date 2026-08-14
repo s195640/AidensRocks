@@ -34,6 +34,7 @@ const MusicTable = ({
     { key: "name", label: "Title", sortable: false, defaultWidth: 120 },
     { key: "writer", label: "Writer", sortable: false, defaultWidth: 150 },
     { key: "lyrics", label: "Lyrics", sortable: false, defaultWidth: 200 },
+    { key: "play_count", label: "Plays", sortable: false, defaultWidth: 60 },
     { key: "update_dt", label: "Date", sortable: false, defaultWidth: 65 },
     { key: "actions", label: "Actions", sortable: false, defaultWidth: 100 },
   ];

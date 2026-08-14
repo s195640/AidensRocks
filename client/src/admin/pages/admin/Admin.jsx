@@ -2,6 +2,7 @@
 import ARDetails from "../../components/ar-details/ARDetails";
 import ServerHealth from "../../components/server-health/ServerHealth";
 import Statistics from "../../components/statistics/Statistics";
+import MusicPanel from "../../components/music-panel/MusicPanel";
 import styles from "./Admin.module.css";
 
 const Admin = () => {
@@ -11,8 +12,9 @@ const Admin = () => {
         <h1>Admin Dashboard</h1>
       </div>
       <div className={styles.content}>
-        {/* Left Column: Stats and Health */}
+        {/* Left Column: Music, Stats, and Health */}
         <div className={styles.leftColumn}>
+          <MusicPanel />
           <Statistics />
           <ServerHealth />
         </div>

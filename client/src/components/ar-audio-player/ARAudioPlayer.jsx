@@ -3,6 +3,7 @@ import AudioPlayer from "react-modern-audio-player";
 import { useState, useEffect } from "react";
 import CustomCloseComponent from "./CustomCloseComponent";
 import CustomLyricsComponent from "./CustomLyricsComponent";
+import PlayCountTracker from "./PlayCountTracker";
 import Dialog from "../simple-components/dialog/Dialog";
 import styles from "./ARAudioPlayer.module.css";
 
@@ -128,6 +129,9 @@ const ARAudioPlayer = () => {
         </AudioPlayer.CustomComponent>
         <AudioPlayer.CustomComponent id="playerLyricsComponent">
           <CustomLyricsComponent setOpen={setOpen} setCurPlayId={setCurPlayId} />
+        </AudioPlayer.CustomComponent>
+        <AudioPlayer.CustomComponent id="playerLyricsComponent">
+          <PlayCountTracker />
         </AudioPlayer.CustomComponent>
       </AudioPlayer>
 

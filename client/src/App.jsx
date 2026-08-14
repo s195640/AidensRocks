@@ -71,7 +71,7 @@ function AppContent() {
         <Route path="/share-your-rock" element={<ShareYourRock />} />
         <Route path="/photos" element={<Photos />} />
         <Route path="/birthdays" element={<Birthdays />} />
-        <Route path="/honoring-aiden" element={<HonoringAiden />} />
+        <Route path="/honoring-aiden/*" element={<HonoringAiden />} />
         <Route path="/track-the-rocks" element={<TrackTheRocks />} />
         <Route path="/all-rocks" element={<AllRocks />} />
         <Route path="/map" element={<Map />} />

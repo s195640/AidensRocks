@@ -15,7 +15,7 @@ router.get("/", async (req, res) => {
     const result = await db.query(
       `SELECT
         ROW_NUMBER() OVER (ORDER BY m.show desc, m.order_num)::int AS id,
-        m_key, name, writer, lyrics, create_dt, update_dt, show, order_num
+        m_key, name, writer, lyrics, create_dt, update_dt, show, order_num, play_count
       FROM music m
       ORDER BY order_num`
     );
@@ -33,6 +33,7 @@ router.get("/", async (req, res) => {
         show: row.show,
         create_dt: row.create_dt,
         update_dt: row.update_dt,
+        play_count: row.play_count,
         img: path.join('/', basePath, 'sm.webp').replace(/\\/g, '/'),
         fullImg: path.join('/', basePath, 'full.webp').replace(/\\/g, '/'),
         src: path.join('/', basePath, 'song.mp3').replace(/\\/g, '/'),
@@ -222,6 +223,33 @@ router.put("/:m_key/toggle-show", requireAdminAuth, async (req, res) => {
   } catch (err) {
     console.error("Error toggling show:", err);
     res.status(500).json({ error: "Server error toggling show." });
+  }
+});
+
+// -------------------- PUT /api/music/:m_key/increment-play --------------------
+// Public (no admin auth) - called by the public audio player each time a
+// visitor plays a song. Does not touch update_dt (that's reserved for
+// content edits, not listens).
+router.put("/:m_key/increment-play", async (req, res) => {
+  const { m_key } = req.params;
+
+  try {
+    const result = await db.query(
+      `UPDATE music
+       SET play_count = play_count + 1
+       WHERE m_key = $1
+       RETURNING play_count`,
+      [m_key]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Music not found." });
+    }
+
+    res.json({ success: true, m_key, play_count: result.rows[0].play_count });
+  } catch (err) {
+    console.error("Error incrementing play count:", err);
+    res.status(500).json({ error: "Server error incrementing play count." });
   }
 });
 
