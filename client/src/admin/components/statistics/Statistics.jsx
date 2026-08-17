@@ -6,13 +6,18 @@ import { FiRefreshCw } from "react-icons/fi";
 
 const Statistics = () => {
   const [stats, setStats] = useState(null);
+  const [unmatchedPaths, setUnmatchedPaths] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("/api/statistics");
-      setStats(res.data);
+      const [statsRes, unmatchedRes] = await Promise.all([
+        axios.get("/api/statistics"),
+        axios.get("/api/unmatched-path"),
+      ]);
+      setStats(statsRes.data);
+      setUnmatchedPaths(unmatchedRes.data);
     } catch (err) {
       console.error("Error fetching statistics:", err);
     } finally {
@@ -86,6 +91,34 @@ const Statistics = () => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className={styles.tableSection}>
+        <h3>Path Hits</h3>
+        {unmatchedPaths.length === 0 ? (
+          <p>No path hits logged.</p>
+        ) : (
+          <table className={styles.agentTable}>
+            <thead>
+              <tr>
+                <th></th>
+                <th>Hits</th>
+                <th>Last Hit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {unmatchedPaths.map((row) => (
+                <tr key={row.path}>
+                  <td className={styles.tdLabel}>{row.path}</td>
+                  <td className={styles.tdValue}>{row.hit_count.toLocaleString()}</td>
+                  <td className={styles.tdValue}>
+                    {row.last_hit_dt ? new Date(row.last_hit_dt).toLocaleString() : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

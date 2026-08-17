@@ -26,7 +26,8 @@ const TABLES = [
   "page_content",
   "photoalbum_tags",
   "photoalbums",
-  "photos"
+  "photos",
+  "unmatched_path_hit"
 ];
 
 // Get container/server IP
@@ -89,6 +90,7 @@ async function getDbCounts(host) {
     results[table] = 0;
   }
   let version = 'unknown';
+  let replicationStatus = 'unknown';
 
   try {
     await client.connect();
@@ -112,13 +114,28 @@ async function getDbCounts(host) {
       console.error(`Error querying app_version on ${host}:`, err.message);
       // keep 'unknown' if the table doesn't exist yet or the query fails
     }
+
+    try {
+      // This node's own subscription(s) to its peer -- read over this same
+      // direct per-node connection, same reasoning as version above (each
+      // node reports its own actual status, not the other node's). A node
+      // with no inbound subscription (e.g. a provider-only or test node)
+      // legitimately returns zero rows.
+      const subRes = await client.query('SELECT status FROM pglogical.show_subscription_status()');
+      replicationStatus = subRes.rows.length > 0
+        ? subRes.rows.map((r) => r.status).join(', ')
+        : 'none';
+    } catch (err) {
+      console.error(`Error querying pglogical.show_subscription_status on ${host}:`, err.message);
+      // keep 'unknown' if pglogical isn't set up on this node or the query fails
+    }
   } catch (err) {
     console.error(`DB connection failed for ${host}:`, err.message);
-    // results/version already defaulted above
+    // results/version/replicationStatus already defaulted above
   } finally {
     await client.end().catch(() => { });
   }
-  return { tableCounts: results, version };
+  return { tableCounts: results, version, replicationStatus };
 }
 
 // Compare table counts between nodes
@@ -145,10 +162,11 @@ router.get("/", async (req, res) => {
   await Promise.all(
     dbIps.map(async (ip, idx) => {
       const nodeName = `node${idx + 1}`;
-      const { tableCounts, version } = await getDbCounts(ip.trim());
+      const { tableCounts, version, replicationStatus } = await getDbCounts(ip.trim());
       dbTables[nodeName] = {
         version,
         ip_addr: ip.trim(),
+        replication_status: replicationStatus,
         ...tableCounts,
       };
     })

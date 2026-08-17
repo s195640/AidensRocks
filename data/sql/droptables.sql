@@ -28,3 +28,7 @@ drop table page_content cascade;
 /* Honoring Aiden Entries */
 
 drop table entry cascade;
+
+/* Unmatched Path Tracking */
+
+drop table unmatched_path_hit cascade;

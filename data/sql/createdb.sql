@@ -684,3 +684,21 @@ CREATE TABLE IF NOT EXISTS public.app_version (
 );
 
 ALTER TABLE public.app_version OWNER TO postgres;
+
+-- unmatched_path_hit: one row per hit against a URL path that didn't match
+-- any defined client route (e.g. "/f"), logged by the client-side catch-all
+-- route (client/src/components/notfoundredirect/NotFoundRedirect.jsx) before
+-- it redirects the visitor to "/". Insert-only, not an incrementing counter
+-- column -- see data/sql/migrations/add_unmatched_path_hit_table.sql for why.
+-- Per-path hit counts are computed via COUNT(*) at read time
+-- (server/src/routes/unmatchedPath.js), shown on the admin Statistics panel.
+
+CREATE TABLE IF NOT EXISTS public.unmatched_path_hit (
+    id         serial PRIMARY KEY,
+    path       character varying(2048) NOT NULL,
+    create_dt  timestamptz DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_unmatched_path_hit_path ON public.unmatched_path_hit (path);
+
+ALTER TABLE public.unmatched_path_hit OWNER TO postgres;

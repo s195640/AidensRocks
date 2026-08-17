@@ -5,6 +5,7 @@ import styles from "./App.module.css";
 import Footer from "./components/footer/Footer.jsx";
 import NavBar from "./components/navbar/Navbar.jsx";
 import QRRedirect from "./components/qrredirect/QRRedirect.jsx";
+import NotFoundRedirect from "./components/notfoundredirect/NotFoundRedirect.jsx";
 import Home from "./pages/home/Home.jsx";
 import Photos from "./pages/photos/Photos.jsx";
 import Birthdays from "./pages/birthdays/Birthdays.jsx";
@@ -161,6 +162,9 @@ function AppContent() {
             </PrivateRoute>
           }
         />
+
+        {/* Catch-all: any unmatched path logs a hit and redirects home */}
+        <Route path="*" element={<NotFoundRedirect />} />
       </Routes>
       <Footer />
     </div>
