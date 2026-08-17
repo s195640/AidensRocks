@@ -160,12 +160,13 @@ networks:
   app-network:
     driver: bridge
 
-# Sourced from GITHUB_TOKEN in this file's own directory's .env (gitignored,
-# per-server — same file DB_PASSWORD/JWT_SECRET/etc. already live in) via
-# Compose's `environment:` secret source. Only reaches the client build's
-# BuildKit secret mount (docker-client-prod) — never written into any image
-# layer, never a container env var. Needs Docker Engine 23+/Compose v2.23+
-# on every deploy target for the `environment:` secret source to work.
+# Sourced from a plain-text `github_token` file in this file's own directory
+# (gitignored, per-server, contents = the token only) via Compose's `file:`
+# secret source. Only reaches the client build's BuildKit secret mount
+# (docker-client-prod) — never written into any image layer, never a
+# container env var. Unlike the `environment:` source this used to use, it
+# needs nothing exported in the deploying shell, so it works the same from
+# an interactive login, a script, or cron.
 secrets:
   github_token:
-    environment: GITHUB_TOKEN
+    file: ./github_token

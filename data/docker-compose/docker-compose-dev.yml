@@ -100,9 +100,10 @@ networks:
   app-network:
     driver: bridge
 
-# See docker-compose-prod.yml's own comment: sourced from GITHUB_TOKEN in
-# this directory's .env (gitignored), reaches only the client build's
-# BuildKit secret mount — never an image layer or container env var.
+# See docker-compose-prod.yml's own comment: sourced from a plain-text
+# `github_token` file in this directory (gitignored), reaches only the
+# client build's BuildKit secret mount — never an image layer or container
+# env var.
 secrets:
   github_token:
-    environment: GITHUB_TOKEN
+    file: ./github_token
