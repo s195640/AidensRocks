@@ -191,6 +191,34 @@
   display: none;
 }
 
+/* @s195640/content-editor's ContentEditor always wraps itself in a
+   bordered/rounded box AND gives its content area extra inner padding
+   (its own compiled CSS: border 1px solid #e4e4e8, border-radius 10px on
+   the root; padding 20px 22px 28px on the editable surface). Its
+   ContentViewer (the View tab, below) renders that identical markup but
+   pairs it with the package's own read-only modifier, which strips both
+   back to border:none/border-radius:0 on the root and padding:0 on the
+   surface. ContentEditor has no read-only variant to opt into, so without
+   this override the Edit tab renders the same entry's content visibly
+   smaller/inset compared to the View tab -- by request, mirrored here so
+   both tabs show content at the identical size/position. The outer rule
+   uses the package's own public `className` prop (passed on ContentEditor
+   in EntryDetailView.jsx); the inner one targets Tiptap's own `.ProseMirror`
+   class -- a stable convention from @tiptap/core itself, always present
+   alongside this package's internal, version-fragile class names -- since
+   no prop reaches that inner element directly. Both use extra selector
+   specificity (two/three classes) to beat the package's own single-class
+   rules regardless of stylesheet load order between this app's bundle and
+   node_modules' pre-built CSS. */
+.content .editorRoot {
+  border: none;
+  border-radius: 0;
+}
+
+.content .editorRoot :global(.ProseMirror) {
+  padding: 0;
+}
+
 /* Mobile tab — see EntryDetailView.jsx's own comment on why this narrows a
    plain container rather than emulating a true device viewport. */
 .mobilePreview {

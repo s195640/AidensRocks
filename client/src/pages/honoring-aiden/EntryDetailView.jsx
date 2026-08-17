@@ -415,6 +415,7 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
           <div className={activeTab === "edit" ? undefined : styles.tabPanelHidden}>
             <ContentEditor
               key={`${entry.id}-${editorSeed}`}
+              className={styles.editorRoot}
               content={entry.body_json}
               onSave={handleSaveContent}
               active={entry.published}
