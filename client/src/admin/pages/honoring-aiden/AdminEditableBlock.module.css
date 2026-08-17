@@ -72,6 +72,12 @@
   right: 0.25rem;
 }
 
+/* Dark neutral rather than this feature's own blue accent (used by
+   .menuLinkActive/.menuLink:hover in HonoringAidenPage.module.css) — that
+   blue is almost identical to rgba(110, 183, 216, ...), so these buttons
+   used to nearly vanish into a selected sidebar entry's highlighted
+   background. Charcoal stays legible against every state this toolbar
+   overlays: the plain sidebar, the hover tint, and the solid active fill. */
 .iconButton {
   display: inline-flex;
   align-items: center;
@@ -80,7 +86,7 @@
   height: 1.7rem;
   border: none;
   border-radius: 6px;
-  background-color: rgba(110, 183, 216, 0.9);
+  background-color: rgba(51, 51, 51, 0.9);
   color: #fff;
   font-size: 0.85rem;
   line-height: 1;
@@ -89,5 +95,5 @@
 }
 
 .iconButton:hover {
-  background-color: rgba(110, 183, 216, 1);
+  background-color: rgba(51, 51, 51, 1);
 }
