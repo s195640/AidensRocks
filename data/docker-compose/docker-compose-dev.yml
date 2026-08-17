@@ -47,6 +47,8 @@ services:
     build:
       context: ../../
       dockerfile: ./data/docker/docker-client-dev
+      secrets:
+        - github_token
     volumes:
       - ../../client:/app
       - /app/node_modules
@@ -97,3 +99,10 @@ volumes:
 networks:
   app-network:
     driver: bridge
+
+# See docker-compose-prod.yml's own comment: sourced from GITHUB_TOKEN in
+# this directory's .env (gitignored), reaches only the client build's
+# BuildKit secret mount — never an image layer or container env var.
+secrets:
+  github_token:
+    environment: GITHUB_TOKEN

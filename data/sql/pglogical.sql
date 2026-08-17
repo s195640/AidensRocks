@@ -23,3 +23,7 @@ SELECT pglogical.replication_set_add_table('default', 'music');
 
 -- Page Content
 SELECT pglogical.replication_set_add_table('default', 'page_content');
+
+-- Honoring Aiden Entries
+-- New table, zero rows at creation time (no backfill/seed) — explicit false.
+SELECT pglogical.replication_set_add_table('default', 'entry', synchronize_data := false);

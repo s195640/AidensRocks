@@ -1,0 +1,316 @@
+/* Shared by both the public /honoring-aiden page and the protected
+   /admin/honoring-aiden page (see HonoringAidenPage.jsx) — one stylesheet
+   so the two can't visually drift apart either. Z-index tiers match this
+   app's global convention (see CLAUDE.md): mobile drawer 1050 / backdrop
+   1040, between the navbar (1100) and ordinary page content (1000). */
+.page {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  min-height: calc(100vh - 100px);
+  padding: 4rem 1rem;
+  /* Sidebar sits outside the content's own width budget: content caps at
+     1000px (matching Home's ContentBody), the sidebar is its fixed width
+     on top of that, not carved out of it. Keep in sync with .sidebar's
+     flex-basis and .content's max-width below. */
+  max-width: calc(1000px + 220px + 2rem);
+  /* `.page` is itself a flex ITEM of App.module.css's `.appContainer`
+     (`display: flex; flex-direction: column`) — its own `margin: 0 auto`
+     (auto left/right) disables that parent's default stretch behavior on
+     the cross axis (a flex item with an auto margin in the cross axis
+     never stretches, per spec — the auto margin absorbs the leftover space
+     instead). Without an explicit width, `.page` was shrink-wrapping to
+     its own content's preferred width — visibly narrower than the
+     viewport on any screen wide enough that its content doesn't need the
+     full width — with `margin: auto` then centering that narrower box,
+     which is what actually produced the "big side margin" on mobile (this
+     was one level up from — and not fixed by — the align-items: stretch
+     override below, which only stretches .content WITHIN .page, not .page
+     itself within .appContainer). `width: 100%` forces it back to normal
+     block-sizing behavior: fills up to `max-width`, `margin: auto` then
+     only centers it once the viewport actually exceeds that cap. */
+  width: 100%;
+  margin: 0 auto;
+}
+
+.mobileToggle {
+  display: none;
+}
+
+.overlay {
+  display: none;
+}
+
+.sidebar {
+  flex: 0 0 220px;
+  position: sticky;
+  top: 5rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem 1rem;
+}
+
+.menuList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.menuLink {
+  display: block;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #333;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.menuLink:hover {
+  background-color: rgba(110, 183, 216, 0.15);
+  color: rgba(110, 183, 216, 1);
+}
+
+.menuLinkActive {
+  background-color: rgba(110, 183, 216, 1);
+  color: #fff;
+}
+
+.menuLinkActive:hover {
+  background-color: rgba(110, 183, 216, 1);
+  color: #fff;
+}
+
+.menuEmpty {
+  padding: 0.6rem 0.8rem;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+/* Sub-entry level (HonoringAidenPage.jsx's two-level menu) — nested
+   directly inside the parent's own <li>, below its NavLink. Indented via
+   left padding rather than a left margin so a sub-entry's own hover/active
+   background (inherited from .menuLink) still spans the sidebar's full
+   available width, matching the top-level rows instead of looking like a
+   narrower inset box. */
+.subMenuList {
+  list-style: none;
+  margin: 0.2rem 0 0;
+  padding-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.subMenuLink {
+  font-size: 0.9rem;
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+}
+
+/* Admin-only: unpublished entries still show in the sidebar/title so they
+   can be built out before publishing, but need a visible "not live yet"
+   marker. Unused (never rendered) on the public page. */
+.draftBadge {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+}
+
+.content {
+  /* Fixed width, not just capped — flex-grow/flex-shrink both 0, so this
+     stays exactly 1000px on any viewport wide enough to fit it (see the
+     media query below: below that point we switch to the mobile stacked
+     layout entirely rather than let this squeeze into some in-between
+     size). max-width is kept alongside flex-basis as a belt-and-suspenders
+     cap, not the thing doing the real work here. */
+  flex: 0 0 1000px;
+  max-width: 1000px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  line-height: 1.6;
+}
+
+.commentsSection {
+  margin-top: 2rem;
+}
+
+/* Admin-only Edit/View/JSON tab strip above the entry body (see
+   EntryDetailView.jsx). Same underline-on-active pattern as this module's
+   own .menuLink/.menuLinkActive accent color, just laid out as a row of
+   tabs instead of a nav list. */
+.tabBar {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tabButton {
+  padding: 0.6rem 1rem;
+  border: none;
+  background: none;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.tabButton:hover {
+  color: rgba(110, 183, 216, 1);
+}
+
+.tabButtonActive,
+.tabButtonActive:hover {
+  color: rgba(110, 183, 216, 1);
+  border-bottom-color: rgba(110, 183, 216, 1);
+  font-weight: 600;
+}
+
+/* Keeps ContentEditor mounted (not conditionally rendered) while a
+   different tab is showing — see EntryDetailView.jsx's own comment on why
+   unmounting it would lose an in-progress unsaved edit. */
+.tabPanelHidden {
+  display: none;
+}
+
+/* Save/visibility failure message from EntryDetailView.jsx's
+   handleSaveContent/handleToggleActive — same look as EntryFormModal's own
+   .errorMessage (a separate CSS Module, so duplicated rather than shared;
+   cross-module class sharing isn't reliable in this app — see
+   AdminEditableBlock.jsx's own comment on the same footgun for placement
+   variants). */
+.errorMessage {
+  color: #c62828;
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+/* Triggers once the viewport can no longer fit the fixed-size row
+   (sidebar 220px + gap 2rem + content 1000px + .page's own 2rem of
+   horizontal padding = 1284px) — with a little buffer so the switch to the
+   mobile layout happens just before that fixed row would actually overflow
+   and force horizontal scrolling, not after. Deliberately much wider than
+   a typical "mobile" breakpoint: on medium/tablet-width screens this skips
+   straight to the same stacked layout small phones get, rather than
+   squeezing the fixed-width sidebar+content row into a cramped in-between
+   size. */
+@media screen and (max-width: 1300px) {
+  .page {
+    flex-direction: column;
+    /* Base .page sets `align-items: flex-start` for the desktop ROW layout
+       (top-align sidebar/content instead of stretching them to match
+       heights) — cross-axis there is vertical. Once flex-direction flips to
+       column here, that SAME value now controls the horizontal axis
+       instead: without this override, `.content` (a plain, unwidthed div)
+       shrinks to fit its own content and left-aligns rather than filling
+       `.page`, leaving a large gap on the right that reads as a huge right
+       margin even though `.page` itself is already full width. */
+    align-items: stretch;
+    padding: 4.5rem 1rem 2rem;
+  }
+
+  .content {
+    /* Column layout now — flex-basis would set a height, not a width, so
+       drop back to a normal block-ish flex item; max-width above still
+       caps it at 1000px if the viewport is ever wide enough within this
+       range (it generally won't be, since this query only fires below
+       1300px), but no longer forces an exact width. */
+    flex: 1 1 auto;
+  }
+
+  .mobileToggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    align-self: flex-start;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 0.9rem;
+    font-size: 1rem;
+    cursor: pointer;
+    z-index: 1050;
+  }
+
+  .mobileToggle i {
+    font-size: 1.1rem;
+  }
+
+  .overlay {
+    display: block;
+    position: fixed;
+    top: 50px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    height: calc(100vh - 50px);
+    width: 80vw;
+    max-width: 300px;
+    border-radius: 0 12px 12px 0;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    overflow-y: auto;
+    z-index: 1050;
+  }
+
+  .sidebarOpen {
+    transform: translateX(0);
+  }
+}
+
+/* True phone widths (matches Navbar.module.css's own 769px mobile
+   breakpoint, distinct from the 1300px query above — that one's about
+   fitting the sidebar+content row, not about being "mobile" per se). By
+   request ("mobile page needs to use the full screen it should not have a
+   border on the right and left"): `.content`'s rounded corners and
+   `.page`'s own side padding together read as a card floating with a gutter
+   on either side — dropped here so the content fills the viewport edge to
+   edge, with `.content`'s own (reduced) padding doing all the inset work
+   instead of `.page`'s. `.mobileToggle` gets its own left margin so the
+   hamburger button isn't flush against the edge now that `.page` no longer
+   provides one. */
+@media screen and (max-width: 769px) {
+  .page {
+    padding: 4.5rem 0 2rem;
+  }
+
+  .mobileToggle {
+    margin-left: 1rem;
+  }
+
+  .content {
+    border-radius: 0;
+    padding: 1.5rem 1.25rem;
+  }
+}

@@ -24,3 +24,7 @@ drop table counter cascade;
 /* Page Content */
 
 drop table page_content cascade;
+
+/* Honoring Aiden Entries */
+
+drop table entry cascade;

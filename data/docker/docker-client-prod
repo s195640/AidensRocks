@@ -1,8 +1,14 @@
+# syntax=docker/dockerfile:1
 # Build stage
 FROM node:18 AS build
 WORKDIR /app
-COPY client/package*.json ./
-RUN npm install
+COPY client/package*.json client/.npmrc ./
+# GITHUB_TOKEN is mounted as a BuildKit secret (see docker-compose-prod.yml's
+# `secrets:`), not an ARG/ENV — that keeps it out of the image's layer
+# history entirely. .npmrc (copied above) is what actually points the
+# @s195640 scope at GitHub Packages and reads this env var; npm needs no
+# other config to pick it up.
+RUN --mount=type=secret,id=github_token,env=GITHUB_TOKEN npm install
 COPY client .
 RUN npm run build
 

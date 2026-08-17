@@ -45,6 +45,13 @@ BEGIN
         GREATEST((SELECT COALESCE(MAX(rcs_key), 0) + 1 FROM counter), 100000));
 END $$;
 
+-- Honoring Aiden Entries
+DO $$
+BEGIN
+    EXECUTE format('ALTER SEQUENCE entry_id_seq RESTART WITH %s;',
+        GREATEST((SELECT COALESCE(MAX(id), 0) + 1 FROM entry), 100000));
+END $$;
+
 /*
 SELECT 'photoalbums_pa_key_seq' AS sequence_name, last_value, is_called FROM photoalbums_pa_key_seq
 UNION ALL

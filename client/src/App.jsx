@@ -25,6 +25,7 @@ import TrackTheRocks from "./pages/track-the-rocks/TrackTheRocks.jsx";
 import JourneyAdmin from "./admin/pages/journey/JourneyAdmin.jsx";
 import AllRocks from "./pages/all-rocks/AllRocks.jsx";
 import MusicAdmin from "./admin/pages/music/MusicAdmin.jsx";
+import HonoringAidenAdmin from "./admin/pages/honoring-aiden/HonoringAidenAdmin.jsx";
 import PagesAdmin from "./admin/pages/pages/PagesAdmin.jsx";
 import EmailPreview from "./admin/pages/pages/email-preview/EmailPreview.jsx";
 import PAGE_PATHS from "./adminContent/pagePaths.js";
@@ -39,6 +40,7 @@ const adminNavItems = [
   { path: "/admin/journey", label: "Journey" },
   { path: "/admin/music", label: "Music" },
   { path: "/admin/pages", label: "Page Details" },
+  { path: "/admin/honoring-aiden", label: "Honoring Aiden" },
   { path: "/", label: "Exit Admin" },
 ];
 
@@ -140,6 +142,14 @@ function AppContent() {
           element={
             <PrivateRoute>
               <PagesAdmin />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/honoring-aiden/*"
+          element={
+            <PrivateRoute>
+              <HonoringAidenAdmin />
             </PrivateRoute>
           }
         />

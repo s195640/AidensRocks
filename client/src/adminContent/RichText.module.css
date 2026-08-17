@@ -31,3 +31,60 @@
 .richTextRoot p:empty {
   min-height: 1em;
 }
+
+/* Same reasoning as the p-margin restore above, extended to the nodes
+   JournalEntryTextEditor.jsx's toolbar grew to expose (see its own
+   .module.css for the matching editor-side rules these mirror) — without
+   these, the global `* { margin: 0; padding: 0; }` reset leaves headings
+   the same size as body text, lists un-indented, a blockquote
+   indistinguishable from a plain paragraph, and an <hr> collapsed to zero
+   height on the actual public page, even though the editor's own live
+   preview (which renders through this same RichText component) would have
+   looked fine while writing it. */
+.richTextRoot h1,
+.richTextRoot h2,
+.richTextRoot h3,
+.richTextRoot h4,
+.richTextRoot h5,
+.richTextRoot h6 {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.richTextRoot ul,
+.richTextRoot ol {
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.richTextRoot blockquote {
+  border-left: 3px solid rgba(110, 183, 216, 0.6);
+  padding-left: 1rem;
+  margin-bottom: 0.75rem;
+  color: #555;
+  font-style: italic;
+}
+
+.richTextRoot hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 1.5rem 0;
+}
+
+/* Mirrors JournalEntryTextEditor.module.css's own rules (see its comments
+   for the full reasoning) — defensive fallback sizing only, since every
+   image WrappableImage itself produces already carries its own inline
+   `style` (always wins over this regardless of specificity) — plus a
+   clearfix so a floated image doesn't collapse this container's height
+   when nothing follows it to wrap around. */
+.richTextRoot img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.richTextRoot::after {
+  content: "";
+  display: table;
+  clear: both;
+}

@@ -5,18 +5,28 @@ const axios = require('axios');
 const { Client } = require('pg');
 require('dotenv').config(); // Load .env
 
+// Kept in sync with data/sql/pglogical.sql's own table list (the canonical
+// "every table in the 'default' replication set" reference) — every table
+// registered for replication should have a row count here too, so a
+// desync shows up per-table instead of silently only covering a subset.
+// `entry`/`page_content`/`photoalbum_tags` were missing (per human report
+// — confirmed against `SELECT nspname, relname, set_name FROM
+// pglogical.tables` run directly against a live node).
 const TABLES = [
   "artist",
   "artist_link",
   "catalog",
   "counter",
   "counter_tracking",
+  "entry",
   "journey",
   "journey_image",
   "journey_tracking",
+  "music",
+  "page_content",
+  "photoalbum_tags",
   "photoalbums",
-  "photos",
-  "music"
+  "photos"
 ];
 
 // Get container/server IP

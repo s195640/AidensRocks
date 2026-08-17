@@ -1,0 +1,93 @@
+/* Scoped to this small block only — never a page-spanning ancestor — so
+   this doesn't create the stacking-context footgun CLAUDE.md warns about
+   for RockMap's .mapContainer. No fixed-position descendants live in here;
+   the edit modals render from their own top-level component, not nested
+   inside this wrapper's DOM. */
+.editable {
+  position: relative;
+}
+
+.toolbar {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  z-index: 1;
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.editable:hover .toolbar,
+.editable:focus-within .toolbar,
+.editable.selected .toolbar {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* "left" placement (see AdminEditableBlock.jsx's doc comment) — sits in the
+   page's margin, outside HonoringAidenPage.module.css's 1000px `.content`
+   card entirely, vertically centered along the block's own height, instead
+   of overlaid in a top corner. `-3.5rem` clears `.content`'s own 2rem
+   padding plus this toolbar's width, landing solidly outside the card;
+   mirrored on the opposite side by EntryDetailView.jsx's own
+   `.addJournalEntryButton` (`right: -3.5rem` there) for a symmetric look —
+   keep both in sync if either changes. Falls back to the original
+   top-right corner placement below 1300px (HonoringAidenPage.module.css's
+   own breakpoint, where the page drops to a single stacked column and
+   there's no side margin left to sit in — kept in sync by hand, not
+   shared, since these are two different CSS Modules). */
+.toolbarLeft {
+  top: 50%;
+  left: -3.5rem;
+  right: auto;
+  transform: translateY(-50%);
+  flex-direction: column;
+}
+
+@media screen and (max-width: 1300px) {
+  .toolbarLeft {
+    top: 0.25rem;
+    left: auto;
+    right: 0.25rem;
+    transform: none;
+    flex-direction: row;
+  }
+}
+
+/* "above" placement (by request — text items specifically: JournalEntry.jsx
+   passes this so the drag/delete icons don't sit on top of
+   JournalEntryTextEditor.jsx's own toolbar while a text item is being
+   edited, since that toolbar occupies the exact same top-right corner the
+   default "corner" placement overlays). Floats entirely above the block's
+   own top edge instead of inset inside it — `top: auto` cancels `.toolbar`'s
+   own `top: 0.25rem` so `bottom` is what actually positions it (both can't
+   win at once), same `bottom: calc(100% + Npx)` technique
+   ImageInlineToolbar.module.css already uses to float above the image it
+   controls. */
+.toolbarAbove {
+  top: auto;
+  bottom: calc(100% + 4px);
+  right: 0.25rem;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border: none;
+  border-radius: 6px;
+  background-color: rgba(110, 183, 216, 0.9);
+  color: #fff;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.iconButton:hover {
+  background-color: rgba(110, 183, 216, 1);
+}

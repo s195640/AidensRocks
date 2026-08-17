@@ -1,0 +1,32 @@
+/* Mirrors EntryFormModal.module.css's own .form/.errorMessage — a separate
+   CSS Module, so duplicated rather than shared (cross-module class sharing
+   isn't reliable in this app; see AdminEditableBlock.jsx's own comment on
+   the same footgun for toolbar placement variants). */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-top: 0.6rem;
+}
+
+.form select {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.errorMessage {
+  color: #c62828;
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}

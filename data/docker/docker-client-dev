@@ -1,7 +1,10 @@
+# syntax=docker/dockerfile:1
 FROM node:18
 WORKDIR /app
-COPY client/package*.json ./
-RUN npm install
+COPY client/package*.json client/.npmrc ./
+# See docker-client-prod's comment: GITHUB_TOKEN comes in as a BuildKit
+# secret (docker-compose-dev.yml's `secrets:`), never an ARG/ENV.
+RUN --mount=type=secret,id=github_token,env=GITHUB_TOKEN npm install
 COPY client .
 EXPOSE 5173
 CMD ["npm", "run", "dev"]

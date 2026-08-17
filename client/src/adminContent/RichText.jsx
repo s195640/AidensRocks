@@ -16,12 +16,32 @@ import styles from "./RichText.module.css";
 // here, so the preview can actually show it. `style` is intentionally
 // allowed on top of this app's usual avoidance of inline styles: HTML email
 // clients don't reliably support external/`<style>` CSS, so inline styles
-// are the standard way to size an embedded image.
+// are the standard way to size an embedded image. This same pre-existing
+// "img"/"style" allowance is also what JournalEntryTextEditor.jsx's own
+// Insert Image button (and its Wrap Left/No Wrap/Wrap Right buttons, which
+// render as a `float`/`margin`/`max-width` addition to that same `style`
+// value) relies on — a materially different feature added much later that
+// happened to need nothing new here at all.
 //
 // "span" is the chip mount point going forward (ComponentChip.js) — "div"
 // stays allowed too purely for already-stored content saved before that
 // tag switch (a <div> mid-sentence isn't valid inside <p> and gets the
 // paragraph auto-split by the browser's HTML parser; new saves emit span).
+// Also, as of JournalEntryTextEditor.jsx's Text Color control, "span" +
+// "style" together are what `@tiptap/extension-text-style` +
+// `@tiptap/extension-color` actually output (`<span style="color:
+// #hex">`) — a second, unrelated reason both were already on this list
+// before that feature existed, not a new allowance made for it.
+//
+// "blockquote"/"s"/"hr" added when JournalEntryTextEditor.jsx's toolbar grew
+// to expose more of StarterKit's already-bundled nodes (Heading/BulletList/
+// OrderedList/ListItem were already covered above — h1-h6/ul/ol/li — since
+// StarterKit ships them enabled by default regardless of whether any
+// toolbar button exposes them; only Blockquote/Strike/HorizontalRule
+// actually needed new tags added here). Without this, DOMPurify would
+// silently strip those tags back out on render — the editor would happily
+// let an admin format a blockquote, and the public page would just show
+// plain unstyled text with no error or warning anywhere.
 const PURIFY_CONFIG = {
   ALLOWED_TAGS: [
     "h1", "h2", "h3", "h4", "h5", "h6",
@@ -31,6 +51,7 @@ const PURIFY_CONFIG = {
     "div",
     "span",
     "img",
+    "blockquote", "s", "hr",
   ],
   ALLOWED_ATTR: ["href", "target", "rel", "data-component", "data-props", "src", "alt", "style"],
 };

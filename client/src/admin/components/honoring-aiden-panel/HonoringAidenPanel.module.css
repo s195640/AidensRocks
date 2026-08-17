@@ -1,0 +1,126 @@
+/* src/admin/components/honoring-aiden-panel/HonoringAidenPanel.module.css
+   Mirrors MusicPanel.module.css's own rules (container/headerRow/header/
+   refreshBtn/tableWrapper/table/tdLabel/tdValue/empty/spin) so this widget
+   reads as the same dashboard "family" — duplicated rather than shared,
+   since separate CSS Modules in this app aren't reliably composable across
+   files (see RichText.module.css's own comment on the same footgun). Only
+   `.subEntry`/`.tdStatus`/`.on`/`.off` are genuinely new. */
+.container {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.headerRow {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.header {
+  text-align: center;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.refreshBtn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.3rem;
+  color: #555;
+}
+
+.tableWrapper {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: right;
+  padding: 8px;
+  border-bottom: 2px solid #eee;
+  color: #666;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.table th:first-child {
+  text-align: left;
+}
+
+.table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.tdLabel {
+  font-weight: bold;
+  color: #333;
+}
+
+/* Sub-entry rows — indented under their parent's row directly above them
+   (see HonoringAidenPanel.jsx's own flattened `rows` build) rather than a
+   nested table; this indent plus the lighter weight/color is what actually
+   reads as "child of the row above" at a glance. */
+.subEntry {
+  padding-left: 1.5rem;
+  font-weight: normal;
+  color: #666;
+}
+
+.tdValue {
+  text-align: right;
+  font-family: monospace;
+  font-size: 1.1rem;
+  color: #444;
+}
+
+.tdStatus {
+  text-align: right;
+}
+
+/* "On" reuses ServerHealth.module.css's own green (a separate CSS Module,
+   so duplicated rather than shared). "Off" deliberately does NOT reuse that
+   file's red, though — red reads as an error/problem state, but an
+   unpublished entry is an ordinary, expected condition (every entry starts
+   that way — see routes/honoringAidenAdmin.js's POST /entries, "always
+   save as off"), not something wrong. Muted gray instead, same neutral
+   treatment HonoringAidenPage.module.css's own .draftBadge already uses
+   for the identical status elsewhere in this feature. */
+.on {
+  color: green;
+  font-weight: 600;
+}
+
+.off {
+  color: #999;
+  font-weight: 600;
+}
+
+.empty {
+  text-align: center;
+  color: #888;
+  padding: 20px 8px;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}

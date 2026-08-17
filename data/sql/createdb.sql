@@ -622,6 +622,54 @@ WITH body AS (
 INSERT INTO public.page_content (page_slug, nav_label, order_num, visible, draft_body, published_body)
 SELECT 'honoring-aiden', 'Honoring Aiden', 4, true, content, content FROM body;
 
+-- Honoring Aiden entries: one entry per nav item/page — title, auto-slug
+-- (see server/src/routes/honoringAidenAdmin.js), a visibility toggle
+-- (published), and its whole page body as one `body_json` document (raw
+-- Tiptap/ProseMirror JSON, authored via @s195640/content-editor's
+-- ContentEditor). No seed data — every install starts with zero entries.
+--
+-- Was a 3-table entry -> journal_entry -> journal_entry_item content model
+-- (ordered sections, each freely composed of text/image/gallery/video
+-- blocks with a column-count layout) — collapsed to this single
+-- `body_json` column once @s195640/content-editor's own editor could embed
+-- images/video directly in one flowing document, making the separate
+-- section/block/layout system redundant. See
+-- data/sql/migrations/add_honoring_aiden_entries.sql (a consolidated
+-- migration replacing 8 incremental ones — its own header comment lists
+-- them) and summary-issue-log.md for the full history of that now-removed
+-- model.
+--
+-- entry_date/cover_image: unused by any current UI (kept rather than
+-- dropped — harmless, nullable, no migration risk either way; simplest to
+-- leave for a possible future use than to churn the schema twice).
+--
+-- parent_id: self-referencing, enables the sidebar's two-level menu (main
+-- entries + sub-entries) — NULL means top-level. Hard-capped at two levels
+-- by application code (routes/honoringAidenAdmin.js's resolveParentId()),
+-- not the schema.
+--
+-- view_count: incremented once per public page view only, never an admin
+-- one — see data/sql/migrations/add_honoring_aiden_entries.sql's own
+-- comment. Not surfaced in any UI yet (by request) — tracked only.
+
+CREATE TABLE public.entry (
+    id            serial PRIMARY KEY,
+    slug          varchar(255) UNIQUE NOT NULL,
+    title         varchar(255) NOT NULL,
+    entry_date    date NULL,
+    sort_order    integer NOT NULL DEFAULT 0,
+    published     boolean NOT NULL DEFAULT false,
+    archived      boolean NOT NULL DEFAULT false,
+    cover_image   varchar(500) NULL,
+    body_json     jsonb NULL,
+    parent_id     integer NULL REFERENCES public.entry(id),
+    view_count    integer NOT NULL DEFAULT 0,
+    created_at    timestamptz DEFAULT CURRENT_TIMESTAMP,
+    updated_at    timestamptz DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE public.entry OWNER TO postgres;
+
 -- app_version: per-node record of which app VERSION is currently running,
 -- written by the server itself once at every process startup (see
 -- server/src/utils/recordAppVersion.js). Deliberately NOT part of the

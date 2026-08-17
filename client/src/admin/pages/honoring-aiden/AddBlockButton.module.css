@@ -1,0 +1,19 @@
+.addButton {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.8rem;
+  margin: 0.75rem 0;
+  border: 1px dashed rgba(110, 183, 216, 0.6);
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(110, 183, 216, 1);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.15s ease;
+}
+
+.addButton:hover {
+  background-color: rgba(110, 183, 216, 0.1);
+}
