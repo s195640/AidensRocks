@@ -11,7 +11,10 @@ export default function NotFoundRedirect() {
 
   useEffect(() => {
     axios
-      .post("/api/unmatched-path", { path: location.pathname })
+      .post("/api/unmatched-path", {
+        path: location.pathname,
+        fullUrl: location.pathname + location.search,
+      })
       .catch((error) => console.error("Error logging unmatched path:", error));
 
     navigate("/", { replace: true });

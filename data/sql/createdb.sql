@@ -692,10 +692,13 @@ ALTER TABLE public.app_version OWNER TO postgres;
 -- column -- see data/sql/migrations/add_unmatched_path_hit_table.sql for why.
 -- Per-path hit counts are computed via COUNT(*) at read time
 -- (server/src/routes/unmatchedPath.js), shown on the admin Statistics panel.
+-- full_url additionally captures the entire URL (pathname + query string)
+-- for that hit -- see data/sql/migrations/add_full_url_to_unmatched_path_hit.sql.
 
 CREATE TABLE IF NOT EXISTS public.unmatched_path_hit (
     id         serial PRIMARY KEY,
     path       character varying(2048) NOT NULL,
+    full_url   character varying(2048),
     create_dt  timestamptz DEFAULT CURRENT_TIMESTAMP
 );
 

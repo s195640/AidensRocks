@@ -11,7 +11,10 @@ export default function QRRedirect() {
     // (NotFoundRedirect.jsx) uses -- /qr is a real, matched route, but the
     // family still wants to see how often it gets hit in the admin panel.
     axios
-      .post("/api/unmatched-path", { path: location.pathname })
+      .post("/api/unmatched-path", {
+        path: location.pathname,
+        fullUrl: location.pathname + location.search,
+      })
       .catch((error) => console.error("Error logging /qr hit:", error));
 
     const params = new URLSearchParams(location.search);

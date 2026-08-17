@@ -31,11 +31,18 @@ function isIgnoredPath(path) {
 // redirects the visitor to "/". No auth -- anonymous visitors hit this, same
 // as /api/rock-count. Insert-only (see data/sql/migrations/
 // add_unmatched_path_hit_table.sql for why it's not an incrementing column).
+// fullUrl (optional) is the entire URL including the query string --
+// path stays pathname-only since that's still what grouping/counting below
+// keys on (see data/sql/migrations/add_full_url_to_unmatched_path_hit.sql).
 router.post("/", async (req, res) => {
-  const { path } = req.body;
+  const { path, fullUrl } = req.body;
 
   if (!path || typeof path !== "string" || path.length > 2048) {
     return res.status(400).json({ error: "Invalid path" });
+  }
+
+  if (fullUrl !== undefined && (typeof fullUrl !== "string" || fullUrl.length > 2048)) {
+    return res.status(400).json({ error: "Invalid fullUrl" });
   }
 
   if (isIgnoredPath(path)) {
@@ -43,7 +50,10 @@ router.post("/", async (req, res) => {
   }
 
   try {
-    await db.query("INSERT INTO unmatched_path_hit (path) VALUES ($1)", [path]);
+    await db.query(
+      "INSERT INTO unmatched_path_hit (path, full_url) VALUES ($1, $2)",
+      [path, fullUrl || null]
+    );
     res.status(204).end();
   } catch (err) {
     console.error("Error logging unmatched path:", err);
