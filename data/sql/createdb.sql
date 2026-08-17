@@ -702,3 +702,26 @@ CREATE TABLE IF NOT EXISTS public.unmatched_path_hit (
 CREATE INDEX IF NOT EXISTS idx_unmatched_path_hit_path ON public.unmatched_path_hit (path);
 
 ALTER TABLE public.unmatched_path_hit OWNER TO postgres;
+
+-- entry_media: tracks every image/video uploaded into a given Honoring
+-- Aiden entry's ContentEditor document, independent of whether it's still
+-- referenced in that entry's current body_json -- see
+-- data/sql/migrations/add_entry_media_table.sql for the full rationale.
+
+CREATE TABLE IF NOT EXISTS public.entry_media (
+    id             serial PRIMARY KEY,
+    entry_id       integer NOT NULL REFERENCES public.entry(id) ON DELETE CASCADE,
+    item_type      character varying(10) NOT NULL,   -- 'image' | 'video'
+    media_path     character varying(500) NOT NULL,
+    thumbnail_path character varying(500),
+    poster_path    character varying(500),
+    original_name  character varying(500),
+    width          integer,
+    height         integer,
+    duration       numeric,
+    create_dt      timestamptz DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_entry_media_entry_id ON public.entry_media (entry_id);
+
+ALTER TABLE public.entry_media OWNER TO postgres;

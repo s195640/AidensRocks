@@ -1,0 +1,132 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #fafafa;
+}
+
+.thumbWrapper {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.meta {
+  padding: 0.5rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.type {
+  font-size: 0.8rem;
+  color: #555;
+  font-weight: 600;
+}
+
+.entryTitle {
+  font-size: 0.75rem;
+  color: #0077cc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 1.5rem 0 1rem;
+}
+
+.sectionHeading {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.badgeUsed,
+.badgeUnused {
+  display: inline-block;
+  width: fit-content;
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badgeUsed {
+  background: rgba(92, 184, 92, 0.15);
+  color: #2e7d32;
+}
+
+.badgeUnused {
+  background: rgba(217, 83, 79, 0.12);
+  color: #c62828;
+}
+
+.actions {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0 0.6rem 0.6rem;
+}
+
+.actionBtn,
+.deleteBtn {
+  flex: 1;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.actionBtn {
+  background: #0077cc;
+  color: #fff;
+}
+
+.actionBtn:hover {
+  background: #005fa3;
+}
+
+.deleteBtn {
+  background: #d9534f;
+  color: #fff;
+}
+
+.deleteBtn:hover {
+  background: #c9302c;
+}
+
+.errorMessage {
+  color: #c62828;
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}

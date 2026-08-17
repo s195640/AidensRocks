@@ -31,3 +31,7 @@ SELECT pglogical.replication_set_add_table('default', 'entry', synchronize_data 
 -- Unmatched Path Tracking
 -- New table, zero rows at creation time (no backfill/seed) — explicit false.
 SELECT pglogical.replication_set_add_table('default', 'unmatched_path_hit', synchronize_data := false);
+
+-- Honoring Aiden Media tab
+-- New table, zero rows at creation time (no backfill/seed) — explicit false.
+SELECT pglogical.replication_set_add_table('default', 'entry_media', synchronize_data := false);

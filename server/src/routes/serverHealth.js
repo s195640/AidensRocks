@@ -19,6 +19,7 @@ const TABLES = [
   "counter",
   "counter_tracking",
   "entry",
+  "entry_media",
   "journey",
   "journey_image",
   "journey_tracking",

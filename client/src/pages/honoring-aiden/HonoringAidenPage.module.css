@@ -191,6 +191,43 @@
   display: none;
 }
 
+/* Mobile tab — see EntryDetailView.jsx's own comment on why this narrows a
+   plain container rather than emulating a true device viewport. */
+.mobilePreview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.mobileWidthLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #555;
+  align-self: flex-start;
+}
+
+.mobileWidthLabel input {
+  width: 5rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.mobileFrame {
+  max-width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  padding: 1.5rem 1rem;
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+  transition: width 0.15s ease;
+}
+
 /* Save/visibility failure message from EntryDetailView.jsx's
    handleSaveContent/handleToggleActive — same look as EntryFormModal's own
    .errorMessage (a separate CSS Module, so duplicated rather than shared;

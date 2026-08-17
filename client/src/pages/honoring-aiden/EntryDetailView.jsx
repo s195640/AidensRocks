@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { ContentEditor, ContentViewer, ContentJsonViewer } from "@s195640/content-editor";
 import honoringAidenAdminApi from "../../admin/pages/honoring-aiden/honoringAidenAdminApi";
 import { makeUploadCallbacks } from "../../admin/pages/honoring-aiden/contentEditorAdapters";
+import UploadingDialog from "../../admin/components/uploading-dialog/UploadingDialog";
+import EntryMediaTab from "../../admin/pages/honoring-aiden/entry-media-tab/EntryMediaTab";
+import { useUnsavedChangesGuard } from "../../context/UnsavedChangesContext.jsx";
 import styles from "./HonoringAidenPage.module.css";
 
 // Fixed navbar's effective height (Navbar.module.css sets no explicit
@@ -20,13 +23,34 @@ const NAVBAR_HEIGHT = 50;
 // entry.body_json, using the package's own ContentViewer/ContentJsonViewer
 // — View is exactly what the public page renders (a true preview, not a
 // separate mock), JSON is the raw Tiptap document for debugging/inspection.
+// Mobile (by request, placed right after View) is the SAME ContentViewer
+// again, just wrapped in a fixed-width container instead of the page's
+// normal full-width one — see MOBILE_WIDTH_DEFAULT below for why this is a
+// width-constrained div, not a true device viewport (iframe) emulation.
 // Public page (isAdmin=false) is untouched: no tabs, just the one
 // ContentViewer it always rendered.
 const TABS = [
   { key: "edit", label: "Edit" },
   { key: "view", label: "View" },
+  { key: "mobile", label: "Mobile" },
   { key: "json", label: "JSON" },
+  { key: "media", label: "Media" },
 ];
+
+// Default width for the Mobile tab's preview frame — 375px (by request),
+// the common baseline "small phone" width (matches an iPhone SE/12 mini's
+// CSS pixel width). Admin can change it via the tab's own input; not
+// persisted anywhere (resets to this default on reload) since nothing asked
+// for that. NOTE: this narrows a plain container div, not a real device
+// viewport — it accurately reflows the CONTENT itself (text wrapping, image
+// scaling — ContentViewer's own images/media are already max-width:100%),
+// but any `@media (max-width: ...)` CSS elsewhere in this app (Navbar,
+// page-shell breakpoints, etc.) responds to the actual BROWSER window width,
+// not this div's width, and wouldn't kick in here even at 375px — this tab
+// only ever renders the bare ContentViewer anyway (same as the View tab,
+// not the full page shell with Navbar/Footer), so that gap doesn't come up
+// in practice for what this preview is actually showing.
+const MOBILE_WIDTH_DEFAULT = 375;
 
 const VIEW_SESSION_KEY_PREFIX = "honoring-aiden:viewed:";
 
@@ -102,6 +126,56 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("edit");
+  const [mobileWidth, setMobileWidth] = useState(MOBILE_WIDTH_DEFAULT);
+  const [uploadDialog, setUploadDialog] = useState({ open: false, fileName: "", percent: 0 });
+
+  // Reporter handed to makeUploadCallbacks so it can drive the Uploading
+  // dialog below — see contentEditorAdapters.js for why uploads are queued
+  // (one dialog at a time even if the editor fires several upload calls
+  // close together). Rebuilt (via useMemo) whenever entry.id changes —
+  // switching sidebar entries needs uploads attributed to the NEW entry,
+  // not carrying over the previous one's id.
+  const uploadCallbacks = useMemo(
+    () =>
+      makeUploadCallbacks(
+        honoringAidenAdminApi.uploadMedia,
+        {
+          onStart: (fileName) => setUploadDialog({ open: true, fileName, percent: 0 }),
+          onProgress: (percent) => setUploadDialog((s) => ({ ...s, percent })),
+          onDone: () => setUploadDialog((s) => ({ ...s, open: false })),
+        },
+        entry?.id
+      ),
+    [entry?.id]
+  );
+
+  // Media tab's "Import" support. ContentEditor's onReady hands back a
+  // getJSON() reader for the LIVE document (including unsaved edits) — no
+  // imperative insert/command API exists (see this file's own doc comment
+  // on content/active being seed-once-only), so importing a node works by
+  // reading the live doc and prepending the new node client-side. That
+  // merged doc is then SAVED IMMEDIATELY (handleImportMedia below), not just
+  // handed to the editor as a new unsaved seed — see that function's own
+  // comment for why: the package's toolbar Save button only enables itself
+  // via its own internal "dirty" flag, which is flipped exclusively by a
+  // real edit transaction inside the mounted editor (confirmed by reading
+  // the compiled source — onUpdate sets it, nothing else can from outside).
+  // Remounting with modified content as the new INITIAL seed doesn't count
+  // as an edit from the editor's own point of view, so Save would stay
+  // disabled forever after an Import with no way for the admin to trigger
+  // it — auto-saving sidesteps that entirely. editorGetJSONRef is a ref, not
+  // state, since it never needs to trigger a re-render on its own.
+  const editorGetJSONRef = useRef(null);
+  const [editorSeed, setEditorSeed] = useState(0);
+
+  // Unsaved-changes guard (see context/UnsavedChangesContext.jsx): `dirty`
+  // is driven by ContentEditor's `onChange` prop, which the package fires
+  // in exact lockstep with its OWN internal Save-button-enabled flag
+  // (confirmed by reading its compiled source — both are set from the same
+  // onUpdate handler) — so this mirrors, rather than duplicates, what the
+  // toolbar Save button is already tracking.
+  const [dirty, setDirty] = useState(false);
+  const { registerGuard, guardNavigate } = useUnsavedChangesGuard();
 
   const load = useCallback(() => {
     setLoading(true);
@@ -133,33 +207,84 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
   }, [load]);
 
   // Switching sidebar entries should always land back on Edit, not leave
-  // whatever tab was open on the previous entry selected on this one.
+  // whatever tab was open on the previous entry selected on this one. Also
+  // resets editorSeed so a fresh ContentEditor mount for the newly-loaded
+  // entry doesn't inherit a stale remount count from whatever entry was
+  // viewed before it.
   useEffect(() => {
     setActiveTab("edit");
+    setEditorSeed(0);
+    setDirty(false);
+    editorGetJSONRef.current = null;
   }, [slug]);
 
-  // Wired to ContentEditor's own toolbar Save button (onSave prop) — it
-  // hands back the editor's current document JSON directly on click, so
-  // there's no separate draft-state tracking needed on this side anymore;
-  // the editor tracks its own "dirty" state and keeps its Save button
-  // disabled until something actually changed. Resubmits title/published
-  // unchanged alongside the edited body_json, same full-replace PUT every
-  // other admin action on this entry uses (see honoringAidenAdminApi.js's
-  // own comment).
-  const handleSaveContent = async (content) => {
-    try {
+  // Shared save primitive — throws on failure (unlike handleSaveContent
+  // below), so the unsaved-changes guard's own dialog can catch it, show its
+  // own error, and keep itself open rather than navigating away on a failed
+  // save. Resubmits title/published unchanged alongside the edited
+  // body_json, same full-replace PUT every other admin action on this entry
+  // uses (see honoringAidenAdminApi.js's own comment).
+  const saveContent = useCallback(
+    async (content) => {
       const saved = await honoringAidenAdminApi.updateEntry(entry.id, {
         title: entry.title,
         published: entry.published,
         body_json: content,
       });
       setEntry(saved);
+      setDirty(false);
       setError("");
+    },
+    [entry]
+  );
+
+  // Wired to ContentEditor's own toolbar Save button (onSave prop) — it
+  // hands back the editor's current document JSON directly on click. The
+  // package calls this synchronously and clears its OWN internal dirty flag
+  // right after, regardless of whether this succeeds — a pre-existing
+  // quirk, not something introduced here — so failures are only surfaced
+  // via this component's own error banner, same as before.
+  const handleSaveContent = async (content) => {
+    try {
+      await saveContent(content);
     } catch (err) {
       console.error("Failed to save entry content:", err);
       setError("Couldn't save your changes. Please try again.");
     }
   };
+
+  // Registered with the unsaved-changes guard (context/
+  // UnsavedChangesContext.jsx) so a blocked navigation's "Save" button can
+  // persist the LIVE document (via editorGetJSONRef, same reader
+  // handleImportMedia uses) — not just the last-known entry.body_json,
+  // which could be stale by exactly the in-progress edit the guard exists
+  // to protect. Left un-caught (unlike handleSaveContent) so the guard's own
+  // dialog can show a real error and stay open on failure instead of
+  // silently discarding the pending navigation.
+  const guardOnSave = useCallback(async () => {
+    const content = editorGetJSONRef.current?.() ?? entry?.body_json;
+    await saveContent(content);
+  }, [entry, saveContent]);
+
+  // Bumps editorSeed to force ContentEditor to remount seeded with the
+  // last-saved entry.body_json — actually reverting the unsaved edit, not
+  // just marking it "not dirty" anymore. Necessary here specifically
+  // because Discard is now also used for the Edit/View/JSON/Media tab
+  // switch below: unlike leaving this entry entirely (where the editor
+  // naturally unmounts and its in-memory edit goes with it), switching tabs
+  // keeps ContentEditor mounted the whole time (see this file's own comment
+  // on why — .tabPanelHidden, not a conditional unmount), so without this
+  // the "discarded" edit would still be sitting there the moment the admin
+  // clicked back to Edit.
+  const guardOnDiscard = useCallback(() => {
+    setEditorSeed((n) => n + 1);
+    setDirty(false);
+  }, []);
+
+  useEffect(() => {
+    registerGuard({ hasUnsavedChanges: dirty, onSave: guardOnSave, onDiscard: guardOnDiscard });
+    return () => registerGuard({ hasUnsavedChanges: false, onSave: null, onDiscard: null });
+  }, [dirty, guardOnSave, guardOnDiscard, registerGuard]);
 
   // Wired to the same toolbar's Active on/off switch — this IS the entry's
   // visibility control (replaces the old standalone checkbox this page used
@@ -186,6 +311,58 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
     }
   };
 
+  // Media tab's "Import" button — see this component's own doc comment on
+  // editorGetJSONRef/editorSeed above for why this saves immediately rather
+  // than just handing the editor new unsaved content. Builds a node
+  // matching exactly what @s195640/content-editor's own upload flow would
+  // have produced (attrs confirmed against its compiled node definitions —
+  // image: src/alt/title/width/height, video: src/poster/duration/align/
+  // width/height), prepends it to the LIVE current doc (so any unsaved
+  // in-progress edit gets carried into the same save rather than discarded),
+  // PUTs the result through the same full-replace endpoint every other save
+  // on this entry uses, then remounts ContentEditor seeded with the
+  // now-saved content — Save correctly shows disabled right after, since at
+  // that instant there genuinely is nothing left unsaved. Any further edits
+  // the admin makes (moving/resizing/deleting the imported node, etc.) are
+  // real transactions in the remounted editor, so Save re-enables normally
+  // from there on, same as always.
+  const handleImportMedia = async (item) => {
+    const currentDoc = editorGetJSONRef.current?.() || entry.body_json || { type: "doc", content: [] };
+    const node =
+      item.item_type === "video"
+        ? {
+            type: "video",
+            attrs: {
+              src: item.media_path,
+              poster: item.poster_path || null,
+              duration: item.duration || null,
+              align: "none",
+              width: item.width || null,
+              height: item.height || null,
+            },
+          }
+        : {
+            type: "image",
+            attrs: {
+              src: item.media_path,
+              alt: null,
+              title: null,
+              width: item.width || null,
+              height: item.height || null,
+            },
+          };
+    const nextDoc = { ...currentDoc, content: [node, ...(currentDoc.content || [])] };
+
+    try {
+      await saveContent(nextDoc);
+      setEditorSeed((n) => n + 1);
+      setActiveTab("edit");
+    } catch (err) {
+      console.error("Failed to import media into entry content:", err);
+      setError("Couldn't import this media into the page. Please try again.");
+    }
+  };
+
   // Only blank out on the true initial load — an inline save shouldn't
   // unmount/remount this tree, losing the editor's own internal state,
   // mid-edit.
@@ -201,6 +378,15 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
 
       {isAdmin && (
         <div className={styles.tabBar} role="tablist">
+          {/* Guarded like any other navigation (see guardNavigate/dirty
+              above) even though switching tabs alone can't actually lose an
+              edit — ContentEditor stays mounted underneath every tab (see
+              this file's own comment below on .tabPanelHidden). Asked for
+              anyway, by request, for a consistent "you have unsaved
+              changes" prompt regardless of where the admin is navigating
+              to; guardOnDiscard reverts the live edit for real (bumps
+              editorSeed) specifically so Discard means the same thing here
+              as it does when actually leaving the entry. */}
           {TABS.map((tab) => (
             <button
               key={tab.key}
@@ -208,7 +394,10 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
               role="tab"
               aria-selected={activeTab === tab.key}
               className={`${styles.tabButton} ${activeTab === tab.key ? styles.tabButtonActive : ""}`}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => {
+                if (tab.key === activeTab) return;
+                guardNavigate(() => setActiveTab(tab.key));
+              }}
             >
               {tab.label}
             </button>
@@ -225,13 +414,17 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
               tab-back would silently discard any unsaved in-progress edit. */}
           <div className={activeTab === "edit" ? undefined : styles.tabPanelHidden}>
             <ContentEditor
-              key={entry.id}
+              key={`${entry.id}-${editorSeed}`}
               content={entry.body_json}
               onSave={handleSaveContent}
               active={entry.published}
               onActiveChange={handleToggleActive}
               toolbarOffset={NAVBAR_HEIGHT}
-              {...makeUploadCallbacks(honoringAidenAdminApi.uploadMedia)}
+              onReady={(getJSON) => {
+                editorGetJSONRef.current = getJSON;
+              }}
+              onChange={() => setDirty(true)}
+              {...uploadCallbacks}
             />
           </div>
           {activeTab === "view" &&
@@ -240,15 +433,46 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
             ) : (
               <p>No content yet.</p>
             ))}
+          {activeTab === "mobile" && (
+            <div className={styles.mobilePreview}>
+              <label className={styles.mobileWidthLabel} htmlFor="mobile-preview-width">
+                Width (px)
+                <input
+                  id="mobile-preview-width"
+                  type="number"
+                  min={200}
+                  max={1024}
+                  value={mobileWidth}
+                  onChange={(e) => setMobileWidth(Number(e.target.value) || MOBILE_WIDTH_DEFAULT)}
+                />
+              </label>
+              <div className={styles.mobileFrame} style={{ width: `${mobileWidth}px` }}>
+                {entry.body_json ? (
+                  <ContentViewer content={entry.body_json} />
+                ) : (
+                  <p>No content yet.</p>
+                )}
+              </div>
+            </div>
+          )}
           {activeTab === "json" &&
             (entry.body_json ? (
               <ContentJsonViewer content={entry.body_json} />
             ) : (
               <p>No content yet.</p>
             ))}
+          {activeTab === "media" && <EntryMediaTab entry={entry} onImport={handleImportMedia} />}
         </>
       ) : (
         entry.body_json && <ContentViewer content={entry.body_json} />
+      )}
+
+      {isAdmin && (
+        <UploadingDialog
+          isOpen={uploadDialog.open}
+          fileName={uploadDialog.fileName}
+          percent={uploadDialog.percent}
+        />
       )}
 
       <section className={styles.commentsSection} aria-label="Comments" />

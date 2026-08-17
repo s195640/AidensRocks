@@ -18,6 +18,10 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs').promises;
+// fs-extra, under its own alias -- this file already uses `fs` for the
+// native fs.promises above. Only needed for .move()/.ensureDir()/.pathExists()
+// in the chunked-upload staging helpers below.
+const fse = require('fs-extra');
 const sharp = require('sharp');
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../db/pool');
@@ -404,6 +408,118 @@ router.patch('/entries/reorder', async (req, res) => {
   }
 });
 
+// Shared by POST /media (whole-file) and POST /media/stage-chunk (chunked,
+// below) -- everything past "the original file is already sitting on disk
+// at originalPath" is identical regardless of how it got there, so this is
+// the one place that actually runs WebP conversion/thumbnailing or ffmpeg
+// poster/duration extraction and builds the response payload. Reads the
+// original via its path rather than an in-memory buffer (sharp(originalPath)
+// works exactly like sharp(buffer)) specifically so the chunked path -- which
+// only ever has an assembled file on disk, never a whole buffer -- can share
+// this without a special case.
+async function processAndSaveMedia(originalPath, originalname, uuid) {
+  const baseDir = path.resolve('media', 'honoring-aiden', uuid);
+
+  if (isVideoFile(originalname)) {
+    const webpDir = path.join(baseDir, 'webp');
+    const videoDir = path.join(baseDir, 'video');
+    await ensureDir(webpDir);
+    await ensureDir(videoDir);
+
+    const webpPath = path.join(webpDir, 'poster.webp');
+    const videoPath = path.join(videoDir, 'video.mp4');
+    const { duration, width, height } = await processVideo(originalPath, {
+      webpOutputPath: webpPath,
+      videoOutputPath: videoPath,
+    });
+
+    return {
+      item_type: 'video',
+      media_path: `/media/honoring-aiden/${uuid}/video/video.mp4`,
+      media_poster_path: `/media/honoring-aiden/${uuid}/webp/poster.webp`,
+      media_duration: duration,
+      width,
+      height,
+    };
+  }
+
+  const webpDir = path.join(baseDir, 'webp');
+  const smDir = path.join(baseDir, 'sm');
+  await ensureDir(webpDir);
+  await ensureDir(smDir);
+
+  const webpPath = path.join(webpDir, 'image.webp');
+  const smPath = path.join(smDir, 'image.webp');
+
+  const metadata = await sharp(originalPath).metadata();
+  await convertToWebP(originalPath, webpPath);
+  await createThumbnails(webpPath, smPath, 300, 300);
+
+  return {
+    item_type: 'image',
+    media_path: `/media/honoring-aiden/${uuid}/webp/image.webp`,
+    thumbnail_path: `/media/honoring-aiden/${uuid}/sm/image.webp`,
+    width: metadata.width || null,
+    height: metadata.height || null,
+  };
+}
+
+// Records one upload against the entry it was uploaded into — see the
+// Media tab feature: `entry_media` is what makes an upload attributable/
+// listable/deletable at all, instead of just an anonymous uuid folder.
+// Best-effort by design (caller awaits it but doesn't let a tracking-row
+// failure fail the whole upload — the file's already saved and usable by
+// this point; losing the tracking row just means it won't show up on the
+// Media tab until someone notices, not a broken upload).
+async function insertEntryMedia(entryId, payload, originalName) {
+  try {
+    await pool.query(
+      `INSERT INTO entry_media
+         (entry_id, item_type, media_path, thumbnail_path, poster_path, original_name, width, height, duration)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [
+        entryId,
+        payload.item_type,
+        payload.media_path,
+        payload.thumbnail_path || null,
+        payload.media_poster_path || null,
+        originalName || null,
+        payload.width || null,
+        payload.height || null,
+        payload.media_duration || null,
+      ]
+    );
+  } catch (err) {
+    console.error(`Error recording entry_media for entry ${entryId}:`, err);
+  }
+}
+
+// Walks a Tiptap/ProseMirror doc tree and tallies how many times each
+// image/video node's `src` attr appears — confirmed against
+// @s195640/content-editor's compiled node definitions that both node types
+// store the media URL as `attrs.src` (NOT `url`, which is only the shape
+// onUploadImage/onUploadVideo resolve to, not the stored node attribute).
+// Used by GET /entries/:id/media to compute each item's ref_count against
+// the entry's current SAVED body_json — live unsaved editor edits aren't
+// visible here, same "Save persists, nothing else does" boundary the rest
+// of this feature already respects.
+function collectMediaRefs(bodyJson) {
+  const refs = new Map();
+
+  function walk(node) {
+    if (!node || typeof node !== 'object') return;
+    if ((node.type === 'image' || node.type === 'video') && node.attrs?.src) {
+      refs.set(node.attrs.src, (refs.get(node.attrs.src) || 0) + 1);
+    }
+    if (Array.isArray(node.content)) {
+      for (const child of node.content) walk(child);
+    }
+  }
+
+  walk(bodyJson);
+  return refs;
+}
+
 // -------------------- POST /api/admin/honoring-aiden/media --------------------
 // One file per request, processed synchronously — called by
 // @s195640/content-editor's onUploadImage/onUploadVideo (via
@@ -416,9 +532,13 @@ router.patch('/entries/reorder', async (req, res) => {
 // embedded into body_json only once the editor's own onChange fires.
 router.post('/media', upload.single('file'), async (req, res) => {
   const { file } = req;
+  const { entry_id } = req.body;
 
   if (!file) {
     return res.status(400).json({ error: 'No file provided.' });
+  }
+  if (!entry_id) {
+    return res.status(400).json({ error: 'entry_id is required.' });
   }
 
   try {
@@ -431,51 +551,253 @@ router.post('/media', upload.single('file'), async (req, res) => {
     await ensureDir(originalDir);
     await fs.writeFile(originalPath, file.buffer);
 
-    if (isVideoFile(file.originalname)) {
-      const webpDir = path.join(baseDir, 'webp');
-      const videoDir = path.join(baseDir, 'video');
-      await ensureDir(webpDir);
-      await ensureDir(videoDir);
-
-      const webpPath = path.join(webpDir, 'poster.webp');
-      const videoPath = path.join(videoDir, 'video.mp4');
-      const { duration, width, height } = await processVideo(originalPath, {
-        webpOutputPath: webpPath,
-        videoOutputPath: videoPath,
-      });
-
-      return res.status(201).json({
-        item_type: 'video',
-        media_path: `/media/honoring-aiden/${uuid}/video/video.mp4`,
-        media_poster_path: `/media/honoring-aiden/${uuid}/webp/poster.webp`,
-        media_duration: duration,
-        width,
-        height,
-      });
-    }
-
-    const webpDir = path.join(baseDir, 'webp');
-    const smDir = path.join(baseDir, 'sm');
-    await ensureDir(webpDir);
-    await ensureDir(smDir);
-
-    const webpPath = path.join(webpDir, 'image.webp');
-    const smPath = path.join(smDir, 'image.webp');
-
-    const metadata = await sharp(file.buffer).metadata();
-    await convertToWebP(originalPath, webpPath);
-    await createThumbnails(webpPath, smPath, 300, 300);
-
-    res.status(201).json({
-      item_type: 'image',
-      media_path: `/media/honoring-aiden/${uuid}/webp/image.webp`,
-      thumbnail_path: `/media/honoring-aiden/${uuid}/sm/image.webp`,
-      width: metadata.width || null,
-      height: metadata.height || null,
-    });
+    const payload = await processAndSaveMedia(originalPath, file.originalname, uuid);
+    await insertEntryMedia(entry_id, payload, file.originalname);
+    res.status(201).json(payload);
   } catch (err) {
     console.error('Error processing honoring-aiden media upload:', err);
     res.status(500).json({ error: 'Failed to process upload.' });
+  }
+});
+
+// Large files (image or video) get split client-side into pieces under
+// Cloudflare's 100MB request limit (see honoringAidenAdminApi.js's
+// CHUNK_SIZE) and staged here, one chunk per request, appended in order into
+// a temp file keyed by uploadId. Mirrors albums.js's POST
+// /:name/upload-chunk (auto-finalize on the last chunk) rather than
+// uploadRock.js's manifest/deferred-finalize design, since ContentEditor's
+// onUploadImage/onUploadVideo each need one self-contained {url,...} result
+// per file, not a bundle of files + other form metadata. Unlike albums.js,
+// finalizing here doesn't just promote/rename the file -- it also has to run
+// the same processing pipeline processAndSaveMedia does for a whole-file
+// upload, so the final chunk's response IS the fully-processed media payload.
+const STAGING_DIR = path.resolve('media', '.staging', 'honoring-aiden');
+const STAGING_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
+
+async function cleanupStaleStaging() {
+  try {
+    if (!(await fse.pathExists(STAGING_DIR))) return;
+    const entries = await fse.readdir(STAGING_DIR);
+    const now = Date.now();
+    for (const entry of entries) {
+      const entryPath = path.join(STAGING_DIR, entry);
+      try {
+        const stat = await fse.stat(entryPath);
+        if (now - stat.mtimeMs > STAGING_MAX_AGE_MS) {
+          await fse.remove(entryPath);
+        }
+      } catch {
+        // best-effort; ignore individual entry failures
+      }
+    }
+  } catch (err) {
+    console.warn('Honoring Aiden staging cleanup failed:', err.message);
+  }
+}
+
+router.post('/media/stage-chunk', upload.single('chunk'), async (req, res) => {
+  try {
+    const { uploadId, originalName, entry_id } = req.body;
+    const chunkIndex = Number(req.body.chunkIndex);
+    const totalChunks = Number(req.body.totalChunks);
+
+    if (
+      !req.file ||
+      !uploadId ||
+      !originalName ||
+      !entry_id ||
+      Number.isNaN(chunkIndex) ||
+      Number.isNaN(totalChunks)
+    ) {
+      return res.status(400).json({ error: 'Missing chunk data' });
+    }
+
+    cleanupStaleStaging(); // best-effort, fire-and-forget
+
+    await fse.ensureDir(STAGING_DIR);
+    const tmpPath = path.join(STAGING_DIR, path.basename(uploadId));
+    await fse.appendFile(tmpPath, req.file.buffer);
+
+    if (chunkIndex < totalChunks - 1) {
+      return res.json({ success: true, complete: false });
+    }
+
+    // Final chunk: promote the assembled temp file into the same
+    // per-upload layout /media uses, then process it exactly like a
+    // whole-file upload would.
+    const uuid = uuidv4();
+    const baseDir = path.resolve('media', 'honoring-aiden', uuid);
+    const originalDir = path.join(baseDir, 'o');
+    const ext = path.extname(originalName);
+    const originalPath = path.join(originalDir, `original${ext}`);
+
+    await ensureDir(originalDir);
+    await fse.move(tmpPath, originalPath, { overwrite: true });
+
+    const payload = await processAndSaveMedia(originalPath, originalName, uuid);
+    await insertEntryMedia(entry_id, payload, originalName);
+    res.status(201).json(payload);
+  } catch (err) {
+    console.error('Honoring Aiden chunk upload failed:', err);
+    res.status(500).json({ error: 'Chunk upload failed' });
+  }
+});
+
+// -------------------- GET /api/admin/honoring-aiden/entries/:id/media --------------------
+// Powers the admin editor's "Media" tab. Returns { current, other }:
+//
+// `current` — every file uploaded into THIS entry (from entry_media), plus
+// how many times it's currently referenced in the entry's saved content
+// (collectMediaRefs over body_json). Also surfaces any media embedded in
+// body_json that has NO entry_media row — entries whose media was uploaded
+// before this feature shipped have no tracking rows at all, so without this
+// fallback they'd show an empty tab even though their page clearly has
+// images/video in it. Those synthesized rows are flagged `historical: true`
+// (no upload date/original filename available — never recorded) and are
+// otherwise displayed the same as a tracked row.
+//
+// `other` — every tracked upload belonging to a DIFFERENT entry (by
+// request, "include all other media that is not on the current file
+// ordered by date"), newest first, each carrying its own entry's
+// title/slug (so the admin can tell where it came from) and its OWN
+// entry's ref_count (an image unused here may still be very much in use on
+// its own page — computing that against the CURRENT entry's body_json
+// would be wrong). Untracked/historical media from OTHER entries isn't
+// included here — there's no cheap way to know an arbitrary other entry's
+// body_json has an untracked src without walking every entry's doc on
+// every request; tracked uploads cover the common case.
+router.get('/entries/:id/media', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Fetch every entry's body_json once — cheap at this app's scale — so
+    // both the current entry's refs AND every other entry's own refs can be
+    // computed without an extra round trip per row.
+    const entriesRes = await pool.query('SELECT id, slug, title, body_json FROM entry');
+    const currentEntryRow = entriesRes.rows.find((row) => String(row.id) === String(id));
+    if (!currentEntryRow) {
+      return res.status(404).json({ error: 'Entry not found.' });
+    }
+
+    const refsByEntry = new Map();
+    for (const row of entriesRes.rows) {
+      refsByEntry.set(row.id, collectMediaRefs(row.body_json));
+    }
+    const currentRefs = refsByEntry.get(currentEntryRow.id);
+
+    const allMediaRes = await pool.query(
+      `SELECT id, entry_id, item_type, media_path, thumbnail_path, poster_path, original_name,
+              width, height, duration, create_dt
+       FROM entry_media
+       ORDER BY create_dt DESC`
+    );
+
+    const tracked = [];
+    const other = [];
+    for (const row of allMediaRes.rows) {
+      const isCurrent = String(row.entry_id) === String(id);
+      const rowRefs = refsByEntry.get(row.entry_id);
+      const item = {
+        id: row.id,
+        item_type: row.item_type,
+        media_path: row.media_path,
+        thumbnail_path: row.thumbnail_path,
+        poster_path: row.poster_path,
+        original_name: row.original_name,
+        width: row.width,
+        height: row.height,
+        duration: row.duration,
+        create_dt: row.create_dt,
+        historical: false,
+        ref_count: (rowRefs && rowRefs.get(row.media_path)) || 0,
+      };
+      if (isCurrent) {
+        tracked.push(item);
+      } else {
+        const ownerEntry = entriesRes.rows.find((e) => e.id === row.entry_id);
+        other.push({ ...item, entry_id: row.entry_id, entry_title: ownerEntry?.title, entry_slug: ownerEntry?.slug });
+      }
+    }
+
+    const trackedPaths = new Set(tracked.map((row) => row.media_path));
+
+    // Any src referenced in the CURRENT entry's body_json that has no
+    // entry_media row at all — walk the doc a second time (collectMediaRefs
+    // already discarded node attrs beyond src/count) to recover each one's
+    // own width/height/poster/duration for display.
+    const historical = [];
+    function walkForHistorical(node) {
+      if (!node || typeof node !== 'object') return;
+      if ((node.type === 'image' || node.type === 'video') && node.attrs?.src) {
+        const src = node.attrs.src;
+        if (!trackedPaths.has(src) && !historical.some((r) => r.media_path === src)) {
+          historical.push({
+            id: null,
+            item_type: node.type,
+            media_path: src,
+            thumbnail_path: null,
+            poster_path: node.attrs.poster || null,
+            original_name: null,
+            width: node.attrs.width || null,
+            height: node.attrs.height || null,
+            duration: node.attrs.duration || null,
+            create_dt: null,
+            historical: true,
+            ref_count: currentRefs.get(src) || 0,
+          });
+        }
+      }
+      if (Array.isArray(node.content)) {
+        for (const child of node.content) walkForHistorical(child);
+      }
+    }
+    walkForHistorical(currentEntryRow.body_json);
+
+    res.json({ current: [...tracked, ...historical], other });
+  } catch (err) {
+    console.error(`Error fetching media for honoring-aiden entry ${id}:`, err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// -------------------- DELETE /api/admin/honoring-aiden/entries/:id/media --------------------
+// Deletes an uploaded file from disk (its whole media/honoring-aiden/<uuid>/
+// folder — original + webp/thumbnail or poster/video) and its entry_media
+// row if it has one (historical/untracked items don't). No ref_count check
+// here — the client's confirm dialog is what surfaces that warning; an
+// admin who deliberately wants to delete a still-referenced file can.
+//
+// The DB delete matches on media_path alone, NOT scoped to :id — the Media
+// tab now also lists (and allows deleting) other entries' media ("other
+// media" — see GET above), so the item being deleted may belong to a
+// different entry than the one whose tab it's being deleted from. Each
+// upload's media_path already includes its own fresh uuid, so it's globally
+// unique on its own; :id here is just "which entry's tab this request came
+// from," not a real ownership boundary.
+//
+// media_path is validated against a strict pattern before anything touches
+// the filesystem: this is the only thing standing between "delete this
+// upload's folder" and an arbitrary-path-deletion bug, since the path
+// otherwise comes straight from the request body.
+const MEDIA_PATH_PATTERN = /^\/media\/honoring-aiden\/([0-9a-f-]+)\//;
+
+router.delete('/entries/:id/media', async (req, res) => {
+  const { media_path } = req.body;
+
+  const match = typeof media_path === 'string' && media_path.match(MEDIA_PATH_PATTERN);
+  if (!match) {
+    return res.status(400).json({ error: 'Invalid media_path.' });
+  }
+
+  const uuid = match[1];
+
+  try {
+    await fse.remove(path.resolve('media', 'honoring-aiden', uuid));
+    await pool.query('DELETE FROM entry_media WHERE media_path = $1', [media_path]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(`Error deleting media "${media_path}":`, err);
+    res.status(500).json({ error: 'Failed to delete media.' });
   }
 });
 

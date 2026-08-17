@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { isPlainLeftClick, useUnsavedChangesGuard } from "../../context/UnsavedChangesContext.jsx";
 import styles from "./Navbar.module.css";
 
 const Navbar = ({ navItems }) => {
   const [clicked, setClicked] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { guardNavigate, isDirty } = useUnsavedChangesGuard();
   const navRef = useRef();
   const buttonRef = useRef();
 
@@ -34,9 +37,25 @@ const Navbar = ({ navItems }) => {
     window.scrollTo(0, 0);
   };
 
+  // Only intercepts when there's actually something unsaved to guard (see
+  // UnsavedChangesContext.jsx) — a plain click on a link when nothing's
+  // dirty behaves exactly as before (real anchor navigation, ctrl/cmd-click
+  // still opens a new tab, etc.).
+  const handleGuardedClick = (e, path) => {
+    if (isPlainLeftClick(e) && isDirty()) {
+      e.preventDefault();
+      guardNavigate(() => {
+        navigate(path);
+        handleLinkClick();
+      });
+      return;
+    }
+    handleLinkClick();
+  };
+
   return (
     <nav className={styles.navbar}>
-      <Link to="/" onClick={handleLinkClick}>
+      <Link to="/" onClick={(e) => handleGuardedClick(e, "/")}>
         <img src="/logo.webp" alt="Logo" className={styles.logo} />
       </Link>
 
@@ -51,7 +70,7 @@ const Navbar = ({ navItems }) => {
               className={`${styles.navLink} ${
                 location.pathname === path ? styles.activeLink : ""
               }`}
-              onClick={handleLinkClick}
+              onClick={(e) => handleGuardedClick(e, path)}
             >
               <span>{label}</span>
             </Link>

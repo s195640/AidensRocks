@@ -31,6 +31,7 @@ import PagesAdmin from "./admin/pages/pages/PagesAdmin.jsx";
 import EmailPreview from "./admin/pages/pages/email-preview/EmailPreview.jsx";
 import PAGE_PATHS from "./adminContent/pagePaths.js";
 import { PreviewProvider } from "./adminContent/PreviewContext.jsx";
+import { UnsavedChangesProvider } from "./context/UnsavedChangesContext.jsx";
 
 const adminNavItems = [
   { path: "/admin", label: "Dashboard" },
@@ -175,7 +176,9 @@ function App() {
   return (
     <AuthProvider>
       <PreviewProvider>
-        <AppContent />
+        <UnsavedChangesProvider>
+          <AppContent />
+        </UnsavedChangesProvider>
       </PreviewProvider>
     </AuthProvider>
   );

@@ -1,0 +1,21 @@
+.error {
+  color: #c62828;
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+/* Dialog's own .dialogButtons default (green) is fine for Save as-is —
+   this just distinguishes Discard from it so the two don't look identical,
+   matching this app's established red-for-destructive convention (e.g.
+   EntryMediaTab.module.css's .deleteBtn). */
+.discardBtn {
+  background: #d9534f !important;
+}
+
+.discardBtn:hover {
+  background: #c9302c !important;
+}

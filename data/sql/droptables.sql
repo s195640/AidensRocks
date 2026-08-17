@@ -32,3 +32,7 @@ drop table entry cascade;
 /* Unmatched Path Tracking */
 
 drop table unmatched_path_hit cascade;
+
+/* Honoring Aiden Media tab */
+
+drop table entry_media cascade;

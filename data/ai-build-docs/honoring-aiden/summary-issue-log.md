@@ -2344,3 +2344,199 @@ Archived entries excluded (same filter `HonoringAidenPage.jsx`'s sidebar already
 
 ### Open questions for human review
 - Same as every open item above: needs the pending migration run by hand, and real entries created, before this widget shows anything meaningful.
+
+## Feature, human request — chunked media uploads + Uploading dialog (2026-08-17)
+
+By request: "look at our code for uploading pic and videos, we are uploading files in chunks because our server can only take a certain size of uploads, we need to implement this also in the honoring-aiden content-editor, i would like to see an 'uploading' window with a process dial."
+
+**Root problem:** `@s195640/content-editor`'s `onUploadImage`/`onUploadVideo` (wired via `contentEditorAdapters.js` → `honoringAidenAdminApi.js`'s `uploadMedia`) sent the whole file in one `FormData` POST to `POST /api/admin/honoring-aiden/media`. That route goes through the same shared multer instance and the same production Cloudflare front end (hard 100MB request-body cap) that already forced chunking onto the Rock-upload and Albums-admin flows — so any image/video an admin dropped/pasted/inserted over ~100MB would fail in prod. There was also no upload feedback of any kind in this editor — the synchronous WebP/thumbnail or ffmpeg poster/duration processing just happened silently.
+
+**Server (`server/src/routes/honoringAidenAdmin.js`):** extracted the existing `/media` handler's processing logic into a shared `processAndSaveMedia(originalPath, originalname, uuid)` helper (one line change to make it path- rather than buffer-based: `sharp(originalPath)` instead of `sharp(file.buffer)` — sharp reads a path just as well, and the chunked path only ever has an assembled file on disk, never a buffer). Added `POST /media/stage-chunk`, modeled on `albums.js`'s `POST /:name/upload-chunk` (auto-finalize on the last chunk) rather than `uploadRock.js`'s manifest/deferred-finalize design — the editor needs one self-contained `{url,...}` result per file, not a bundle of files + other form metadata. Chunks are appended into `media/.staging/honoring-aiden/<uploadId>` (own staging subdir, 24h stale sweep copied from `uploadRock.js`'s pattern, no shared util existed to import). On the final chunk, the assembled file is moved into the same `media/honoring-aiden/<uuid>/o/original<ext>` layout `/media` already uses, then run through `processAndSaveMedia` — so the final chunk's HTTP response **is** the fully-processed media payload.
+
+**Client (`honoringAidenAdminApi.js`):** `uploadMedia(file, onProgress)` now branches on `file.size > CHUNK_SIZE` (80MB, same constant/rationale as `AlbumsCreateDlg.jsx`/`UploadRockForm.jsx`) — small files still go straight to `/media` (now with `onUploadProgress` wired through to the new `onProgress` param), large files go through a new `uploadMediaChunked`, mirroring `AlbumsCreateDlg.jsx`'s `uploadInChunks` chunk-index-based progress math, returning the last chunk's (fully-processed) response data.
+
+**`contentEditorAdapters.js`:** `makeUploadCallbacks` now takes a second `reporter` argument (`{onStart, onProgress, onDone}`) threaded into both upload callbacks, plus a small in-module promise-chain queue — `@s195640/content-editor`'s `FileHandler` extension calls `onUploadImage`/`onUploadVideo` once per file independently, so pasting/dropping several files at once could otherwise fire several uploads "simultaneously" and race multiple `onProgress` streams against one dialog. Queuing keeps one upload (and one visible dialog) in flight at a time; each queued upload is wrapped in `try/finally` so `onDone()` fires even on failure, and the dialog can't get stuck open.
+
+**New `UploadingDialog`** (`client/src/admin/components/uploading-dialog/`), built on the shared `Dialog` (`client/src/components/simple-components/dialog/Dialog.jsx`) like every other admin modal. No cancel/close affordance — no upload flow anywhere in this app currently supports aborting an in-flight upload, so none was added here either. The dial itself is hand-rolled SVG (`stroke-dasharray`/`stroke-dashoffset` on two concentric circles) since no circular-progress component or library exists anywhere in this codebase (confirmed nothing's installed in `client/package.json`) — colored to match `AlbumsCreateDlg.module.css`'s existing linear progress bars (`#eee` track / `#5cb85c` fill) so it reads as the same design system, just a different shape.
+
+**`EntryDetailView.jsx`:** owns `uploadDialog` state (`{open, fileName, percent}`), builds the reporter via `useMemo` (so the upload queue in `contentEditorAdapters.js` persists across re-renders rather than getting rebuilt every render), and renders `<UploadingDialog>` for `isAdmin` only, alongside `<ContentEditor>`. The dialog shows for every upload — small or chunked — since both paths now report progress uniformly through the same `onProgress` callback; this also fixes the pre-existing "no feedback at all" gap for ordinary small-file uploads as a side effect.
+
+### Files changed
+- `server\src\routes\honoringAidenAdmin.js` — extracted `processAndSaveMedia` helper; added `POST /media/stage-chunk` + its own staging-sweep helper.
+- `client\src\admin\pages\honoring-aiden\honoringAidenAdminApi.js` — `uploadMedia` now takes `onProgress` and branches to a new `uploadMediaChunked` above `CHUNK_SIZE`.
+- `client\src\admin\pages\honoring-aiden\contentEditorAdapters.js` — `makeUploadCallbacks` gained a `reporter` param + an internal upload queue.
+- `client\src\admin\components\uploading-dialog\UploadingDialog.jsx` + `.module.css` — new.
+- `client\src\pages\honoring-aiden\EntryDetailView.jsx` — owns/wires the dialog state.
+
+### Verified
+- `npx eslint` on all touched/new client files — zero errors.
+- `node --check` on the changed server file — syntax-clean.
+- **Not** run against a live server/browser in this session (no dev environment spun up here) — per this repo's UI-verification convention, that's offered to the human to run first rather than launched unprompted. In particular, the chunk-boundary progress math, the upload-queue serialization under real concurrent paste/drop, and the final chunk's processing response were reasoned through against the existing Albums/Rock precedents but not exercised against a live server.
+
+### Open questions for human review
+- Confirm end-to-end against the real dev stack per the plan's verification steps (small upload, >80MB chunked upload, two rapid uploads queuing correctly, a forced mid-upload failure closing the dialog rather than sticking) before considering this done.
+
+## Feature, human request — Media tab (list / ref-count / delete / import) (2026-08-17)
+
+By request, after confirming the actual current behavior first: "on the admin/honoring-aiden page what happens to media that is uploaded? ... what happens when we add it, then remove it? do these files get delete from the system or do they stay? i want to add a 4th tab that will show all of the media files that have been updated for a page that has been created" — then, asked to clarify scope: "yes lets add a few things 1) delete option 2) count saying how many times this is ref in the current file 3) import option, if this is selected add the media to the top of the file users can then move or change it if they like."
+
+**Confirmed root behavior (read straight from the code, not assumed):** every upload gets its own permanent `media/honoring-aiden/<uuid>/` folder, decoupled from the document. Inserting media just embeds a link (`attrs.src` on an `image`/`video` Tiptap node — confirmed against `@s195640/content-editor`'s compiled node definitions; NOT `attrs.url`, which is only the upload-result shape, not the stored node attribute). `PUT /entries/:id` is a full-replace with no diffing against prior content, and there's no hard-delete for entries at all (only soft-archive). Nothing, anywhere, ever deleted an uploaded file before this feature — every upload was permanent and orphans accumulated invisibly.
+
+**New `entry_media` table** tracks every future upload against the entry it belongs to (`entry_id`, `item_type`, `media_path`, `thumbnail_path`/`poster_path`, `original_name`, `width`/`height`/`duration`, `create_dt`). `POST /media` and `POST /media/stage-chunk` both now require an `entry_id` field and insert one row (best-effort — a tracking-row failure doesn't fail the upload itself, since the file's already saved and usable at that point).
+
+**Known, accepted gap:** media uploaded before this shipped (and anything already removed from a doc before today) has no tracking row and can't be retroactively attributed — there was never a record connecting a file back to its entry. `GET /entries/:id/media` covers the common case anyway by falling back to whatever's *currently* embedded in the entry's saved `body_json` for any `src` with no `entry_media` row, synthesizing a `historical: true` item (no upload date/filename — never recorded). Only genuinely-orphaned-before-today files (already removed from a doc, never tracked) stay invisible — accepted as unavoidable, not solved.
+
+**Ref count (#2):** new shared `collectMediaRefs(bodyJson)` walks the Tiptap doc tree tallying every `image`/`video` node's `attrs.src`. `GET /entries/:id/media` computes each item's `ref_count` against the entry's current *saved* body_json (not live unsaved editor state — same boundary the rest of this feature already respects: nothing persists except through Save).
+
+**Delete (#1):** new `DELETE /entries/:id/media` (body `{media_path}`). Validates `media_path` against `^/media/honoring-aiden/[0-9a-f-]+/` before touching the filesystem — the one thing standing between "delete this upload's folder" and an arbitrary-path-deletion bug, since otherwise the path comes straight from the request body. Removes the whole `media/honoring-aiden/<uuid>/` folder (original + webp/thumbnail or poster/video) plus the `entry_media` row if one exists. No server-side block on `ref_count > 0` — the client's `window.confirm` (same established pattern as every other delete in this admin — `Rocks.jsx`/`Albums.jsx`/`Users.jsx`/etc.) surfaces that warning instead, naming the exact count, but still lets the admin delete a still-referenced file if they choose to.
+
+**Import (#3):** `@s195640/content-editor`'s `onReady` prop only exposes a `getJSON()` reader (confirmed against its type defs) — no imperative insert/command API, and `content`/`active` are seed-once-only per this file's own pre-existing doc comments. So Import works by: reading the *live* current doc via the captured `getJSON()` (preserves any unsaved in-progress edits rather than silently discarding them), building a node matching exactly what the package's own upload flow would produce (attrs confirmed against its compiled node definitions — image: `src`/`alt`/`title`/`width`/`height`; video: `src`/`poster`/`duration`/`align`/`width`/`height`), unshifting it onto the doc's `content` array, and forcing `ContentEditor` to remount seeded with that (a `editorSeed` counter added alongside the existing `key={entry.id}`, now `key={`${entry.id}-${editorSeed}`}`, plus a `pendingContent` state that overrides the `content` prop for that remount). Both reset on slug change so a stale import from one entry can't bleed into another. Deliberately does **not** auto-save — the imported node lands in the live editor and the admin repositions/edits it normally; it's only persisted when they hit the editor's own Save button, same as any other edit.
+
+**New `EntryMediaTab`** (4th tab, alongside Edit/View/JSON): grid of thumbnails (image thumbnail or video poster), type, upload date (or "—" for historical items), a "Used ×N"/"Not used" badge, and Import/Delete buttons per item.
+
+### Files changed
+- `data\sql\migrations\add_entry_media_table.sql` — new.
+- `data\sql\createdb.sql`, `data\sql\pglogical.sql`, `data\sql\droptables.sql` — `entry_media` additions.
+- `server\src\routes\serverHealth.js` — `entry_media` added to the `TABLES` sync list (same convention established for `unmatched_path_hit`).
+- `server\src\routes\honoringAidenAdmin.js` — `entry_id` required on both upload endpoints + `insertEntryMedia`; new `collectMediaRefs`; new `GET`/`DELETE /entries/:id/media`.
+- `client\src\admin\pages\honoring-aiden\honoringAidenAdminApi.js` — `entryId` threaded into `uploadMedia`/`uploadMediaChunked`; new `fetchEntryMedia`/`deleteEntryMedia`.
+- `client\src\admin\pages\honoring-aiden\contentEditorAdapters.js` — `entryId` param threaded through.
+- `client\src\admin\pages\honoring-aiden\entry-media-tab\EntryMediaTab.jsx` + `.module.css` — new.
+- `client\src\pages\honoring-aiden\EntryDetailView.jsx` — 4th tab, `onReady`/import wiring, `entry.id` threaded into upload callbacks.
+
+### Verified
+- `npx eslint` on all touched/new client files — zero errors.
+- `node --check` on both changed server files — syntax-clean.
+- **Not** run against a live server/browser or a live database in this session — no dev environment or DB connection available here. The doc-tree walk (`collectMediaRefs`), the historical-fallback synthesis, the path-validation regex, and the import remount mechanics were reasoned through carefully (including reading the content-editor package's actual compiled node definitions rather than guessing attr names) but not exercised end-to-end.
+
+### Open questions for human review
+- Run the new migration, then verify end-to-end per the plan's verification steps — especially: ref_count updates correctly after a Save that adds/removes a reference; delete actually removes files from disk; import lands correctly and doesn't clobber unsaved edits; an entry that predates this feature still shows its currently-embedded media via the historical fallback.
+- The accepted historical-data gap (pre-existing orphans, already removed before this shipped, can't be discovered) — flagging again in case that turns out to matter more than expected once real usage data is visible.
+
+## Feature, human request — "Other Pages' Media" section (2026-08-17)
+
+By request: "lets add a line break then include all other media that is not on the current file ordered by date."
+
+`GET /entries/:id/media`'s response shape changed from a flat array to `{ current, other }`. `other` is every tracked upload belonging to a DIFFERENT entry, newest-first (`ORDER BY create_dt DESC`, same direction as `current`'s existing ordering — "ordered by date" didn't specify a direction, kept consistent with what was already there rather than introducing a second convention). Implementation fetches every entry's `body_json` once per request (cheap at this app's scale — a handful of entries) so it can build a `Map<entryId, refsMap>` via `collectMediaRefs` and give each "other" item its OWN entry's `ref_count`, not the current entry's — an image unused on the page you're currently viewing may still be very much in use on the page it actually belongs to, and showing "Not used" for that would be wrong. Each "other" item also carries `entry_title`/`entry_slug` so the admin can tell which page it came from — not explicitly requested, but without it a cross-entry item would be unidentifiable in the list, especially before deciding whether to Import or Delete it. Untracked/historical media from OTHER entries isn't included in `other` — only the current entry gets the "walk body_json for untracked src" fallback (same as before); doing that for every other entry on every request wasn't worth the added cost for what's a secondary/browsing view, not the primary "what does THIS page use" one.
+
+**Correctness fix this forced:** `DELETE /entries/:id/media` used to scope its DB delete to `WHERE entry_id = $1 AND media_path = $2` (`$1` from the URL's `:id`). Once "other" entries' media becomes deletable from a different entry's tab, that condition would silently fail to match and leave a stale `entry_media` row behind (pointing at now-deleted files) even though the file removal itself doesn't care about `entry_id`. Fixed by scoping on `media_path` alone — already globally unique (each upload gets its own uuid) — so deleting a cross-entry item now correctly cleans up both the files and its tracking row regardless of which entry's tab it's deleted from.
+
+**Client:** `EntryMediaTab.jsx` split into a shared `MediaCard` sub-component (renders `entry_title` when present) reused by both the "current page" grid and a new "Other Pages' Media" grid below an `<hr>` divider, shown only when `other.length > 0`. `handleDelete`'s confirm message now names the actual page ("...used N time(s) on 'Page Title'...") when deleting a cross-entry item, instead of the generic "in this page's content" wording that would be wrong for an item that doesn't belong to the page you're viewing.
+
+### Files changed
+- `server\src\routes\honoringAidenAdmin.js` — `GET /entries/:id/media` rewritten to return `{current, other}`; `DELETE /entries/:id/media` re-scoped to `media_path` only.
+- `client\src\admin\pages\honoring-aiden\entry-media-tab\EntryMediaTab.jsx` + `.module.css` — "Other Pages' Media" section, shared `MediaCard`.
+
+### Verified
+- `npx eslint` on the touched client file — zero errors.
+- `node --check` on the changed server file — syntax-clean.
+- **Not** run against a live server/browser or a live database in this session — same standing caveat as the rest of this feature. In particular, the per-entry `ref_count` computation for "other" items and the `DELETE` re-scoping fix are reasoned through carefully but not exercised against real cross-entry data.
+
+### Open questions for human review
+- Confirm "newest first" is the wanted date order for the Other Pages' Media section (matched the existing current-media ordering rather than asking, since none was specified).
+- Verify end-to-end once there are at least two entries with uploaded media: confirm "other" correctly excludes the entry you're viewing, ref_count is right per-item (not borrowed from the current entry), and deleting a cross-entry item removes it cleanly from both entries' views on next load.
+
+## Fix, human request — Import needs to auto-save, not just enable the Save button (2026-08-17)
+
+By request: "when we click the import to add the file, the save changes needs to activate so this can be changed."
+
+**Root cause, confirmed by reading `@s195640/content-editor`'s compiled source (not guessed):** the toolbar's Save button's enabled/disabled state comes from an internal `dirty` React state (`useState(false)`), flipped to `true` ONLY inside the editor's own `onUpdate` handler — i.e. only when a real ProseMirror transaction happens inside the mounted editor instance. `onReady` only ever exposes a bound `getJSON()` reader (confirmed against both the type defs' actual signature and the compiled call site), never the real editor instance, despite its own doc comment saying "exposes the underlying Tiptap editor instance" — there is no prop, callback, or ref anywhere in the package's public surface that can flip that internal flag from outside. Import's previous implementation (remount `ContentEditor` with the modified doc as the new INITIAL `content` seed) doesn't count as an edit from the editor's own point of view — a fresh mount always starts with `dirty: false` — so Save stayed permanently disabled after every Import with no way for the admin to ever click it.
+
+**Fix:** Import now saves immediately instead of just seeding new unsaved content. `handleImportMedia` reads the live current doc (still via `getJSON()`, so any unsaved in-progress edit isn't discarded — carried into the same save), prepends the new node, `PUT`s it through the same full-replace endpoint every other save on this entry already uses, updates `entry` from the response, then remounts `ContentEditor` (`editorSeed` bump) seeded with that now-saved content. Save correctly shows disabled immediately after — there's genuinely nothing unsaved at that instant — and re-enables normally the moment the admin makes any further real edit, same as always. Removed the now-unnecessary `pendingContent` state entirely (previously the mechanism for feeding the remount its new seed before a save existed at all) — `ContentEditor`'s `content` prop is just `entry.body_json` again, matching how it worked before Import existed.
+
+**Deviation from the original Media-tab plan**, worth naming explicitly since it reverses something stated as intentional: that plan (and this log's own earlier "Feature, human request — Media tab" entry) said Import "does NOT auto-save... persisted only when they hit the editor's own Save button." That was the right design IF the Save button could actually be enabled after Import — it can't, per the above, so the choice was between "Import silently does nothing persistable" (the bug just reported) and "Import saves itself." Auto-save is now correct, not just a workaround.
+
+### Files changed
+- `client\src\pages\honoring-aiden\EntryDetailView.jsx` — `handleImportMedia` now saves; `pendingContent` state removed.
+
+### Verified
+- `npx eslint` — zero errors.
+- **Not** run against a live server/browser in this session. The `dirty`-flag root cause was confirmed by directly reading `node_modules/@s195640/content-editor/dist/index-BZAfoBbn.js` (not assumed), but the actual save-then-remount flow wasn't exercised against a running editor.
+
+### Open questions for human review
+- Verify end-to-end: Import a media item, confirm it's immediately visible AND already persisted (e.g. reload the page and confirm it's still there without ever touching the toolbar Save button), then make a further edit and confirm Save re-enables and works normally from there.
+- Longer-term, cleaner fix would be on the package's side (`@s195640/content-editor`) — either genuinely exposing the editor instance `onReady`'s own doc comment already promises, or an explicit `markDirty()`/imperative insert API — worth raising with whoever maintains that package if this host-side workaround ever feels fragile.
+
+## Fix, human request — playable videos in the Media tab (2026-08-17)
+
+By request: "lets allow videos to be playable in the media tab."
+
+`MediaCard` (`EntryMediaTab.jsx`) previously showed a video item as a static `<img src={poster_path}>` (or a plain "Video" text placeholder when there was no poster) — never actually playable, just a still frame. Swapped for a real `<video>` element: `src={media_path}`, `poster={poster_path}`, native `controls`, `preload="none"` (so the browser doesn't fetch every video's data just because its card happens to be on screen — only once the admin actually presses play on one). Reuses the same `.thumb` class the image cards already use (`width/height: 100%; object-fit: cover`), so it fills the same square card slot either way. The now-unused `.thumbPlaceholder` CSS rule (only ever used by the removed no-poster branch) was removed.
+
+### Files changed
+- `client\src\admin\pages\honoring-aiden\entry-media-tab\EntryMediaTab.jsx` — video card now a real `<video controls>` element.
+- `client\src\admin\pages\honoring-aiden\entry-media-tab\EntryMediaTab.module.css` — removed unused `.thumbPlaceholder`.
+
+### Verified
+- `npx eslint` — zero errors.
+- **Not** run against a live server/browser in this session — native `<video controls>` is standard, well-supported markup, but actual playback of a real uploaded video (correct poster, correct `media_path`, controls usable inside the small square card) hasn't been eyeballed.
+
+### Open questions for human review
+- Confirm playback looks right in the actual small card size once there's real video data to test against — `object-fit: cover` + native controls in a ~160px square hasn't been visually checked.
+
+## Feature, human request — unsaved-changes guard (2026-08-17)
+
+By request: "can we make a dialog show up if users try to move away from the edit page but have unsaved changed, should says you have unsaved changes do you want to save then 'Save' 'Discard'." Clarified scope with a question first: this app uses a plain `<BrowserRouter>` (see `main.jsx`), not a Data Router, so react-router's own `useBlocker` navigation-blocking isn't available — confirmed with the human that a custom dialog is only reliably achievable for in-app link clicks this app itself renders (chose: guard ALL of them — the Honoring Aiden sidebar AND every other admin nav link), with browser-level actions (tab close/refresh/typed URL) falling back to the browser's own native, un-customizable "leave site?" prompt. Browser Back/Forward specifically can't be caught by either mechanism — same-origin popstate isn't a real page unload, so `beforeunload` never fires for it either — flagged as a known, accepted gap rather than solved.
+
+**New generic mechanism**, not Honoring-Aiden-specific: `client/src/context/UnsavedChangesContext.jsx` exports `UnsavedChangesProvider` (wraps `AppContent` in `App.jsx`, alongside `AuthProvider`/`PreviewProvider`) and `useUnsavedChangesGuard()`, giving any future editor a `registerGuard({hasUnsavedChanges, onSave, onDiscard})` + `guardNavigate(navigateFn)` pair instead of growing its own copy of this. Also exports `isPlainLeftClick(e)`, shared by every guarded link's onClick — skips interception for ctrl/cmd/shift/alt-click and middle-click, so "open in new tab" keeps working normally (a new tab can't lose the current tab's unsaved edits, so there's nothing to guard there).
+
+**Dirty tracking, the interesting part:** `@s195640/content-editor`'s toolbar Save button enables itself from an internal `dirty` flag that's flipped ONLY inside its own `onUpdate` handler (per the same compiled-source reading that drove the last two fixes in this log) — there's no exposed way to read that flag from outside. But the SAME `onUpdate` handler also calls the package's public `onChange` prop (previously unused here) in exact lockstep — so wiring `onChange={() => setDirty(true)}` on `ContentEditor` gives this component its OWN `dirty` state that tracks the package's internal one exactly, without needing access to it. `dirty` resets to `false` on a successful save (both the toolbar's own Save and the guard's Save button ultimately go through the same new `saveContent` helper), on Import (already an auto-save, see the earlier "Import needs to auto-save" fix), on Discard, and on switching to a different entry (slug change).
+
+**Save vs Discard in the guard dialog:** Save calls `guardOnSave`, which reads the LIVE document via the same `editorGetJSONRef.current()` reader `handleImportMedia` already uses (not the last-known `entry.body_json`, which is exactly what's stale by the unsaved edit being protected), then reuses the same full-replace `PUT` every other save on this entry goes through. Left un-caught (unlike the toolbar's own `handleSaveContent`) so a failed save keeps the dialog open with its own error message rather than silently discarding the pending navigation and leaving the admin's edit lost. Discard just clears `dirty` and lets the pending navigation through — the unmounting `ContentEditor` throws its unsaved edits away, which is the literal point of that button.
+
+**Styling:** the dialog reuses the shared `Dialog` component (same as every other modal in this app) with `closeOnOutsideClick` enabled here specifically — unlike data-entry dialogs elsewhere, a confirm-type dialog benefits from "click outside = stay on this page," so that's not treated as a Cancel button by itself, just backdrop/Escape doing the same thing. Discard is styled red (`.discardBtn`, `!important` needed to out-specificity `Dialog.module.css`'s own `.dialogButtons button` element selector) to match this app's established red-for-destructive convention rather than defaulting to the same green as Save.
+
+### Files changed
+- `client\src\context\UnsavedChangesContext.jsx` + `.module.css` — new.
+- `client\src\App.jsx` — wraps `AppContent` in `UnsavedChangesProvider`.
+- `client\src\components\navbar\Navbar.jsx` — guards every nav link (logo + `navItems`, which covers both the public nav and the full admin nav, including "Exit Admin").
+- `client\src\pages\honoring-aiden\HonoringAidenPage.jsx` — guards all four sidebar `<NavLink>` variants (admin top-level/sub, public top-level/sub).
+- `client\src\pages\honoring-aiden\EntryDetailView.jsx` — `dirty` state via `onChange`; new `saveContent` helper shared by the toolbar Save, the guard's Save, and Import; `registerGuard` wiring.
+
+### Verified
+- `npx eslint` on every touched/new file — zero errors.
+- **Not** run against a live server/browser in this session. The `onChange`/`dirty` lockstep claim is confirmed by reading the compiled package source (same method as the last two entries), but the actual dialog — appearing on a guarded click, Save persisting the live doc and then navigating, Discard throwing edits away and navigating, and the native `beforeunload` prompt on refresh/close — hasn't been exercised end-to-end.
+
+### Open questions for human review
+- Verify end-to-end: make an edit, click a different sidebar entry (dialog should appear); Save should persist AND navigate; Discard should navigate without persisting; clicking outside the dialog should cancel and leave you on the still-dirty page; refreshing the tab with unsaved changes should trigger the browser's own native prompt.
+- Browser Back/Forward buttons are NOT guarded (see context above) — confirm that's acceptable, since fixing it properly would mean migrating this app's router from `<BrowserRouter>` to a Data Router (`createBrowserRouter`), a much larger change out of scope here.
+
+## Feature, human request — guard Edit/View/JSON/Media tab switches too (2026-08-17)
+
+By request: "lets add the dialog also for if users flip between edit/view ... tabs."
+
+Reused the exact same mechanism from the previous entry rather than building a second one — `guardNavigate` doesn't actually care that its callback is a real router navigation, so the tab strip's `onClick` now calls `guardNavigate(() => setActiveTab(tab.key))` instead of `setActiveTab` directly (skipped entirely when clicking the already-active tab — a no-op that shouldn't prompt anything).
+
+**The one real wrinkle:** `ContentEditor` stays mounted underneath every tab (`.tabPanelHidden` just hides it with CSS — see this file's own long-standing comment on why: unmounting on tab-away would silently discard an in-progress edit, which is exactly the bug this whole guard feature exists to prevent). That means, unlike leaving the entry entirely, clicking Discard here can't rely on a natural unmount to throw the edit away — `guardOnDiscard` now also bumps `editorSeed` to force `ContentEditor` to remount seeded with the last-saved `entry.body_json`, actually reverting the edit rather than just marking it "not dirty" while the same unsaved content sits there waiting for the admin to click back to Edit. This applies uniformly now — Discard means the same thing whether you're switching tabs or leaving the page entirely.
+
+### Files changed
+- `client\src\pages\honoring-aiden\EntryDetailView.jsx` — tab clicks routed through `guardNavigate`; `guardOnDiscard` now reverts via `editorSeed` instead of just clearing `dirty`.
+
+### Verified
+- `npx eslint` — zero errors.
+- **Not** run against a live server/browser in this session — same standing caveat as the rest of this feature area.
+
+### Open questions for human review
+- Verify end-to-end: make an edit on the Edit tab, click View/JSON/Media (dialog should appear); Discard should genuinely revert the content (switch back to Edit and confirm the edit is really gone, not just hidden); Save should persist and then switch tabs normally.
+
+## Feature, human request — 5th "Mobile" tab (2026-08-17)
+
+By request: "right now we have 4 tabs (edit, view, json, media) i want to add a 5th tab to the right of 'view' that called 'mobile' this will be used to view what the page will look like on mobile devices, lets use default px as 375, but allow users to change this."
+
+Tab order is now Edit / View / **Mobile** / JSON / Media. Mobile renders the exact same `ContentViewer` the View tab already uses (same last-SAVED `entry.body_json`, not live unsaved edits — consistent with View/JSON), just wrapped in a container whose `width` is driven by a small number input (default `375`, min `200`/max `1024` as sane guardrails — not specified, chosen to cover phone through small-tablet widths without being unbounded). Not persisted anywhere — resets to 375 on reload, since nothing asked for it to stick.
+
+**Honest limitation, worth being upfront about rather than overselling this as a device emulator:** this narrows a plain `<div>`, not a real device viewport. Any `@media (max-width: ...)` CSS elsewhere in this app (Navbar, page-shell breakpoints, etc.) responds to the actual BROWSER window width, not this div's width, so those wouldn't kick in here even at 375px. A true per-viewport emulation would need an `<iframe>` (iframes get their own independent CSS viewport) with the page portaled into it — meaningfully more complexity (loading the site's CSS into a fresh iframe document, handling auth for a draft admin preview, etc.) for a tab that, like View right next to it, only ever renders the bare `ContentViewer` anyway (not the full page shell with Navbar/Footer) — so the breakpoint gap doesn't actually come up for what this tab is showing. Narrowing the container still accurately reflows the CONTENT itself (text wrapping, image scaling — images in this content are already `max-width:100%`), which is the part that actually varies per-entry and is what's most useful to preview here.
+
+Already guarded by the unsaved-changes dialog from the previous two entries — no extra wiring needed, since that guard treats any tab-switch generically rather than special-casing which tab.
+
+### Files changed
+- `client\src\pages\honoring-aiden\EntryDetailView.jsx` — `TABS` array, `mobileWidth` state, Mobile tab panel.
+- `client\src\pages\honoring-aiden\HonoringAidenPage.module.css` — `.mobilePreview`/`.mobileWidthLabel`/`.mobileFrame`.
+
+### Verified
+- `npx eslint` — zero errors.
+- **Not** run against a live server/browser in this session — same standing caveat as the rest of this feature area.
+
+### Open questions for human review
+- Confirm the width bounds (200–1024) are reasonable, or if a specific max/min was wanted.
+- If a true device-viewport emulation (real `@media` breakpoint accuracy) turns out to matter later, that's a bigger follow-up (iframe + portal), not something this pass attempted.

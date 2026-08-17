@@ -1,0 +1,59 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 12px;
+}
+
+.dialWrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.dial {
+  width: 120px;
+  height: 120px;
+  transform: rotate(-90deg);
+}
+
+.dialTrack,
+.dialFill {
+  fill: none;
+  stroke-width: 10;
+}
+
+.dialTrack {
+  stroke: #eee;
+}
+
+.dialFill {
+  stroke: #5cb85c;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.2s ease;
+}
+
+.dialPercent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.fileName {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  color: #555;
+  text-align: center;
+}

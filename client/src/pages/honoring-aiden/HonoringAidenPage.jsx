@@ -8,6 +8,7 @@ import AddBlockButton from "../../admin/pages/honoring-aiden/AddBlockButton";
 import EntryFormModal from "../../admin/pages/honoring-aiden/EntryFormModal";
 import MoveEntryModal from "../../admin/pages/honoring-aiden/MoveEntryModal";
 import honoringAidenAdminApi from "../../admin/pages/honoring-aiden/honoringAidenAdminApi";
+import { isPlainLeftClick, useUnsavedChangesGuard } from "../../context/UnsavedChangesContext.jsx";
 import styles from "./HonoringAidenPage.module.css";
 
 // Shared shell for both the public /honoring-aiden page and the protected
@@ -34,8 +35,22 @@ export default function HonoringAidenPage({ isAdmin = false }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { guardNavigate, isDirty } = useUnsavedChangesGuard();
   const sidebarRef = useRef();
   const toggleRef = useRef();
+
+  // Sidebar entries use react-router's relative `to={entry.slug}` on
+  // <NavLink> — navigate() resolves a bare relative path the same way when
+  // called from within this same route, so the guarded/unguarded paths
+  // produce identical navigation. Only intercepts when there's actually
+  // something unsaved (see UnsavedChangesContext.jsx) — a plain click when
+  // nothing's dirty behaves exactly like an ordinary NavLink click.
+  const handleEntryLinkClick = (e, slug) => {
+    if (isPlainLeftClick(e) && isDirty()) {
+      e.preventDefault();
+      guardNavigate(() => navigate(slug));
+    }
+  };
 
   const [entries, setEntries] = useState([]);
   const [entriesLoading, setEntriesLoading] = useState(true);
@@ -220,6 +235,7 @@ export default function HonoringAidenPage({ isAdmin = false }) {
                           >
                             <NavLink
                               to={entry.slug}
+                              onClick={(e) => handleEntryLinkClick(e, entry.slug)}
                               className={({ isActive }) =>
                                 `${styles.menuLink} ${isActive ? styles.menuLinkActive : ""}`
                               }
@@ -265,6 +281,7 @@ export default function HonoringAidenPage({ isAdmin = false }) {
                                           >
                                             <NavLink
                                               to={child.slug}
+                                              onClick={(e) => handleEntryLinkClick(e, child.slug)}
                                               className={({ isActive }) =>
                                                 `${styles.menuLink} ${styles.subMenuLink} ${isActive ? styles.menuLinkActive : ""}`
                                               }
@@ -301,6 +318,7 @@ export default function HonoringAidenPage({ isAdmin = false }) {
                 <li key={entry.slug}>
                   <NavLink
                     to={entry.slug}
+                    onClick={(e) => handleEntryLinkClick(e, entry.slug)}
                     className={({ isActive }) =>
                       `${styles.menuLink} ${isActive ? styles.menuLinkActive : ""}`
                     }
@@ -313,6 +331,7 @@ export default function HonoringAidenPage({ isAdmin = false }) {
                         <li key={child.slug}>
                           <NavLink
                             to={child.slug}
+                            onClick={(e) => handleEntryLinkClick(e, child.slug)}
                             className={({ isActive }) =>
                               `${styles.menuLink} ${styles.subMenuLink} ${isActive ? styles.menuLinkActive : ""}`
                             }
