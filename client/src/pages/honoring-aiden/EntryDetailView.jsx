@@ -435,8 +435,19 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
             ))}
           {activeTab === "mobile" && (
             <div className={styles.mobilePreview}>
-              <label className={styles.mobileWidthLabel} htmlFor="mobile-preview-width">
-                Width (px)
+              <div className={styles.mobileWidthRow}>
+                <label className={styles.mobileWidthLabel} htmlFor="mobile-preview-width">
+                  Width (px)
+                </label>
+                <input
+                  type="range"
+                  className={styles.mobileWidthSlider}
+                  min={200}
+                  max={1024}
+                  value={mobileWidth}
+                  onChange={(e) => setMobileWidth(Number(e.target.value))}
+                  aria-label="Mobile preview width"
+                />
                 <input
                   id="mobile-preview-width"
                   type="number"
@@ -445,7 +456,7 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
                   value={mobileWidth}
                   onChange={(e) => setMobileWidth(Number(e.target.value) || MOBILE_WIDTH_DEFAULT)}
                 />
-              </label>
+              </div>
               <div className={styles.mobileFrame} style={{ width: `${mobileWidth}px` }}>
                 {entry.body_json ? (
                   <ContentViewer content={entry.body_json} />

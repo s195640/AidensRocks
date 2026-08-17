@@ -200,16 +200,23 @@
   gap: 1rem;
 }
 
-.mobileWidthLabel {
+.mobileWidthRow {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.9rem;
-  color: #555;
   align-self: flex-start;
 }
 
-.mobileWidthLabel input {
+.mobileWidthLabel {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.mobileWidthSlider {
+  width: 12rem;
+}
+
+.mobileWidthRow input[type="number"] {
   width: 5rem;
   padding: 0.3rem 0.5rem;
   border: 1px solid #ccc;
