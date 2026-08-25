@@ -7,7 +7,7 @@ const processVideo = require('../processVideo');
 const sendEmail = require('../sendEmail');
 const db = require('../../db/pool');
 
-async function processImagesInBackground(baseDir, name, safeRockNumber, commentSafe, locationSafe, rpsKey, req) {
+async function processImagesInBackground(baseDir, name, safeRockNumber, commentSafe, locationSafe, dateSafe, emailSafe, rpsKey, req) {
   try {
     const originalDir = path.join(baseDir, 'o');
     const webpDir = path.join(baseDir, 'webp');
@@ -83,16 +83,20 @@ async function processImagesInBackground(baseDir, name, safeRockNumber, commentS
 
 Rock Number: ${safeRockNumber}
 Name: ${name}
+Date: ${dateSafe || 'Not provided'}
 Location: ${locationSafe}
 Comment: ${commentSafe}
+Email: ${emailSafe || 'Not provided'}
   `,
       html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
           <h2 style="color: #4CAF50;">New Rock Journey Posted</h2>
           <p><strong>Rock Number:</strong> ${safeRockNumber}</p>
           <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Date:</strong> ${dateSafe || 'Not provided'}</p>
           <p><strong>Location:</strong> ${locationSafe}</p>
           <p><strong>Comment:</strong> ${commentSafe}</p>
+          <p><strong>Email:</strong> ${emailSafe || 'Not provided'}</p>
           <hr style="border: none; border-top: 1px solid #ccc;" />
           <p style="font-size: 0.9em; color: #888;">This is an automated notification from Aidens Rocks.</p>
         </div>

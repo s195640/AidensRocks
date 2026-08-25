@@ -190,13 +190,13 @@ router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
     });
 
     // ✅ Run the image processing in the background
-    setImmediate(() => processImagesInBackground(baseDir, name, safeRockNumber, commentSafe, locationSafe, rpsKey));
+    const emailTrimmed = email?.trim();
+    setImmediate(() => processImagesInBackground(baseDir, name, safeRockNumber, commentSafe, locationSafe, date, emailTrimmed, rpsKey));
 
     // ✅ If they gave a real rock number and an email, fire the (optional,
     // admin-controlled) Response Email — no-ops internally if that template
     // is currently Inactive. Independent of the background processing above.
     const rockNumberInt = parseInt(safeRockNumber, 10);
-    const emailTrimmed = email?.trim();
     if (rockNumberInt > 0 && emailTrimmed) {
       setImmediate(() => sendRockResponseEmail(rockNumberInt, emailTrimmed, rpsKey));
     }
