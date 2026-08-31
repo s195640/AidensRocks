@@ -4,6 +4,7 @@ import ServerHealth from "../../components/server-health/ServerHealth";
 import Statistics from "../../components/statistics/Statistics";
 import MusicPanel from "../../components/music-panel/MusicPanel";
 import HonoringAidenPanel from "../../components/honoring-aiden-panel/HonoringAidenPanel";
+import PathHitsPanel from "../../components/path-hits-panel/PathHitsPanel";
 import styles from "./Admin.module.css";
 
 const Admin = () => {
@@ -13,10 +14,11 @@ const Admin = () => {
         <h1>Admin Dashboard</h1>
       </div>
       <div className={styles.content}>
-        {/* Left Column: Music, Honoring Aiden, Stats, and Health */}
+        {/* Left Column: Music, Honoring Aiden, Path Hits, Stats, and Health */}
         <div className={styles.leftColumn}>
           <MusicPanel />
           <HonoringAidenPanel />
+          <PathHitsPanel />
           <Statistics />
           <ServerHealth />
         </div>

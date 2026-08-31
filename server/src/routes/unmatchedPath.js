@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db/pool");
+const buildPathDisplayNameMatcher = require("../utils/pathDisplayNameMatcher");
 
 // Paths that are routine browser/crawler noise, not a bad link a visitor
 // actually typed/followed -- never logged. Matched case-insensitively
@@ -61,18 +62,58 @@ router.post("/", async (req, res) => {
   }
 });
 
-// GET / -- for the admin Statistics panel. Public, no auth, matching this
+// GET / -- for the admin Path Hits widget (client/src/admin/components/
+// path-hits-panel/PathHitsPanel.jsx). Public, no auth, matching this
 // repo's existing precedent for this kind of aggregate analytics read (see
-// routes/statistics.js). Counts are computed at read time via COUNT(*).
+// routes/statistics.js). Mapping management itself (path_display_name) is
+// admin-only -- see routes/pathDisplayNameAdmin.js.
+//
+// Raw hits are first aggregated per distinct full_url (falling back to the
+// pathname-only `path` for older rows logged before full_url existed --
+// see data/sql/migrations/add_full_url_to_unmatched_path_hit.sql), then
+// merged a second time in JS by whichever path_display_name row each one
+// resolves to (see utils/pathDisplayNameMatcher.js). That second merge is
+// what lets a wildcard mapping like "/qr?r=*" -> "Rock" collapse every
+// distinct rock code into a single "Rock" row with a combined hit count,
+// while a full_url that matches no mapping stays listed on its own under
+// "Unknown" -- surfacing it, rather than hiding it, is the point (it's how
+// the family notices a path that still needs a mapping).
 router.get("/", async (req, res) => {
   try {
-    const result = await db.query(
-      `SELECT path, COUNT(*)::int AS hit_count, MAX(create_dt) AS last_hit_dt
-       FROM unmatched_path_hit
-       GROUP BY path
-       ORDER BY COUNT(*) DESC, path ASC`
+    const [hitsResult, mappingsResult] = await Promise.all([
+      db.query(
+        `SELECT COALESCE(full_url, path) AS full_url, COUNT(*)::int AS hit_count, MAX(create_dt) AS last_hit_dt
+         FROM unmatched_path_hit
+         GROUP BY COALESCE(full_url, path)`
+      ),
+      db.query(`SELECT url_pattern, display_name FROM path_display_name`),
+    ]);
+
+    const resolve = buildPathDisplayNameMatcher(mappingsResult.rows);
+
+    const merged = new Map();
+    for (const row of hitsResult.rows) {
+      const match = resolve(row.full_url);
+      const key = match ? match.urlPattern : row.full_url;
+      const existing = merged.get(key);
+      if (existing) {
+        existing.hit_count += row.hit_count;
+        if (row.last_hit_dt > existing.last_hit_dt) existing.last_hit_dt = row.last_hit_dt;
+      } else {
+        merged.set(key, {
+          full_url: key,
+          display_name: match ? match.displayName : "Unknown",
+          hit_count: row.hit_count,
+          last_hit_dt: row.last_hit_dt,
+        });
+      }
+    }
+
+    const rows = [...merged.values()].sort(
+      (a, b) => b.hit_count - a.hit_count || a.full_url.localeCompare(b.full_url)
     );
-    res.json(result.rows);
+
+    res.json(rows);
   } catch (err) {
     console.error("Error fetching unmatched path hits:", err);
     res.status(500).json({ error: "Internal Server Error" });

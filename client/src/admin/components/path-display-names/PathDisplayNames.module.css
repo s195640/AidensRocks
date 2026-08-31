@@ -1,0 +1,90 @@
+.dialogFixedHeight {
+  /* Same fixed-height convention as SendEmailsCatchup.module.css's own
+     dialogFixedHeight -- keeps the dialog from growing/shrinking as rows
+     are added/removed; Dialog.module.css's dialogContent scrolls instead. */
+  height: 70vh;
+}
+
+.description {
+  color: #555;
+  margin: 0 0 16px;
+}
+
+.description code {
+  background: #f0f0f0;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.button {
+  background-color: rgba(110, 183, 216, 1);
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.button:hover {
+  background-color: rgba(90, 160, 190, 1);
+}
+
+.error {
+  color: #b00020;
+  margin-bottom: 12px;
+}
+
+.form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.input {
+  flex: 1 1 200px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #6eb7d8;
+}
+
+.saveButton {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+}
+
+.actionIcons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.editIcon,
+.deleteIcon {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.editIcon {
+  color: #5bc0de;
+}
+
+.deleteIcon {
+  color: red;
+}
+
+.editIcon:hover,
+.deleteIcon:hover {
+  transform: scale(1.2);
+}

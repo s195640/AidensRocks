@@ -728,3 +728,24 @@ CREATE TABLE IF NOT EXISTS public.entry_media (
 CREATE INDEX IF NOT EXISTS idx_entry_media_entry_id ON public.entry_media (entry_id);
 
 ALTER TABLE public.entry_media OWNER TO postgres;
+
+-- path_display_name: admin-managed lookup mapping a hit's full_url (or
+-- bare path, for older rows with no full_url) to a display label shown on
+-- the admin Path Hits widget in place of the raw URL, e.g.
+-- "/treeHH?z=1" -> "Hocking Hills". url_pattern may use "*" as a wildcard
+-- (e.g. "/qr?r=*" -> "Rock") -- see
+-- server/src/utils/pathDisplayNameMatcher.js for the match/precedence
+-- rules. A hit with no matching row shows as "Unknown" rather than being
+-- omitted -- see server/src/routes/unmatchedPath.js. See
+-- data/sql/migrations/add_path_display_name_table.sql for the full
+-- rationale.
+
+CREATE TABLE IF NOT EXISTS public.path_display_name (
+    id            serial PRIMARY KEY,
+    url_pattern   character varying(2048) NOT NULL UNIQUE,
+    display_name  character varying(255) NOT NULL,
+    create_dt     timestamptz DEFAULT CURRENT_TIMESTAMP,
+    update_dt     timestamptz DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE public.path_display_name OWNER TO postgres;

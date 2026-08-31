@@ -41,7 +41,8 @@
     flex-direction: column;
   }
 
-  /* Order: 1. Music, 2. Statistics, 3. ARDetails, 4. ServerHealth */
+  /* Order: 1. Music, 2. Honoring Aiden, 3. Path Hits, 4. ARDetails,
+     5. Statistics, 6. Server Health */
   .leftColumn {
     display: contents;
     /* Flattens the div so we can reorder children */
@@ -56,15 +57,25 @@
     order: 2;
   }
 
-  /* Statistics */
-  .rightColumn {
+  /* Honoring Aiden */
+  .leftColumn>div:nth-child(3) {
     order: 3;
   }
 
-  /* ARDetails */
-  .leftColumn>div:nth-child(3) {
+  /* Path Hits */
+  .rightColumn {
     order: 4;
   }
 
-  /* ServerHealth */
+  /* ARDetails */
+  .leftColumn>div:nth-child(4) {
+    order: 5;
+  }
+
+  /* Statistics */
+  .leftColumn>div:nth-child(5) {
+    order: 6;
+  }
+
+  /* Server Health */
 }

@@ -25,6 +25,7 @@ const TABLES = [
   "journey_tracking",
   "music",
   "page_content",
+  "path_display_name",
   "photoalbum_tags",
   "photoalbums",
   "photos",

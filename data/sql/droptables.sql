@@ -36,3 +36,7 @@ drop table unmatched_path_hit cascade;
 /* Honoring Aiden Media tab */
 
 drop table entry_media cascade;
+
+/* Path Display Names */
+
+drop table path_display_name cascade;

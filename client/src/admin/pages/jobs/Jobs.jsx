@@ -3,6 +3,7 @@ import CreateQRCodes from "../../components/create-qr-codes/CreateQRCodes";
 import CreateSingleQRCode from "../../components/create-single-qr-code/CreateSingleQRCode";
 import PrintMultiImages from "../../components/print-multi-images/PrintMultiImages";
 import SendEmailsCatchup from "../../components/send-emails-catchup/SendEmailsCatchup";
+import PathDisplayNames from "../../components/path-display-names/PathDisplayNames";
 import styles from "./Jobs.module.css";
 
 const Jobs = () => {
@@ -14,6 +15,7 @@ const Jobs = () => {
         <CreateSingleQRCode />
         <PrintMultiImages />
         <SendEmailsCatchup />
+        <PathDisplayNames />
       </div>
     </div>
   );

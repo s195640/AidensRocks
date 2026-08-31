@@ -34,6 +34,7 @@ app.use("/api/ar-details", require("./routes/arDetails"));
 app.use("/api/music", require("./routes/music"));
 app.use("/api/statistics", require("./routes/statistics"));
 app.use("/api/unmatched-path", require("./routes/unmatchedPath"));
+app.use("/api/admin/path-display-names", require("./routes/pathDisplayNameAdmin"));
 app.use("/api/pages", require("./routes/pages"));
 app.use("/api/admin/pages", require("./routes/pagesAdmin"));
 app.use("/api/admin/jobs", require("./routes/jobsAdmin"));
