@@ -147,4 +147,40 @@ router.post("/send-emails-catchup/send", async (req, res) => {
   }
 });
 
+// -------------------- POST /api/admin/jobs/send-email --------------------
+// Backs the freeform "Send Email" job: an admin-supplied to/subject/message,
+// no template involved (unlike send-emails-catchup above) and nothing
+// recorded afterward -- this doesn't touch journey/rock rows at all.
+// Body: { to, subject, message }.
+router.post("/send-email", async (req, res) => {
+  const { to, subject, message } = req.body;
+
+  if (typeof to !== "string" || !EMAIL_RE.test(to.trim())) {
+    return res.status(400).json({ error: "A valid recipient email address is required." });
+  }
+
+  const trimmedSubject = typeof subject === "string" ? subject.trim() : "";
+  const trimmedMessage = typeof message === "string" ? message.trim() : "";
+
+  if (!trimmedSubject) {
+    return res.status(400).json({ error: "A subject is required." });
+  }
+  if (!trimmedMessage) {
+    return res.status(400).json({ error: "A message is required." });
+  }
+
+  try {
+    await sendEmail({
+      to: to.trim(),
+      subject: trimmedSubject,
+      text: trimmedMessage,
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(`Error sending email to ${to}:`, err);
+    res.status(500).json({ error: "Failed to send email." });
+  }
+});
+
 module.exports = router;

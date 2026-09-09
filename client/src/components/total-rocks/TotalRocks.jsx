@@ -26,7 +26,7 @@ export default function TotalRocks() {
   return (
     <div className={styles.totalRocks}>
       <div className={styles.summary}>
-        Rocks found {details.rocksFound} of {details.rocks}
+        Rocks placed {details.rocksFound} of {details.rocks}
       </div>
 
       <div className={styles.statsColumn}>
