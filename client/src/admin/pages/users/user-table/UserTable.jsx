@@ -1,4 +1,3 @@
-import React from "react";
 import Table from "../../../../components/simple-components/table/Table";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import styles from "./UserTable.module.css";

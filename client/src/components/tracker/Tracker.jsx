@@ -42,27 +42,27 @@ const Tracker = () => {
         // console.error("Error fetching IP:", error);
       }
 
-      const handleFinalLog = () => finalizeAndStore(clientData);
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            clientData.geo = {
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-              accuracy: position.coords.accuracy,
-            };
-            handleFinalLog();
-          },
-          (error) => {
-            // console.error("Geolocation error:", error.message);
-            handleFinalLog();
-          }
-        );
-      } else {
-        // console.warn("Geolocation not supported");
-        handleFinalLog();
+      // IP-based lookup (server/src/routes/misc.js, geoip-lite) instead of
+      // navigator.geolocation.getCurrentPosition() -- gives approximate
+      // country/region/city/lat-lng without ever prompting the visitor for
+      // location permission. Left null (its existing default) whenever the
+      // IP can't be resolved (e.g. localhost/private IPs in dev), same
+      // graceful-degradation shape as before.
+      try {
+        const geoResponse = await axios.get("/api/location");
+        const { country, region, city, ll } = geoResponse.data;
+        clientData.geo = {
+          country: country || null,
+          region: region || null,
+          city: city || null,
+          latitude: ll?.[0] ?? null,
+          longitude: ll?.[1] ?? null,
+        };
+      } catch (error) {
+        // console.error("Location lookup error:", error.message);
       }
+
+      finalizeAndStore(clientData);
     };
 
     fetchIpAndGeo();

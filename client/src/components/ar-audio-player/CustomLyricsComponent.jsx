@@ -1,4 +1,3 @@
-import { FaFileAlt } from "react-icons/fa";
 import { MdOutlineLyrics } from "react-icons/md";
 import styles from "./CustomLyricsComponent.module.css";
 

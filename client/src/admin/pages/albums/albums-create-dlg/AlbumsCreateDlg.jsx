@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import AlbumsCreateTable from "./albums-create-table/AlbumsCreateTable";
 import {
@@ -29,7 +29,6 @@ const AlbumsCreateDlg = ({
   const [nameError, setNameError] = useState("");
   const [uploadQueue, setUploadQueue] = useState([]);
   const [tagsInput, setTagsInput] = useState((albumData.tags || []).join(", "));
-  const fileInputRef = useRef(null);
 
   // Resync the raw text field when album data is (re)loaded from the server
   // (initial load, or handleFullRefresh) — but not on every keystroke, since

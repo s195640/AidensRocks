@@ -1,0 +1,83 @@
+.dialogForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dialogForm label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.dialogForm input,
+.dialogForm textarea {
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dialogForm input[type="checkbox"] {
+  width: auto;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+
+.dialogForm input:focus,
+.dialogForm textarea:focus {
+  border-color: #4caf50;
+  box-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
+  outline: none;
+}
+
+.errorMessage {
+  background: #ffe5e5;
+  color: #d32f2f;
+  border: 1px solid #f5c2c2;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.savedIndicator {
+  color: #2e7d32;
+  font-size: 0.9rem;
+  font-weight: 600;
+  align-self: center;
+}
+
+.sendEmailHint {
+  color: #8a6d00;
+  font-size: 0.85rem;
+  align-self: center;
+}
+
+.rockNumberList {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.rockNumberLink {
+  cursor: pointer;
+  color: #007bff;
+  text-decoration: underline;
+}
+
+.readOnlyField {
+  padding: 0.6rem;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  background: #f9f9f9;
+  font-size: 0.9rem;
+  color: #555;
+  white-space: pre-wrap;
+}

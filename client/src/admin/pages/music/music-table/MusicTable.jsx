@@ -1,7 +1,7 @@
 //MusicTable
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Table from "../../../../components/simple-components/table/Table";
-import { FaEdit, FaTrash, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaEye } from "react-icons/fa";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import styles from "./MusicTable.module.css";
 

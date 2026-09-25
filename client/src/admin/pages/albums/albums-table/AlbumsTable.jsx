@@ -1,6 +1,5 @@
-import React from "react";
 import Table from "../../../../components/simple-components/table/Table";
-import { FaEdit, FaTrash, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaEye } from "react-icons/fa";
 import styles from "./AlbumsTable.module.css";
 
 const AlbumsTable = ({
@@ -26,7 +25,7 @@ const AlbumsTable = ({
 
   const renderCell = (album, key) => {
     switch (key) {
-      case "image":
+      case "image": {
         const imageUrl = album.first_image_name
           ? `/media/albums/${album.name}/webp300x300/${album.first_image_name}`
           : null;
@@ -43,6 +42,7 @@ const AlbumsTable = ({
         ) : (
           <div className={styles.thumbPlaceholder} />
         );
+      }
 
       case "show":
         return album.show ? "Yes" : "No";

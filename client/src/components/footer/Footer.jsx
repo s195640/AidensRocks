@@ -1,17 +1,10 @@
 import { useState } from "react";
-import ComingSoonPopup from "../coming-soon/ComingSoonPopup";
 import ContactPopup from "../contact-popup/ContactPopup";
 import styles from "./Footer.module.css";
 import ARAudioPlayer from "../ar-audio-player/ARAudioPlayer";
 
 const Footer = () => {
-  const [showPopup, setShowPopup] = useState(false);
   const [showContactPopup, setShowContactPopup] = useState(false);
-
-  const handleSocialClick = (e) => {
-    e.preventDefault();
-    setShowPopup(true);
-  };
 
   const handleContactClick = (e) => {
     e.preventDefault();
@@ -46,7 +39,6 @@ const Footer = () => {
       </div>
       <ARAudioPlayer />
 
-      {showPopup && <ComingSoonPopup onClose={() => setShowPopup(false)} />}
       {showContactPopup && <ContactPopup onClose={() => setShowContactPopup(false)} />}
     </>
   );

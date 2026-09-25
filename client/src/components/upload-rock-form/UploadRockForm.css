@@ -400,6 +400,22 @@
   flex-shrink: 0;
 }
 
+.link-style-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: rgba(110, 183, 216, 1);
+  text-decoration: underline;
+  font: inherit;
+  cursor: pointer;
+}
+
+.link-style-btn:hover,
+.link-style-btn:focus {
+  color: rgba(90, 163, 196, 1);
+}
+
 .heic-spinner-overlay {
   position: fixed;
   top: 0;

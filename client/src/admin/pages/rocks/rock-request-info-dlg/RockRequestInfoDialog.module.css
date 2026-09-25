@@ -1,0 +1,19 @@
+.grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+  align-items: start;
+}
+
+.label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #333;
+  white-space: nowrap;
+}
+
+.value {
+  font-size: 0.9rem;
+  color: #555;
+  white-space: pre-wrap;
+}

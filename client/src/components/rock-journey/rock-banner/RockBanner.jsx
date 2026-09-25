@@ -21,7 +21,7 @@ const RockBanner = ({ rockNumber, totalTrips, startDate, latestDate, artists, di
       />
 
       <div className="rock-info">
-        <div>Aiden's Rock: {rockNumber}</div>
+        <div>Aiden&apos;s Rock: {rockNumber}</div>
 
         <div className="date-line">
           <span>Trips: {totalTrips}</span>&nbsp;&nbsp;&nbsp;

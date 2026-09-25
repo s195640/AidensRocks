@@ -24,6 +24,7 @@ import Users from "./admin/pages/users/Users.jsx";
 import Sudc from "./pages/sudc/Sudc.jsx";
 import TrackTheRocks from "./pages/track-the-rocks/TrackTheRocks.jsx";
 import JourneyAdmin from "./admin/pages/journey/JourneyAdmin.jsx";
+import RockRequestsAdmin from "./admin/pages/rock-requests/RockRequestsAdmin.jsx";
 import AllRocks from "./pages/all-rocks/AllRocks.jsx";
 import MusicAdmin from "./admin/pages/music/MusicAdmin.jsx";
 import HonoringAidenAdmin from "./admin/pages/honoring-aiden/HonoringAidenAdmin.jsx";
@@ -38,6 +39,7 @@ const adminNavItems = [
   { path: "/admin/jobs", label: "Jobs" },
   { path: "/admin/users", label: "Users" },
   { path: "/admin/rocks", label: "Rocks" },
+  { path: "/admin/rock-requests", label: "Rock Requests" },
   { path: "/admin/albums", label: "Albums" },
   { path: "/admin/journey", label: "Journey" },
   { path: "/admin/music", label: "Music" },
@@ -128,6 +130,14 @@ function AppContent() {
           element={
             <PrivateRoute>
               <JourneyAdmin />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/rock-requests"
+          element={
+            <PrivateRoute>
+              <RockRequestsAdmin />
             </PrivateRoute>
           }
         />

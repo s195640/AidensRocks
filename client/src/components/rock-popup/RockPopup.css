@@ -9,7 +9,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  /* Above the shared Dialog component's ~2000 modal tier, since this can now
+     be opened from within an already-open Dialog (Rock Requests edit page)
+     and must render on top of it, not behind. */
+  z-index: 2100;
 }
 
 .rock-dialog {

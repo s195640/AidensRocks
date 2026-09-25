@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import authFetch from "../../utils/authFetch";
-import styles from "./JourneyAdmin.module.css";
 import AdminContainer from "../../components/admin-base/AdminContainer";
 import JourneyAdminEditDialog from "./journey-edit-dlg/JourneyAdminEditDialog";
 import JourneyAdminTable from "./journey-table/JourneyAdminTable";
@@ -23,14 +22,12 @@ import "yet-another-react-lightbox/styles.css";
 
 const JourneyAdmin = () => {
   const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [editingPost, setEditingPost] = useState(null);
   const [popupRockNumber, setPopupRockNumber] = useState(null);
   const [imagesLightbox, setImagesLightbox] = useState(null);
   const [imagesIndex, setImagesIndex] = useState(-1);
 
   const fetchPosts = async () => {
-    setLoading(true);
     try {
       const res = await authFetch("/api/journey-admin");
       if (!res.ok) throw new Error("Failed to fetch journey posts");
@@ -38,8 +35,6 @@ const JourneyAdmin = () => {
       setPosts(data);
     } catch (error) {
       console.error(error);
-    } finally {
-      setLoading(false);
     }
   };
 

@@ -46,7 +46,6 @@ const JourneyAdminTable = ({
         String(field ?? "").toLowerCase().includes(term)
       )
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, posts]);
 
   const unprocessedData = searchedData.filter((u) => !(u.latitude && u.longitude));

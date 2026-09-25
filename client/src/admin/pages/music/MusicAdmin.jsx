@@ -68,10 +68,9 @@ const MusicAdmin = () => {
     }
   };
 
-  const handleReorder = async (order) => {
+  const handleReorder = async () => {
     setLoading(true);
     try {
-      // await axios.post(`/api/music/reorder`, { order });
       await fetchSongs();
     } catch (err) {
       console.error("Failed to reorder songs:", err);

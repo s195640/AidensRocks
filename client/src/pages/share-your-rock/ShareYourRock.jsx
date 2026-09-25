@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { FaFacebookSquare, FaInstagram } from "react-icons/fa";
+import { FaFacebookSquare } from "react-icons/fa";
 
 import BkgImage from "../../components/bkgimage/BkgImage";
 import ContentBody from "../../components/content-body/ContentBody";
@@ -32,7 +32,6 @@ const ShareYourRockContent = () => {
       ?.scrollIntoView({ behavior: "smooth" });
     open();
     setSearchParams({}, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   return (
@@ -41,7 +40,7 @@ const ShareYourRockContent = () => {
         <RichText html={body} />
       ) : (
         <>
-          <h2>Aiden's Rocks</h2>
+          <h2>Aiden&apos;s Rocks</h2>
           <button onClick={open} className={styles.uploadBtn}>
             Upload Your Rock
           </button>

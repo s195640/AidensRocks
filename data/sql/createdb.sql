@@ -80,7 +80,8 @@ CREATE TABLE public.catalog (
     rock_number integer NOT NULL,
     create_dt timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     update_dt timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    comment text
+    comment text,
+    rq_key integer
 );
 
 
@@ -749,3 +750,32 @@ CREATE TABLE IF NOT EXISTS public.path_display_name (
 );
 
 ALTER TABLE public.path_display_name OWNER TO postgres;
+
+-- rock_requests: visitor "Request A Rock" submissions (name/email/address/
+-- # rocks requested), plus admin-managed shipped/tracking_number/comments/
+-- rock_numbers fields -- see data/sql/migrations/add_rock_requests.sql for
+-- the full rationale. catalog.rq_key (added to the catalog table above)
+-- links a cataloged rock to the request it's currently assigned to.
+
+CREATE TABLE IF NOT EXISTS public.rock_requests (
+    rq_key           serial PRIMARY KEY,
+    name             character varying(255) NOT NULL,
+    email            character varying(255) NOT NULL,
+    address          text NOT NULL,
+    rocks_requested  integer NOT NULL,
+    shipped          boolean NOT NULL DEFAULT false,
+    tracking_number  character varying(255),
+    comments         text,
+    rock_numbers     text,
+    message          text,
+    create_dt        timestamptz DEFAULT CURRENT_TIMESTAMP,
+    update_dt        timestamptz DEFAULT CURRENT_TIMESTAMP,
+    sent_dt          timestamptz,
+    email_dt         timestamptz,
+    deleted          boolean NOT NULL DEFAULT false,
+    deleted_dt       timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS idx_rock_requests_shipped ON public.rock_requests (shipped);
+
+ALTER TABLE public.rock_requests OWNER TO postgres;

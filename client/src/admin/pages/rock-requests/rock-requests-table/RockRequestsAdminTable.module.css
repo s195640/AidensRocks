@@ -1,0 +1,92 @@
+.sectionHeadingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.searchInput {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.searchInput:focus {
+  border-color: #4caf50;
+  box-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
+  outline: none;
+}
+
+.sectionHeading {
+  margin: 1.5rem 0 0.5rem;
+}
+
+.sectionHeadingRow .sectionHeading {
+  margin: 0;
+}
+
+.sectionHeading:first-child {
+  margin-top: 0;
+}
+
+.emptyMessage {
+  text-align: center;
+  color: #777;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+.checkboxCell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.actionsWrapper {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.addressCell {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commentCell {
+  cursor: pointer;
+  color: #007bff;
+  text-decoration: underline;
+}
+
+.rockNumberLink {
+  cursor: pointer;
+  color: #007bff;
+  text-decoration: underline;
+}
+
+.commentText {
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  color: #333;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+}

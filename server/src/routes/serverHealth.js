@@ -29,6 +29,7 @@ const TABLES = [
   "photoalbum_tags",
   "photoalbums",
   "photos",
+  "rock_requests",
   "unmatched_path_hit"
 ];
 

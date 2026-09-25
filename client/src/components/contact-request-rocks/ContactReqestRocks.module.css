@@ -16,7 +16,10 @@
   background: white;
   padding: 20px 30px;
   border-radius: 8px;
-  max-width: 400px;
+  max-width: 480px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
   text-align: center;
 }
 
@@ -41,4 +44,54 @@
   font-style: italic;
   margin-top: 2rem;
   font-size: 1.05rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: left;
+  margin-top: 1.5rem;
+}
+
+.label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-top: 0.6rem;
+}
+
+.optional {
+  font-weight: 400;
+  color: #777;
+}
+
+.input,
+.textarea {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.textarea {
+  resize: vertical;
+}
+
+.buttonRow {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.25rem;
+}
+
+.errorMessage {
+  color: #c62828;
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
 }

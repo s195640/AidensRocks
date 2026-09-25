@@ -4,6 +4,7 @@ import jsQR from "jsqr";
 import styles from "./RockCreateEditDlg.module.css";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import LightboxRock from "../../../../components/lightbox-rock/LightboxRock";
+import RockRequestInfoDialog from "../rock-request-info-dlg/RockRequestInfoDialog";
 
 // jsQR's binarizer struggles to find small QR modules in full-resolution camera
 // photos (lots of JPEG noise relative to module size), so scan progressively
@@ -94,7 +95,7 @@ const defaultArtistKeys = (artists) => {
   return defaultArtist ? [defaultArtist.ra_key] : [];
 };
 
-const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, rocks }) => {
+const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, rocks, requests }) => {
   // Edit-mode fields (single existing rock).
   const [rockNumber, setRockNumber] = useState("");
   const [selectedArtistKeys, setSelectedArtistKeys] = useState([]);
@@ -103,6 +104,12 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
   const [error, setError] = useState("");
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
+  const [showRequestInfo, setShowRequestInfo] = useState(false);
+
+  const linkedRequest =
+    selectedRock?.rq_key != null
+      ? (requests || []).find((r) => String(r.rq_key) === String(selectedRock.rq_key))
+      : null;
 
   // Create-mode fields (batch of new rocks from multiple selected images).
   const fileInputRef = useRef(null);
@@ -394,6 +401,19 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
               rows={4}
               placeholder="Add optional comment here..."
             ></textarea>
+
+            {linkedRequest && (
+              <>
+                <label>Linked Rock Request</label>
+                <button
+                  type="button"
+                  className={styles.linkedRequestButton}
+                  onClick={() => setShowRequestInfo(true)}
+                >
+                  View Request from {linkedRequest.name}
+                </button>
+              </>
+            )}
           </form>
         </Dialog>
       )}
@@ -485,6 +505,18 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
       )}
 
       <LightboxRock open={imageDialogOpen} onClose={() => setImageDialogOpen(false)} imageSrc={imageSrc} />
+
+      {/* Rendered as a sibling of the edit Dialog above, not nested inside
+          its children -- Dialog.module.css's .dialog has a `transform`
+          (its open/close animation), which becomes the containing block
+          for position:fixed descendants, so a fixed overlay nested inside
+          would render relative to that dialog's box instead of the
+          viewport. See RockRequestsEditDialog.jsx for the same fix. */}
+      <RockRequestInfoDialog
+        isOpen={showRequestInfo}
+        onClose={() => setShowRequestInfo(false)}
+        request={linkedRequest}
+      />
     </>
   );
 };

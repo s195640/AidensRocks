@@ -40,3 +40,7 @@ drop table entry_media cascade;
 /* Path Display Names */
 
 drop table path_display_name cascade;
+
+/* Rock Requests */
+
+drop table rock_requests cascade;

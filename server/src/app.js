@@ -27,6 +27,7 @@ app.use('/api', require('./routes/createImages'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/rocks', require('./routes/rocks'));
 app.use('/api/rock-posts', require('./routes/rockPosts'));
+app.use('/api/rock-requests', require('./routes/rockRequests'));
 app.use('/api/albums', require('./routes/albums'));
 app.use('/api/journey-admin', require('./routes/journeyAdmin'));
 app.use('/api/server-health', require('./routes/serverHealth'));

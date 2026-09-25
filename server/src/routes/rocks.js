@@ -35,7 +35,7 @@ router.get('/', async (req, res, next) => {
   try {
     const result = await pool.query(`
       SELECT rc.rc_key, rc.rock_number, rc.create_dt, rc.update_dt,
-             rc.comment,
+             rc.comment, rc.rq_key,
              json_agg(json_build_object('ra_key', ra.ra_key, 'display_name', ra.display_name)) AS artists
       FROM catalog rc
       LEFT JOIN artist_link ral ON rc.rc_key = ral.rc_key

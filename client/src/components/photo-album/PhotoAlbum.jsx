@@ -42,7 +42,7 @@ const PhotoAlbum = ({ onAlbumClick, tag = "main", title = "Photo Albums" }) => {
         targetRowHeight={300}
         spacing={20}
         render={{
-          photo: ({}, { photo, width, height }) => (
+          photo: (_props, { photo, width, height }) => (
             <div
               key={photo.src}
               className={styles.photoContainer}

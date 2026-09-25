@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { FiChevronDown, FiChevronRight, FiRefreshCw } from "react-icons/fi";
+import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 import styles from "./ARDetails.module.css";
 
 const ARDetails = () => {
   const [details, setDetails] = useState(null);
-  const [loading, setLoading] = useState(false);
 
   // toggle states
   const [showArtists, setShowArtists] = useState(true);
@@ -14,13 +13,10 @@ const ARDetails = () => {
 
   const fetchDetails = async () => {
     try {
-      setLoading(true);
       const res = await axios.get("/api/ar-details");
       setDetails(res.data);
     } catch (err) {
       console.error("Error fetching AR details:", err);
-    } finally {
-      setLoading(false);
     }
   };
 

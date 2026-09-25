@@ -1,5 +1,4 @@
 // components/contact-popup/ContactPopup.jsx
-import React from "react";
 import styles from "./ContactPopup.module.css";
 
 const ContactPopup = ({ onClose }) => {

@@ -19,7 +19,7 @@ const Home = () => {
         backgroundImage={backgroundImage}
         scrollTargetSelector=".additional-content"
       >
-        <h1>Aiden's Rocks</h1>
+        <h1>Aiden&apos;s Rocks</h1>
         <p>In Loving Memory of Aiden Armitage</p>
         <p>9/14/2022 - 5/20/2025</p>
         <InHeavenCounter />

@@ -4,6 +4,7 @@ import { useARContext } from "../../context/ARContext";
 import "./UploadRockForm.css";
 import { FaFacebookSquare } from "react-icons/fa";
 import heic2any from "heic2any";
+import ContactReqestRocks from "../contact-request-rocks/ContactReqestRocks";
 
 // Cloudflare (prod host) hard-caps request bodies at 100MB, so anything
 // bigger has to be staged client-side in chunks before the rock post itself
@@ -30,6 +31,7 @@ export default function UploadRockForm({ onClose }) {
   const [email, setEmail] = useState("");
   const [imageError, setImageError] = useState("");
   const [dialog, setDialog] = useState(null);
+  const [showRequestForm, setShowRequestForm] = useState(false);
   const [stageLabel, setStageLabel] = useState("");
   const [stagingProgress, setStagingProgress] = useState(0);
   const fileInputRef = useRef(null);
@@ -232,8 +234,15 @@ export default function UploadRockForm({ onClose }) {
                 </a>
               </li>
               <li>
-                Finally, Email us and request a new rock for your next adventure.{" "}
-                <a href="mailto:AidensRocks.AAA@gmail.com">AidensRocks.AAA@gmail.com</a>
+                Finally,{" "}
+                <button
+                  type="button"
+                  className="link-style-btn"
+                  onClick={() => setShowRequestForm(true)}
+                >
+                  request a new rock for your next adventure
+                </button>
+                .
               </li>
             </ol>
           </>
@@ -475,6 +484,9 @@ export default function UploadRockForm({ onClose }) {
             </button>
           </div>
         </div>
+      )}
+      {showRequestForm && (
+        <ContactReqestRocks onClose={() => setShowRequestForm(false)} />
       )}
     </>
   );

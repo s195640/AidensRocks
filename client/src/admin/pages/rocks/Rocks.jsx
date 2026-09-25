@@ -9,6 +9,7 @@ import RockTable from "./rock-table/RockTable";
 const Rocks = () => {
   const [rocks, setRocks] = useState([]);
   const [artists, setArtists] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedRock, setSelectedRock] = useState(null);
   const [rockNumber, setRockNumber] = useState("");
@@ -31,9 +32,17 @@ const Rocks = () => {
     setArtists(sorted);
   };
 
+  const loadRequests = async () => {
+    // Used to look up a linked rock request's details by catalog.rq_key --
+    // see RockTable.jsx/RockCreateEditDlg.jsx's "Linked Rock Request" link.
+    const res = await axios.get("/api/rock-requests");
+    setRequests(res.data);
+  };
+
   useEffect(() => {
     loadRocks();
     loadArtists();
+    loadRequests();
   }, []);
 
   const openDialog = (rock = null) => {
@@ -94,7 +103,13 @@ const Rocks = () => {
         </div>
       </div>
 
-      <RockTable rocks={rocks} onEdit={openDialog} onDelete={handleDelete} openImageDialog={openImageDialog} />
+      <RockTable
+        rocks={rocks}
+        onEdit={openDialog}
+        onDelete={handleDelete}
+        openImageDialog={openImageDialog}
+        requests={requests}
+      />
 
       <RockCreateEditDlg
         isOpen={dialogOpen}
@@ -107,6 +122,7 @@ const Rocks = () => {
         artists={artists}
         selectedRock={selectedRock}
         rocks={rocks}
+        requests={requests}
       />
 
       <LightboxRock open={imageDialogOpen} onClose={closeImageDialog} imageSrc={imageSrc} />

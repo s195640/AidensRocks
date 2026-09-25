@@ -3,7 +3,6 @@ import axios from "axios";
 import { useState } from "react";
 
 const TestDataComponent = () => {
-  const [rowCount, setRowCount] = useState(null);
   const [comment, setComment] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,7 +17,6 @@ const TestDataComponent = () => {
           "Content-Type": "application/json",
         },
       });
-      setRowCount(response.data.count);
       setMessage(`Total rows: ${response.data.count}`);
     } catch (err) {
       console.error("Error fetching row count:", err);
