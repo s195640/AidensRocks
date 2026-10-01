@@ -131,3 +131,49 @@
   color: #555;
   text-align: center;
 }
+
+/* Form on the left, live page preview on the right (wraps under on narrow
+   screens). */
+.layout {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.layout .pmiContainer {
+  flex: 1 1 320px;
+  min-width: 280px;
+}
+
+.previewColumn {
+  flex: 0 0 auto;
+  max-width: 100%;
+  margin-top: 20px;
+}
+
+.previewTitle {
+  margin: 0 0 10px;
+  color: #333;
+}
+
+/* Outlined so the page edges are visible against the white job box. */
+.previewFrame {
+  display: block;
+  max-width: 100%;
+  border: 1px solid #ccc;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  background: white;
+}
+
+.previewHint {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.previewPlaceholder {
+  color: #888;
+  font-style: italic;
+}

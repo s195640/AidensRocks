@@ -39,6 +39,7 @@ app.use("/api/admin/path-display-names", require("./routes/pathDisplayNameAdmin"
 app.use("/api/pages", require("./routes/pages"));
 app.use("/api/admin/pages", require("./routes/pagesAdmin"));
 app.use("/api/admin/jobs", require("./routes/jobsAdmin"));
+app.use("/api/admin/settings", require("./routes/settingsAdmin"));
 app.use("/api/honoring-aiden", require("./routes/honoringAiden"));
 app.use("/api/admin/honoring-aiden", require("./routes/honoringAidenAdmin"));
 

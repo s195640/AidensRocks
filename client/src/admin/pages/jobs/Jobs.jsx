@@ -1,5 +1,6 @@
 import CreateImages from "../../components/create-images/CreateImages";
 import CreateQRCodes from "../../components/create-qr-codes/CreateQRCodes";
+import CreateQRCodesCenterLabel from "../../components/create-qr-codes-center-label/CreateQRCodesCenterLabel";
 import CreateSingleQRCode from "../../components/create-single-qr-code/CreateSingleQRCode";
 import PrintMultiImages from "../../components/print-multi-images/PrintMultiImages";
 import SendEmailsCatchup from "../../components/send-emails-catchup/SendEmailsCatchup";
@@ -13,6 +14,7 @@ const Jobs = () => {
       <div className={styles.jobsStack}>
         <CreateImages />
         <CreateQRCodes />
+        <CreateQRCodesCenterLabel />
         <CreateSingleQRCode />
         <PrintMultiImages />
         <SendEmailsCatchup />

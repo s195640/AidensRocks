@@ -707,6 +707,21 @@ CREATE INDEX IF NOT EXISTS idx_unmatched_path_hit_path ON public.unmatched_path_
 
 ALTER TABLE public.unmatched_path_hit OWNER TO postgres;
 
+-- setting: generic key/value store for admin-managed settings, one row per
+-- name, value as jsonb -- see data/sql/migrations/add_setting_table.sql.
+
+CREATE TABLE IF NOT EXISTS public.setting (
+    id           serial PRIMARY KEY,
+    name         character varying(100) NOT NULL UNIQUE,
+    value        jsonb NOT NULL,
+    type         character varying(50) NULL,
+    description  text NULL,
+    create_dt    timestamptz DEFAULT CURRENT_TIMESTAMP,
+    update_dt    timestamptz DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE public.setting OWNER TO postgres;
+
 -- entry_media: tracks every image/video uploaded into a given Honoring
 -- Aiden entry's ContentEditor document, independent of whether it's still
 -- referenced in that entry's current body_json -- see
