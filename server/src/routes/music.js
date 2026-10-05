@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db/pool");
+const safeRollback = require("../utils/db/safeRollback");
 const path = require("path");
 const fs = require("fs-extra");
 const upload = require("../middleware/upload"); // new multer
@@ -8,16 +9,21 @@ const { v4: uuidv4 } = require("uuid");
 const ensureDir = require('../utils/ensureDir');
 const convertToWebP = require('../utils/convert-to-webp/convertToWebP');
 const requireAdminAuth = require('../middleware/requireAdminAuth');
+const { optionalAuth } = require('../middleware/requireAuth');
+const includeHidden = require('../utils/includeHidden');
 
 // -------------------- GET /api/music --------------------
-router.get("/", async (req, res) => {
+// Hidden songs are left out unless an admin asks for them (?includeHidden=1).
+router.get("/", optionalAuth, async (req, res) => {
   try {
     const result = await db.query(
       `SELECT
         ROW_NUMBER() OVER (ORDER BY m.show desc, m.order_num)::int AS id,
         m_key, name, writer, lyrics, create_dt, update_dt, show, order_num, play_count
       FROM music m
-      ORDER BY order_num`
+      WHERE $1 OR m.show = TRUE
+      ORDER BY order_num`,
+      [includeHidden(req)]
     );
 
     const songs = result.rows.map((row) => {
@@ -113,7 +119,7 @@ router.post("/", requireAdminAuth, upload.fields([{ name: "music_file" }, { name
       message: "Music created successfully.",
     });
   } catch (err) {
-    if (client) await client.query("ROLLBACK");
+    await safeRollback(client);
     console.error("Error creating music:", err);
     res.status(500).json({ error: "Server error creating music." });
   } finally {
@@ -269,10 +275,6 @@ router.delete("/:m_key", requireAdminAuth, async (req, res) => {
       return res.status(404).json({ error: "Music not found." });
     }
 
-    // Delete media files
-    const mediaDir = path.join(__dirname, `../media/music/${m_key}`);
-    await fs.remove(mediaDir);
-
     // Delete the DB record
     await client.query("DELETE FROM music WHERE m_key = $1", [m_key]);
 
@@ -290,9 +292,14 @@ router.delete("/:m_key", requireAdminAuth, async (req, res) => {
 
     await client.query("COMMIT");
 
+    // Delete media files once the row is really gone. Same cwd-relative
+    // media/ the rest of this file writes to (this used __dirname, i.e.
+    // server/src/media, so the files were never actually deleted).
+    await fs.remove(path.join("media", "music", String(m_key)));
+
     res.json({ success: true, m_key, message: "Music deleted and order updated successfully." });
   } catch (err) {
-    if (client) await client.query("ROLLBACK");
+    await safeRollback(client);
     console.error("Error deleting music:", err);
     res.status(500).json({ error: "Server error deleting music." });
   } finally {

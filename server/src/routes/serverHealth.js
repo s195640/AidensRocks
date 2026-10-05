@@ -3,6 +3,7 @@ const router = express.Router();
 const os = require('os');
 const axios = require('axios');
 const { Client } = require('pg');
+const requireAdminAuth = require('../middleware/requireAdminAuth');
 require('dotenv').config(); // Load .env
 
 // Kept in sync with data/sql/pglogical.sql's own table list (the canonical
@@ -13,6 +14,9 @@ require('dotenv').config(); // Load .env
 // — confirmed against `SELECT nspname, relname, set_name FROM
 // pglogical.tables` run directly against a live node).
 const TABLES = [
+  "account",
+  "account_follow",
+  "account_token",
   "artist",
   "artist_link",
   "catalog",
@@ -54,7 +58,7 @@ async function getLanIp() {
 
 async function getInternetIp() {
   try {
-    const res = await axios.get("https://api.ipify.org?format=json");
+    const res = await axios.get("https://api.ipify.org?format=json", { timeout: 5000 });
     return res.data.ip;
   } catch (err) {
     return "unknown";
@@ -153,7 +157,7 @@ function checkDbSync(dbTables) {
 }
 
 // Main route
-router.get("/", async (req, res) => {
+router.get("/", requireAdminAuth, async (req, res) => {
   const serverIp = getServerIp();
   const lanIp = await getLanIp();
   const internetIp = await getInternetIp();

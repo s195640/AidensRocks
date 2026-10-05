@@ -53,7 +53,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 2000; /* modal tier: above the navbar (~1100), see CLAUDE.md */
 }
 
 .dialog {
@@ -132,4 +132,12 @@
   .buttonGroup {
     gap: 6px;
   }
+}
+.followedFilter {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
 }

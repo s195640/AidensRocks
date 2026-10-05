@@ -14,11 +14,19 @@ import ShareYourRock from "./pages/share-your-rock/ShareYourRock.jsx";
 import Map from "./pages/map/Map.jsx";
 
 import PrivateRoute from "./admin/components/PrivateRoute.jsx";
-import { AuthProvider } from "./admin/context/AuthContext.jsx";
+import { AuthProvider, useAuth } from "./admin/context/AuthContext.jsx";
 import Admin from "./admin/pages/admin/Admin.jsx";
 import Albums from "./admin/pages/albums/Albums.jsx";
 import Jobs from "./admin/pages/jobs/Jobs.jsx";
-import Login from "./admin/pages/login/Login.jsx";
+import AccountsAdmin from "./admin/pages/accounts/AccountsAdmin.jsx";
+import { LEVELS } from "./admin/utils/accessLevels.js";
+import SignIn from "./pages/account/SignIn.jsx";
+import SignUp from "./pages/account/SignUp.jsx";
+import SignOut from "./pages/account/SignOut.jsx";
+import VerifyEmail from "./pages/account/VerifyEmail.jsx";
+import ForgotPassword from "./pages/account/ForgotPassword.jsx";
+import ResetPassword from "./pages/account/ResetPassword.jsx";
+import FollowRocks from "./pages/follow-rocks/FollowRocks.jsx";
 import Rocks from "./admin/pages/rocks/Rocks.jsx";
 import Users from "./admin/pages/users/Users.jsx";
 import Sudc from "./pages/sudc/Sudc.jsx";
@@ -37,7 +45,8 @@ import { UnsavedChangesProvider } from "./context/UnsavedChangesContext.jsx";
 const adminNavItems = [
   { path: "/admin", label: "Dashboard" },
   { path: "/admin/jobs", label: "Jobs" },
-  { path: "/admin/users", label: "Users" },
+  { path: "/admin/users", label: "Artists" },
+  { path: "/admin/accounts", label: "Accounts" },
   { path: "/admin/rocks", label: "Rocks" },
   { path: "/admin/rock-requests", label: "Rock Requests" },
   { path: "/admin/albums", label: "Albums" },
@@ -52,6 +61,7 @@ function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
   const [publicNavItems, setPublicNavItems] = useState([]);
+  const { account, isAuthenticated, isUser, isAdmin } = useAuth();
 
   useEffect(() => {
     axios
@@ -59,6 +69,7 @@ function AppContent() {
       .then((res) => {
         setPublicNavItems(
           res.data.map((p) => ({
+            slug: p.slug,
             path: PAGE_PATHS[p.slug] || `/${p.slug}`,
             label: p.nav_label,
           }))
@@ -67,9 +78,21 @@ function AppContent() {
       .catch((err) => console.error("Failed to load nav pages:", err));
   }, []);
 
+  // Signed-in-only pages (Follow Rocks) are hidden from everyone else, and
+  // Admin (admins only) is the last menu item. Sign In / "Welcome <name>" +
+  // Sign out is not a menu item — the navbar shows it in its own spot at
+  // the far right (see Navbar.jsx's account block).
+  const visiblePublicNavItems = [
+    ...publicNavItems.filter((item) => item.slug !== "follow-rocks" || isUser),
+    ...(isAdmin ? [{ path: "/admin", label: "Admin" }] : []),
+  ];
+
   return (
     <div className={styles.appContainer}>
-      <NavBar navItems={isAdminRoute ? adminNavItems : publicNavItems} />
+      <NavBar
+        navItems={isAdminRoute ? adminNavItems : visiblePublicNavItems}
+        account={isAuthenticated ? account : null}
+      />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
@@ -82,7 +105,20 @@ function AppContent() {
         <Route path="/all-rocks" element={<AllRocks />} />
         <Route path="/map" element={<Map />} />
         <Route path="/sudc" element={<Sudc />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<SignIn />} />
+        <Route path="/sign-up" element={<SignUp />} />
+        <Route path="/sign-out" element={<SignOut />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route
+          path="/follow-rocks"
+          element={
+            <PrivateRoute minLevel={LEVELS.USER}>
+              <FollowRocks />
+            </PrivateRoute>
+          }
+        />
 
         {/* Admin Routes */}
         <Route
@@ -106,6 +142,14 @@ function AppContent() {
           element={
             <PrivateRoute>
               <Users />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/accounts"
+          element={
+            <PrivateRoute>
+              <AccountsAdmin />
             </PrivateRoute>
           }
         />

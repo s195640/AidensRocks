@@ -132,6 +132,10 @@ const JourneyAdmin = () => {
 
       {editingPost &&
         <JourneyAdminEditDialog
+          // Remount per journey so nothing (picked files, errors) carries
+          // over when Prev/Next steps to another one -- picked files used to
+          // upload to whichever journey was showing when Upload was clicked.
+          key={editingPost.rps_key}
           post={editingPost}
           posts={posts}
           isOpen={editingPost}

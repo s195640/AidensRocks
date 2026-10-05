@@ -1,46 +1,43 @@
 import { useState } from "react";
 import axios from "axios";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
+import EMAIL_TEMPLATES from "../../../../adminContent/emailTemplates";
 import styles from "./SendEmailDialog.module.css";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Sends the current draft content of an email-template page_content row
-// (see emailSlugs.js) to a single recipient, via POST /:slug/send — the
-// server re-reads draft_body/draft_email_subject itself, so this dialog only
-// needs to collect the recipient address plus whatever {PLACEHOLDER} values
-// the template needs filled in. "response-email" wants a single
-// {ROCK_NUMBER}; "response-email-multi" wants a list, sent as a raw
-// comma/space-separated string the server parses into {ROCK_NUMBERS}/
-// {ROCK_IMAGES} itself (see routes/pagesAdmin.js) — add more fields here as
-// more templates get introduced.
+// Test-sends the current draft content of an email-template page_content
+// row (see emailSlugs.js) to a single recipient, via POST /:slug/send — the
+// server re-reads the draft itself and derives any HTML placeholders, so
+// this dialog only collects the recipient plus the template's raw `fields`
+// (adminContent/emailTemplates.js). Blank optional fields stay as their
+// literal {PLACEHOLDER} text.
 const SendEmailDialog = ({ page, onClose }) => {
-  const isMulti = page.slug === "response-email-multi";
+  const fields = EMAIL_TEMPLATES[page.slug]?.fields || [];
   const [to, setTo] = useState("");
-  const [rockNumber, setRockNumber] = useState("");
-  const [rockNumbers, setRockNumbers] = useState("");
+  const [inputs, setInputs] = useState({});
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [sentTo, setSentTo] = useState(null);
 
   const trimmedTo = to.trim();
-  const rockNum = parseInt(rockNumber, 10);
-  const trimmedRockNumbers = rockNumbers.trim();
   const isValid =
     EMAIL_RE.test(trimmedTo) &&
-    (isMulti
-      ? trimmedRockNumbers.split(/[,\s]+/).filter(Boolean).some((n) => parseInt(n, 10) > 0)
-      : rockNum > 0);
+    fields.every((f) => !f.required || (inputs[f.key] || "").trim());
+
+  const setInput = (key, value) => setInputs((prev) => ({ ...prev, [key]: value }));
 
   const handleSend = async () => {
     if (!isValid) return;
     setSending(true);
     setError("");
+    const values = {};
+    for (const f of fields) {
+      const v = (inputs[f.key] || "").trim();
+      if (v) values[f.key] = v;
+    }
     try {
-      await axios.post(`/api/admin/pages/${page.slug}/send`, {
-        to: trimmedTo,
-        values: isMulti ? { ROCK_NUMBERS: trimmedRockNumbers } : { ROCK_NUMBER: rockNum },
-      });
+      await axios.post(`/api/admin/pages/${page.slug}/send`, { to: trimmedTo, values });
       setSentTo(trimmedTo);
     } catch (err) {
       console.error("Failed to send email:", err);
@@ -93,38 +90,23 @@ const SendEmailDialog = ({ page, onClose }) => {
             autoFocus
           />
 
-          {isMulti ? (
-            <>
-              <label htmlFor="send-email-rock-numbers" className={styles.label}>
-                Rock numbers (fills in {"{ROCK_NUMBERS}"} and {"{ROCK_IMAGES}"})
+          {fields.map((f) => (
+            <div key={f.key} style={{ marginTop: "1rem" }}>
+              <label htmlFor={`send-email-${f.key}`} className={styles.label}>
+                {f.label} (fills in {`{${f.key}}`}){f.required ? "" : " — optional"}
               </label>
               <input
-                id="send-email-rock-numbers"
+                id={`send-email-${f.key}`}
                 className={styles.input}
-                type="text"
-                value={rockNumbers}
-                onChange={(e) => setRockNumbers(e.target.value)}
-                placeholder="123, 124, 125"
+                type={f.type || "text"}
+                min={f.type === "number" ? "1" : undefined}
+                value={inputs[f.key] || ""}
+                onChange={(e) => setInput(f.key, e.target.value)}
+                placeholder={f.placeholder}
                 disabled={sending}
               />
-            </>
-          ) : (
-            <>
-              <label htmlFor="send-email-rock-number" className={styles.label}>
-                Rock number (fills in {"{ROCK_NUMBER}"})
-              </label>
-              <input
-                id="send-email-rock-number"
-                className={styles.input}
-                type="number"
-                min="1"
-                value={rockNumber}
-                onChange={(e) => setRockNumber(e.target.value)}
-                placeholder="123"
-                disabled={sending}
-              />
-            </>
-          )}
+            </div>
+          ))}
         </>
       )}
     </Dialog>

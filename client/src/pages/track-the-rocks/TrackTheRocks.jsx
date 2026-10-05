@@ -4,6 +4,8 @@ import RockTable from "../../components/rock-journey/rock-table/RockTable";
 import styles from "./TrackTheRocks.module.css";
 import RockJourneyDialog from "../../components/rock-map/rock-journey-dialog/RockJourneyDialog";
 import TotalRocks from "../../components/total-rocks/TotalRocks";
+import ToggleSwitch from "../../components/simple-components/toggle-switch/ToggleSwitch";
+import { useAuth } from "../../admin/context/AuthContext";
 
 function TrackTheRocks() {
   const navigate = useNavigate();
@@ -11,6 +13,9 @@ function TrackTheRocks() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [rockNumber, setRockNumber] = useState("");
   const [selectedRock, setSelectedRock] = useState(null);
+  const { isUser } = useAuth();
+  const [followedOnly, setFollowedOnly] = useState(false);
+  const showFollowedOnly = isUser && followedOnly;
 
   // Deep-link support: /track-the-rocks?rock=123 opens straight to that
   // rock's result dialog (same as typing 123 into Search and submitting),
@@ -68,7 +73,21 @@ function TrackTheRocks() {
         </div>
       </div>
 
-      <RockTable />
+      {isUser && (
+        <div className={styles.followedFilter}>
+          <span>Show only rocks I follow</span>
+          <ToggleSwitch
+            checked={followedOnly}
+            onChange={() => setFollowedOnly((v) => !v)}
+          />
+        </div>
+      )}
+
+      {/* Remount on toggle so paging starts over from page 1. */}
+      <RockTable
+        key={showFollowedOnly ? "followed" : "all"}
+        followedOnly={showFollowedOnly}
+      />
 
       {/* 🔎 Search Dialog */}
       {isDialogOpen && (

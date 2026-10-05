@@ -3,6 +3,17 @@ const pool = require('../db/pool');
 const requireAdminAuth = require('../middleware/requireAdminAuth');
 const router = express.Router();
 
+// artist.display_name has no unique constraint, so the 23505 handlers
+// below never fired: an edit could create a duplicate. Checked here
+// instead (case-insensitive, ignoring the artist being edited).
+async function nameTaken(displayName, exceptKey = null) {
+  const { rows } = await pool.query(
+    'SELECT 1 FROM artist WHERE lower(display_name) = lower($1) AND ($2::int IS NULL OR ra_key <> $2)',
+    [displayName.trim(), exceptKey]
+  );
+  return rows.length > 0;
+}
+
 router.use(requireAdminAuth);
 
 // Get all users
@@ -20,15 +31,20 @@ router.get('/', async (req, res, next) => {
 // Create a new user
 router.post('/', async (req, res, next) => {
   try {
-    const { display_name, relation, dob } = req.body;
+    // Artists no longer have a DOB in the UI; the artist.dob column is
+    // kept (existing values untouched) but no longer set from here.
+    const { display_name, relation } = req.body;
     if (!display_name)
       return res.status(400).json({ error: 'Display name required' });
+    if (await nameTaken(display_name)) {
+      return res.status(409).json({ error: 'Display name already exists' });
+    }
 
     const result = await pool.query(
-      `INSERT INTO artist (display_name, relation, dob)
-       VALUES ($1, $2, $3)
+      `INSERT INTO artist (display_name, relation)
+       VALUES ($1, $2)
        RETURNING *`,
-      [display_name, relation || null, dob || null]
+      [display_name, relation || null]
     );
 
     res.status(201).json(result.rows[0]);
@@ -45,19 +61,23 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { display_name, relation, dob } = req.body;
+    // dob is deliberately not updated (no longer in the UI) — leaving it
+    // out keeps any existing value instead of wiping it.
+    const { display_name, relation } = req.body;
     if (!display_name)
       return res.status(400).json({ error: 'Display name required' });
+    if (await nameTaken(display_name, Number(id) || null)) {
+      return res.status(409).json({ error: 'Display name already exists' });
+    }
 
     const result = await pool.query(
       `UPDATE artist
        SET display_name = $1,
            relation = $2,
-           dob = $3,
            update_dt = CURRENT_TIMESTAMP
-       WHERE ra_key = $4
+       WHERE ra_key = $3
        RETURNING *`,
-      [display_name, relation || null, dob || null, id]
+      [display_name, relation || null, id]
     );
 
     if (result.rows.length === 0) {
@@ -89,6 +109,12 @@ router.delete('/:id', async (req, res, next) => {
 
     res.json({ success: true });
   } catch (err) {
+    // 23503 = foreign key: the artist is still linked to rocks.
+    if (err.code === '23503') {
+      return res.status(409).json({
+        error: "This artist is still linked to rocks. Remove them from those rocks first.",
+      });
+    }
     next(err);
   }
 });

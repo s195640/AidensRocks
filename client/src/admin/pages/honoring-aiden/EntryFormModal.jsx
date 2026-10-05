@@ -15,10 +15,9 @@ import styles from "./EntryFormModal.module.css";
 // is the ContentEditor there — nothing left for a separate form field to
 // configure.
 //
-// On rename, `updateEntry` still needs to resend `published`/`body_json`
-// unchanged (see honoringAidenAdminApi.js/routes/honoringAidenAdmin.js's
-// own comments on why PUT is a full replace) — carried through from the
-// `entry` prop's current values, never shown or edited in this form.
+// On rename, `updateEntry` sends only `title` -- PUT is a partial update
+// (see routes/honoringAidenAdmin.js). The `entry` prop here is a sidebar
+// list row, which has no body_json; resending it used to wipe the page.
 //
 // `parentEntry`: only meaningful in create mode (entry == null) — the
 // top-level entry a new sub-entry is being added under, from
@@ -48,11 +47,7 @@ export default function EntryFormModal({ isOpen, onClose, entry, parentEntry = n
     try {
       setIsSaving(true);
       const saved = entry
-        ? await honoringAidenAdminApi.updateEntry(entry.id, {
-            title: title.trim(),
-            published: entry.published,
-            body_json: entry.body_json,
-          })
+        ? await honoringAidenAdminApi.updateEntry(entry.id, { title: title.trim() })
         : await honoringAidenAdminApi.createEntry({
             title: title.trim(),
             parent_id: parentEntry?.id ?? null,

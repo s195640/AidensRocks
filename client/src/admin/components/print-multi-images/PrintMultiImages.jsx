@@ -112,12 +112,12 @@ const PrintMultiImages = () => {
     const loadFacesAlbum = async () => {
       setAlbumLoading(true);
       try {
-        const albumsRes = await axios.get("/api/albums");
+        const albumsRes = await axios.get("/api/albums?includeHidden=1");
         const album = albumsRes.data.find((a) => a.name.toLowerCase() === "faces");
         setFacesAlbum(album || null);
 
         if (album) {
-          const photosRes = await axios.get(`/api/albums/${album.pa_key}/photos`);
+          const photosRes = await axios.get(`/api/albums/${album.pa_key}/photos?includeHidden=1`);
           setAlbumPhotos(photosRes.data);
         }
       } catch (err) {

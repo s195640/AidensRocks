@@ -44,3 +44,8 @@ drop table path_display_name cascade;
 /* Rock Requests */
 
 drop table rock_requests cascade;
+/* User Accounts */
+
+drop table account_follow cascade;
+drop table account_token cascade;
+drop table account cascade;

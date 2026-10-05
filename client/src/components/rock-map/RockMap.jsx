@@ -43,10 +43,25 @@ const greenIcon = L.icon({
   className: styles.greenMarkerIcon,
 });
 
-export default function RockMap({ pins = [] }) {
+// Rocks the signed-in user follows. Same explicit-icon rule as above.
+const orangeIcon = L.icon({
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+  className: styles.orangeMarkerIcon,
+});
+
+// `followedSet` (Set<number>) colors followed rocks' pins orange; the
+// "only rocks I follow" filter appears only when `canFilterFollowed`.
+export default function RockMap({ pins = [], followedSet = new Set(), canFilterFollowed = false }) {
   const [selectedRock, setSelectedRock] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [filters, setFilters] = useState({ show2025: true, show2026: true });
+  const [filters, setFilters] = useState({ show2025: true, show2026: true, onlyFollowed: false });
   const [rockNumberQuery, setRockNumberQuery] = useState("");
   const [highlightQuery, setHighlightQuery] = useState("");
   const mapURL = ["https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -64,6 +79,9 @@ export default function RockMap({ pins = [] }) {
   const visiblePins = pins.filter((pin) => {
     if (pin.year === 2025 && !filters.show2025) return false;
     if (pin.year === 2026 && !filters.show2026) return false;
+    if (canFilterFollowed && filters.onlyFollowed && !followedSet.has(Number(pin.label))) {
+      return false;
+    }
 
     const trimmedQuery = rockNumberQuery.trim();
     if (trimmedQuery && !pin.label.includes(trimmedQuery)) return false;
@@ -88,12 +106,13 @@ export default function RockMap({ pins = [] }) {
           const trimmedHighlight = highlightQuery.trim();
           const isHighlighted =
             trimmedHighlight && pin.label === trimmedHighlight;
+          const isFollowed = followedSet.has(Number(pin.label));
 
           return (
             <Marker
               key={pin.id}
               position={pin.coords}
-              icon={isHighlighted ? greenIcon : defaultIcon}
+              icon={isHighlighted ? greenIcon : isFollowed ? orangeIcon : defaultIcon}
               eventHandlers={{
                 click: () => {
                   setSelectedRock(pin.label);
@@ -176,6 +195,19 @@ export default function RockMap({ pins = [] }) {
             <span className={styles.switchTrack} />
           </span>
         </label>
+        {canFilterFollowed && (
+          <label className={styles.switchRow}>
+            <span>Show Only Following Rocks</span>
+            <span className={styles.switch}>
+              <input
+                type="checkbox"
+                checked={filters.onlyFollowed}
+                onChange={() => toggleFilter("onlyFollowed")}
+              />
+              <span className={styles.switchTrack} />
+            </span>
+          </label>
+        )}
       </Dialog>
 
       <RockJourneyDialog

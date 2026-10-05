@@ -51,7 +51,7 @@ const MusicCreateEditDlg = ({ isOpen, onClose, onSave, selectedSong }) => {
       onClose();
     } catch (err) {
       console.error(err);
-      setError("Error saving song. Please try again.");
+      setError(err.response?.data?.error || "Error saving song. Please try again.");
     } finally {
       setIsSaving(false);
     }

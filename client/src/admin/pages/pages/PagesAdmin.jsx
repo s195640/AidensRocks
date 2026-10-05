@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import AdminContainer from "../../components/admin-base/AdminContainer";
 import Table from "../../../components/simple-components/table/Table";
@@ -7,6 +7,8 @@ import PagesEditDialog from "./pages-edit-dlg/PagesEditDialog";
 import SendEmailDialog from "./send-email-dlg/SendEmailDialog";
 import PAGE_PATHS from "../../../adminContent/pagePaths";
 import EMAIL_SLUGS from "./emailSlugs";
+import EMAIL_TEMPLATES from "../../../adminContent/emailTemplates";
+import { ACCOUNT_PAGES, ACCOUNT_PAGE_SLUGS } from "../../../adminContent/accountPages";
 import styles from "./PagesAdmin.module.css";
 
 // Only these pages were actually converted to CMS-driven body content
@@ -22,6 +24,7 @@ const EDITABLE_SLUGS = new Set([
   "sudc",
   "birthdays",
   ...EMAIL_SLUGS,
+  ...ACCOUNT_PAGE_SLUGS,
 ]);
 
 const PagesAdmin = () => {
@@ -109,27 +112,34 @@ const PagesAdmin = () => {
   };
 
   const openPreview = (slug) => {
-    // Deliberately no "noopener"/"noreferrer" here: both sever the new
-    // tab's opener relationship, which is what lets a same-origin
-    // window.open() tab inherit a copy of sessionStorage — without it the
-    // new tab has no admin token and PrivateRoute bounces to /login (or,
-    // for a public-page preview, the draft silently fails to load and it
-    // falls back to published content). Safe to omit here since these URLs
-    // are always internal and hardcoded, never user-supplied.
+    // The sign-in token lives in localStorage, so the new tab is signed in
+    // on its own; "noopener" just cuts its link back to this window.
     if (EMAIL_SLUGS.has(slug)) {
-      window.open(`/admin/preview-email/${slug}`, "_blank");
+      window.open(`/admin/preview-email/${slug}`, "_blank", "noopener");
       return;
     }
     const path = PAGE_PATHS[slug] || "/";
     const separator = path.includes("?") ? "&" : "?";
-    window.open(`${path}${separator}preview=1`, "_blank");
+    window.open(`${path}${separator}preview=1`, "_blank", "noopener");
   };
+
+  // Pages and email templates share page_content.order_num, but only real
+  // pages are drag-reorderable (that order is the public nav). Email rows
+  // are appended after them so they keep sorting last.
+  // Memoized: Table resets its internal row state whenever `data` changes
+  // identity, so these must stay stable across unrelated re-renders.
+  const sitePages = useMemo(
+    () => pages.filter((p) => !EMAIL_SLUGS.has(p.slug) && !ACCOUNT_PAGE_SLUGS.has(p.slug)),
+    [pages]
+  );
+  const accountPages = useMemo(() => pages.filter((p) => ACCOUNT_PAGE_SLUGS.has(p.slug)), [pages]);
+  const emailPages = useMemo(() => pages.filter((p) => EMAIL_SLUGS.has(p.slug)), [pages]);
 
   const handleReorder = async (newData) => {
     setLoading(true);
     try {
       await axios.post("/api/admin/pages/reorder", {
-        order: newData.map((p) => p.slug),
+        order: [...newData, ...accountPages, ...emailPages].map((p) => p.slug),
       });
       await fetchPages();
     } catch (err) {
@@ -150,17 +160,46 @@ const PagesAdmin = () => {
     { key: "actions", label: "Actions", sortable: false, defaultWidth: 380 },
   ];
 
+  const emailColumns = [
+    { key: "nav_label", label: "Email", sortable: false, defaultWidth: 160 },
+    { key: "used_for", label: "Used For", sortable: false, defaultWidth: 240 },
+    { key: "published_email_subject", label: "Subject", sortable: false },
+    ...columns.slice(1),
+  ];
+
+  // Account pages: Title is stored in the email-subject columns.
+  const accountColumns = [
+    { key: "nav_label", label: "Page", sortable: false, defaultWidth: 160 },
+    { key: "published_email_subject", label: "Title", sortable: false },
+    ...columns.slice(1),
+  ];
+
   const renderCell = (page, key) => {
     switch (key) {
+      case "used_for":
+        return EMAIL_TEMPLATES[page.slug]?.description || "";
+
       case "visible": {
         const isEmail = EMAIL_SLUGS.has(page.slug);
+        const isAccountPage = ACCOUNT_PAGE_SLUGS.has(page.slug);
+        const isRequired =
+          !!EMAIL_TEMPLATES[page.slug]?.required || !!ACCOUNT_PAGES[page.slug]?.lockedOn;
         return (
           <div style={{ display: "flex", justifyContent: "center" }}>
             <ToggleSwitch
-              checked={page.visible}
+              checked={isRequired || page.visible}
               onChange={() => handleToggleVisible(page.slug)}
+              disabled={isRequired}
               title={
-                isEmail
+                isRequired
+                  ? isAccountPage
+                    ? "Always on: the Sign In page can't be turned off"
+                    : "Always on: needed for sign-up / password reset"
+                  : isAccountPage
+                    ? page.visible
+                      ? "On — click to turn off (hides its link on Sign In)"
+                      : "Off — click to turn on"
+                  : isEmail
                   ? page.visible
                     ? "Active — click to mark inactive"
                     : "Inactive — click to mark active"
@@ -189,7 +228,9 @@ const PagesAdmin = () => {
           <div className={styles.actionsCol}>
             {isEditable && <button onClick={() => setEditingPage(page)}>Edit</button>}
             <button onClick={() => openPreview(page.slug)}>Preview</button>
-            {isEmail && <button onClick={() => setSendingPage(page)}>Send</button>}
+            {isEmail && EMAIL_TEMPLATES[page.slug]?.kind !== "default" && (
+              <button onClick={() => setSendingPage(page)}>Send</button>
+            )}
             {isEditable && (
               <>
                 <button
@@ -218,13 +259,31 @@ const PagesAdmin = () => {
   return (
     <AdminContainer>
       <h2>Page Details</h2>
+
+      <h3 className={styles.sectionHeading}>Pages</h3>
       <Table
         columns={columns}
-        data={pages}
+        data={sitePages}
         renderCell={renderCell}
         loading={loading}
         enableRowDrag
         onRowReorder={handleReorder}
+      />
+
+      <h3 className={styles.sectionHeading}>Account Pages</h3>
+      <Table
+        columns={accountColumns}
+        data={accountPages}
+        renderCell={renderCell}
+        loading={loading}
+      />
+
+      <h3 className={styles.sectionHeading}>Emails</h3>
+      <Table
+        columns={emailColumns}
+        data={emailPages}
+        renderCell={renderCell}
+        loading={loading}
       />
 
       {editingPage && (

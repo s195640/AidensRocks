@@ -82,3 +82,14 @@
   line-height: 1.5;
   color: #222;
 }
+
+/* One label + input per template field (adminContent/emailTemplates.js). */
+.fieldLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fieldLabel input {
+  width: 180px;
+}

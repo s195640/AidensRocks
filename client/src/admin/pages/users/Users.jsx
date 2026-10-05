@@ -44,16 +44,20 @@ const Users = () => {
       fetchUsers();
     } catch (error) {
       console.error("Failed to save user:", error);
+      // Rethrown so the dialog stays open and shows why (e.g. a duplicate
+      // name on edit, which the server answers with 409).
+      throw error;
     }
   };
 
   const handleDelete = async (ra_key) => {
-    if (!window.confirm("Delete this user?")) return;
+    if (!window.confirm("Delete this artist?")) return;
     try {
       await axios.delete(`/api/users/${ra_key}`);
       setUsers((prev) => prev.filter((u) => u.ra_key !== ra_key));
     } catch (error) {
       console.error("Failed to delete user:", error);
+      alert(error.response?.data?.error || "Deleting the artist failed.");
     }
   };
 
@@ -67,7 +71,7 @@ const Users = () => {
     let aValue = a[sortConfig.key];
     let bValue = b[sortConfig.key];
 
-    if (sortConfig.key === "dob" || sortConfig.key === "create_dt") {
+    if (sortConfig.key === "create_dt") {
       aValue = aValue ? new Date(aValue) : new Date(0);
       bValue = bValue ? new Date(bValue) : new Date(0);
     } else if (typeof aValue === "string") {
@@ -80,26 +84,16 @@ const Users = () => {
     return 0;
   });
 
-  const calculateAge = (dob) => {
-    if (!dob) return "";
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-    return age;
-  };
-
   return (
     <div className={styles.container}>
       <div className={styles.headerTop}>
         <div className={styles.headerLeft}>
-          <h1>Users Dashboard</h1>
+          <h1>Artists</h1>
         </div>
 
         <div className={styles.headerRight}>
           <button className={styles.createButton} onClick={() => openDialog()}>
-            + New User
+            + New Artist
           </button>
         </div>
       </div>
@@ -111,7 +105,6 @@ const Users = () => {
         requestSort={requestSort}
         onEdit={openDialog}
         onDelete={handleDelete}
-        calculateAge={calculateAge}
       />
 
       <UserCreateEditDlg

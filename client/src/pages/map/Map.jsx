@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import RockMap from "../../components/rock-map/RockMap";
+import { useAuth } from "../../admin/context/AuthContext";
+import useFollowedRocks from "../../hooks/useFollowedRocks";
 import styles from "./Map.module.css";
 
 const Map = () => {
   const [pins, setPins] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { isUser } = useAuth();
+  const { followedSet } = useFollowedRocks();
 
   useEffect(() => {
     const fetchPins = async () => {
@@ -40,7 +44,9 @@ const Map = () => {
         </div>
       )}
 
-      {!loading && <RockMap pins={pins} />}
+      {!loading && (
+        <RockMap pins={pins} followedSet={followedSet} canFilterFollowed={isUser} />
+      )}
     </div>
   );
 };

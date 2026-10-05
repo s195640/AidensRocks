@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db/pool");
 const buildPathDisplayNameMatcher = require("../utils/pathDisplayNameMatcher");
+const requireAdminAuth = require("../middleware/requireAdminAuth");
 
 // Paths that are routine browser/crawler noise, not a bad link a visitor
 // actually typed/followed -- never logged. Matched case-insensitively
@@ -78,7 +79,7 @@ router.post("/", async (req, res) => {
 // while a full_url that matches no mapping stays listed on its own under
 // "Unknown" -- surfacing it, rather than hiding it, is the point (it's how
 // the family notices a path that still needs a mapping).
-router.get("/", async (req, res) => {
+router.get("/", requireAdminAuth, async (req, res) => {
   try {
     const [hitsResult, mappingsResult] = await Promise.all([
       db.query(

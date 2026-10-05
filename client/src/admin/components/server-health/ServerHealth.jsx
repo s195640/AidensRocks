@@ -16,12 +16,11 @@ const ServerHealth = () => {
       const data = res.data;
 
       // Adapt API shape to old expected format
-      const dbTablesNode1 = Object.entries(data.dbTables.node1).map(
-        ([name, value]) => ({ name, value })
-      );
-      const dbTablesNode2 = Object.entries(data.dbTables.node2).map(
-        ([name, value]) => ({ name, value })
-      );
+      // A single-node setup (one DB_IPS entry, e.g. dev) has no node2 --
+      // that used to throw here and leave the panel on "Loading" for good.
+      const toRows = (node) => Object.entries(node || {}).map(([name, value]) => ({ name, value }));
+      const dbTablesNode1 = toRows(data.dbTables?.node1);
+      const dbTablesNode2 = toRows(data.dbTables?.node2);
 
       setHealthData({
         lastUpdated: new Date(data.lastUpdated).toLocaleString(),

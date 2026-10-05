@@ -96,13 +96,8 @@ const SendEmailsCatchup = () => {
   // Opens the same email-preview mockup Page Details' own "Preview" button
   // uses (EmailPreview.jsx), pre-filled with this row's rock number(s) and
   // recipient via query params instead of requiring them to be re-typed.
-  //
-  // Deliberately no "noopener"/"noreferrer" here: both sever the new tab's
-  // opener relationship, which is what lets a same-origin window.open() tab
-  // inherit a copy of sessionStorage -- without it the new tab has no admin
-  // token and PrivateRoute bounces to /login. Safe to omit since this URL is
-  // built entirely from a hardcoded path plus this row's own template slug/
-  // email/rocks, never arbitrary user input.
+  // The sign-in token lives in localStorage, so the new tab is signed in
+  // on its own; "noopener" just cuts its link back to this window.
   const handlePreview = (row) => {
     const params = new URLSearchParams({ to: row.email });
     if (row.template === "response-email-multi") {
@@ -110,7 +105,7 @@ const SendEmailsCatchup = () => {
     } else {
       params.set("rock", row.rocks);
     }
-    window.open(`/admin/preview-email/${row.template}?${params.toString()}`, "_blank");
+    window.open(`/admin/preview-email/${row.template}?${params.toString()}`, "_blank", "noopener");
   };
 
   // Shared by handleSendRow and handleSendAll: sends this row's actual

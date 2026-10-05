@@ -36,7 +36,9 @@ const ShareYourRockContent = () => {
 
   return (
     <ContentBody>
-      {useRichText ? (
+      {/* Nothing until loaded: showing the built-in copy first made the
+            edited page flash old text. */}
+        {loading ? null : useRichText ? (
         <RichText html={body} />
       ) : (
         <>

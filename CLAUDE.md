@@ -17,7 +17,7 @@ Two independent apps, no root-level `package.json`/workspace — run commands fr
 - `client/` — Vite + React 18 SPA (public site + an `/admin` section), plain CSS Modules per component.
 - `server/` — Express REST API (`src/app.js`), PostgreSQL via raw SQL (`pg.Pool`), file-based media storage under `server/media`.
 
-There is no test suite in either app (`server`'s `npm test` is a placeholder; `client` has no test script at all). `client`'s only quality gate is ESLint.
+Quality gates: `client` ESLint, a server API suite (Vitest + supertest, `server/tests/`) and a browser suite (Playwright, `client/e2e/`), both run against a throwaway docker Postgres + Mailpit -- never the dev DB or Gmail. One command runs all three: `bash data/scripts/run-regression.sh`. See `data/ai-build-docs/regression-testing/RUNBOOK.md` (how it works, seed data, how to extend it).
 
 ## Version & Git Conventions
 
@@ -41,6 +41,12 @@ Client (`cd client`):
 - `npm run lint` — ESLint (`--max-warnings 0`, fails on any warning).
 - `npm run preview` — serve the production build.
 
+Tests (needs Docker; see the runbook above):
+- `bash data/scripts/run-regression.sh` -- lint + API + browser, with a PASS/FAIL summary.
+- `server`: `npm run test:db:up` / `test:db:down` (test stack on 5433/1026/8026), `npm test`.
+- `client`: `npm run test:e2e`.
+- Adding an API route? Add it to `server/tests/api/auth-matrix.test.mjs` with its auth gate.
+
 Server (`cd server`):
 - `npm run dev` — nodemon with `--legacy-watch` (polling-based watch, for WSL2/Docker).
 - `npm start` — plain `node src/app.js`.
@@ -48,11 +54,20 @@ Server (`cd server`):
 
 ## Architecture notes
 
-**Database access is split across two unused-in-practice layers.** `server/src/config/database.js` sets up a Prisma client and `@prisma/client`/`prisma` are real dependencies, but there is no `prisma/schema.prisma` in the repo and no route actually imports it. Every route instead imports `server/src/db/pool.js` (a plain `pg.Pool`) and writes raw SQL directly inline in the route handlers (see `routes/rockPosts.js`, `routes/rocks.js`, etc.). Treat the Prisma client as dead/vestigial unless you find a schema — don't assume Prisma is the real data layer.
+**Database access** is raw SQL through `server/src/db/pool.js` (a plain `pg.Pool`), inline in the route handlers (see `routes/rockPosts.js`, `routes/rocks.js`, etc.). The unused Prisma client and dependencies were removed. Use one checked-out client (`pool.connect()`) for transactions, never `pool.query('BEGIN')`, and `utils/db/safeRollback.js` in catch blocks. `data/sql/createdb.sql` must stay a complete fresh install; the test suite builds its DB from it.
 
-**Rock upload is a multi-stage pipeline**, not a single request: `routes/uploadRock.js` accepts the upload (multer), inserts a summary row inside a transaction, saves original images synchronously, then kicks off `utils/rock-upload/processImagesInBackground.js` **without awaiting it** — that background task converts originals to WebP, generates thumbnails, flips `show` flags on the `journey`/`journey_image` tables once processing finishes, and emails a notification. Anything touching rock images/journey visibility needs to account for this async gap between "upload accepted" and "rock visible in the journey/map".
+**Rock upload is a multi-stage pipeline**, not a single request: `routes/uploadRock.js` accepts the upload (multer), inserts a summary row inside a transaction, saves original images synchronously, then kicks off `utils/rock-upload/processImagesInBackground.js` **without awaiting it** — that background task converts originals to WebP, generates thumbnails, flips `show` flags on the `journey`/`journey_image` tables once processing finishes, and emails a notification. Anything touching rock images/journey visibility needs to account for this async gap between "upload accepted" and "rock visible in the journey/map". Each file is processed on its own: a file that fails stays hidden, the rest publish, and the admin is emailed the failures. "Publicly visible stop" has one definition, `utils/visibleJourneySql.js` (`journey.show` AND at least one visible image), used by every public rock query. `metadata.txt` and the `o/` originals under `media/rocks` are never served (see `app.js`).
 
-**Admin auth is JWT-based.** `POST /api/auth/login` issues a JWT, which `client/src/admin/context/AuthContext.jsx` stores in `sessionStorage` and attaches to every axios request as `Authorization: Bearer <token>`. It re-checks the token via `/api/auth/verify` on load and logs out on any 401. Server-side, admin routes gate on `server/src/middleware/requireAdminAuth.js` (`router.use(requireAdminAuth)`). New admin endpoints should use that middleware, and admin client code can just call `axios` without adding headers.
+**Auth is account-based JWT (visitors and admin share one sign-in).**
+- **Accounts:** they live in the `account` table. Email is the username. `access_level` is 10 unverified, 20 user, 30 creator, or 50 admin. "Locked (40)" is the separate `is_locked` flag, not a stored level. 5 bad passwords lock an account, and a password reset unlocks it.
+- **Sign-in:** `POST /api/auth/login` issues a JWT `{sub: accountId, ver: token_version}` (`JWT_EXPIRES_IN`, 90d). Bumping `account.token_version` (password reset, account locked) signs that account out everywhere. `client/src/admin/context/AuthContext.jsx` stores it in `localStorage` (`authToken`) and attaches it to every axios request as `Authorization: Bearer <token>`.
+- **Client session:** on load it re-checks the token via `/api/auth/me`. It signs out on any 401, but not on a 403. It exposes `account`/`isUser`/`isAdmin`.
+- **Server gates:** `server/src/middleware/requireAuth.js` provides `requireAuth(minLevel)`, which re-reads the account on every request, and `optionalAuth`. `requireAdminAuth.js` is just `requireAuth(50)`. New admin endpoints should use it (`router.use(requireAdminAuth)`), and admin client code can call `axios` without adding headers.
+- **Client routes:** `PrivateRoute` takes `minLevel` (default 50).
+- **Creating an admin:** there is no env-var admin login. Run `npm run create-admin -- you@email.com` in `server/`.
+- **Admin-created accounts:** Admin → Accounts → Add Account (`POST /api/admin/accounts`) creates an account **locked** with an unusable random password hash. It can't be signed into until the person sets a password through a reset link (optionally emailed on create), which also unlocks and verifies it. See `data/ai-build-docs/admin-create-account/`.
+- **Email links:** verify/reset/rock-moved links are built from `PUBLIC_SITE_URL`.
+- See `data/ai-build-docs/user-accounts/`.
 
 **Generic settings store.** The `setting` table (`name` unique, `value` jsonb, `type`, `description`) is read and written through `GET`/`PUT /api/admin/settings/:name` (`server/src/routes/settingsAdmin.js`). It's the place for admin-managed preferences such as a job's last-used controls (e.g. `qr-center-label`), so don't create a one-off table for that kind of data.
 

@@ -27,9 +27,13 @@ export default function AllRocks() {
   const [artists, setArtists] = useState([]);
   const [selectedArtist, setSelectedArtist] = useState("All Artists");
   const [index, setIndex] = useState(-1);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true);
+      setLoadFailed(false);
       try {
         const [rocksRes, detailsRes] = await Promise.all([
           axios.get("/api/rock-posts/allrocks"),
@@ -66,13 +70,14 @@ export default function AllRocks() {
         setDetails(detailsRes.data);
       } catch (err) {
         console.error("Failed to load data", err);
+        setLoadFailed(true);
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, []);
+  }, [attempt]);
 
   const handleArtistChange = (e) => {
     const artist = e.target.value;
@@ -87,6 +92,20 @@ export default function AllRocks() {
       );
     }
   };
+
+  // Used to be a permanently blank page whenever either request failed.
+  if (loadFailed) {
+    return (
+      <ContentBody>
+        <p className={styles.loadError}>
+          The rocks couldn&apos;t be loaded right now.{" "}
+          <button type="button" onClick={() => setAttempt((a) => a + 1)}>
+            Try again
+          </button>
+        </p>
+      </ContentBody>
+    );
+  }
 
   if (loading || !details) return null;
 

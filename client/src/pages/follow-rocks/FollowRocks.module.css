@@ -1,0 +1,187 @@
+.container {
+  padding: 80px 16px 40px;
+  /* This page is a flex item of .appContainer (a flex column). The auto
+     side margins (for centering) turn off flex stretching, so without an
+     explicit width the page shrinks to its *content's* minimum width — the
+     table's 640px — and ends up wider than a phone screen. width: 100%
+     + max-width keeps it screen-wide but capped and centered. */
+  width: 100%;
+  max-width: 960px;
+  min-width: 0;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.pageTitle {
+  text-align: center;
+  margin-bottom: 0.5rem;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.intro {
+  text-align: center;
+  color: #555;
+  margin: 0 0 1.5rem;
+}
+
+.notifyRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f5f9fc;
+  border: 1px solid #dbe8f1;
+  border-radius: 8px;
+}
+
+.section {
+  margin-top: 2rem;
+}
+
+.section h2 {
+  font-size: 1.2rem;
+  margin: 0 0 0.75rem;
+}
+
+.search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.results {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.resultRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.resultRow:last-child {
+  border-bottom: none;
+}
+
+.resultText {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.noResults {
+  padding: 0.75rem;
+  color: #888;
+}
+
+.thumb {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.followButton,
+.removeButton {
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: white;
+}
+
+.followButton {
+  background-color: #4caf50;
+}
+
+.followButton:hover:not(:disabled) {
+  background-color: #45a049;
+}
+
+.followButton:disabled {
+  background-color: #9e9e9e;
+  cursor: default;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+.removeButton,
+.viewButton {
+  background: none;
+  padding: 0.35rem;
+  font-size: 1rem;
+  line-height: 0;
+}
+
+.removeButton {
+  color: #e57373;
+}
+
+.removeButton:hover {
+  color: #d32f2f;
+}
+
+.viewButton {
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #4a90e2;
+}
+
+.viewButton:hover {
+  color: #2c6db8;
+}
+
+
+.error {
+  color: #c0392b;
+  margin-top: 1rem;
+}
+
+.tableScroll {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Keep the columns readable on phones; the box above scrolls sideways. */
+.tableScroll table {
+  min-width: 640px;
+}
+
+/* Paintbrush before the artist name on a Creator's own rocks (always
+   followed, can't be removed); hover shows "You painted this rock". */
+.ownArtist {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ownIcon {
+  display: inline-flex;
+  color: #e65100;
+  font-size: 0.95rem;
+  cursor: help;
+  flex-shrink: 0;
+}

@@ -11,11 +11,23 @@ import styles from "./PhotoAlbum.module.css";
 
 const PhotoAlbum = ({ onAlbumClick, tag = "main", title = "Photo Albums" }) => {
   const [photos, setPhotos] = useState([]);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchAlbums = async () => {
-      const res = await axios.get(`/api/albums/?tag=${tag}`);
-      const albums = res.data;
+      let albums;
+      try {
+        const res = await axios.get("/api/albums/", { params: { tag } });
+        albums = res.data;
+      } catch (err) {
+        // Used to be an unhandled rejection that left just the title.
+        console.error("Failed to load photo albums:", err);
+        if (!cancelled) setLoadFailed(true);
+        return;
+      }
+      if (cancelled) return;
+      setLoadFailed(false);
 
       const formattedPhotos = albums
         .filter((album) => album.show && album.first_image_name)
@@ -32,11 +44,15 @@ const PhotoAlbum = ({ onAlbumClick, tag = "main", title = "Photo Albums" }) => {
     };
 
     fetchAlbums();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [tag]);
 
   return (
     <div className={styles.galleryContainer}>
       <h1 className={styles.galleryTitle}>{title}</h1>
+      {loadFailed && <p>The photo albums couldn&apos;t be loaded right now. Please try again later.</p>}
       <RowsPhotoAlbum
         photos={photos}
         targetRowHeight={300}

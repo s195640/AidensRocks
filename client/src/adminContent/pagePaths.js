@@ -10,6 +10,11 @@ const PAGE_PATHS = {
   "track-the-rocks": "/track-the-rocks",
   map: "/map",
   sudc: "/sudc",
+  "follow-rocks": "/follow-rocks",
+  // Account pages (Page Details "Account Pages"; never in the nav).
+  "sign-in": "/login",
+  "create-account": "/sign-up",
+  "reset-password": "/forgot-password",
 };
 
 export default PAGE_PATHS;

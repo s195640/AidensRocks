@@ -2,17 +2,11 @@
 import RockBanner from "./rock-banner/RockBanner";
 import RockCollection from "./rock-collection/RockCollection";
 import "./RockJourney.css";
-import { totalDistance } from '../../utils/calcDistance.js';
+import { journeyStats } from '../../utils/journeyStats.js';
 
-
-
+// `collections`: this rock's stops, newest first (as the API returns them).
 const RockJourney = ({ rockNumber, collections }) => {
-  const totalTrips = collections.length;
-  const startDate = collections[0].date;
-  const latestDate = collections[collections.length - 1].date;
-  const startingPoint = [40.15040899572542, -83.2360525268589];
-  const points = [startingPoint, ...collections.map(item => [parseFloat(item.latitude), parseFloat(item.longitude)])];
-  const distance = totalDistance(points);
+  const { totalTrips, startDate, latestDate, artists, distance } = journeyStats(collections);
 
   return (
     <div className="rock-journey-outer">
@@ -22,7 +16,7 @@ const RockJourney = ({ rockNumber, collections }) => {
           totalTrips={totalTrips}
           startDate={startDate}
           latestDate={latestDate}
-          artists={collections[0].artists}
+          artists={artists}
           distance={distance}
         />
       </div>

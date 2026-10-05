@@ -2,10 +2,6 @@ const express = require('express');
 const geoip = require('geoip-lite');
 const router = express.Router();
 
-router.get('/test', (req, res) => {
-  res.json('TEST AGAIN! Again');
-});
-
 router.get('/ip', (req, res) => {
   const ip =
     req.headers['x-forwarded-for']?.split(',')[0].trim() ||

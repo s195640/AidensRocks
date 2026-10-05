@@ -1,4 +1,3 @@
-import CreateImages from "../../components/create-images/CreateImages";
 import CreateQRCodes from "../../components/create-qr-codes/CreateQRCodes";
 import CreateQRCodesCenterLabel from "../../components/create-qr-codes-center-label/CreateQRCodesCenterLabel";
 import CreateSingleQRCode from "../../components/create-single-qr-code/CreateSingleQRCode";
@@ -12,7 +11,6 @@ const Jobs = () => {
   return (
     <div className={styles.jobsContainer}>
       <div className={styles.jobsStack}>
-        <CreateImages />
         <CreateQRCodes />
         <CreateQRCodesCenterLabel />
         <CreateSingleQRCode />

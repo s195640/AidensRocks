@@ -25,6 +25,7 @@ const fse = require('fs-extra');
 const sharp = require('sharp');
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../db/pool');
+const safeRollback = require('../utils/db/safeRollback');
 const requireAdminAuth = require('../middleware/requireAdminAuth');
 const fetchEntryDetail = require('../utils/honoringAiden/fetchEntryDetail');
 const upload = require('../middleware/multer');
@@ -177,7 +178,7 @@ router.get('/entries/slug/:slug', async (req, res) => {
 router.post('/entries', async (req, res) => {
   const { title, parent_id } = req.body;
 
-  if (!title || !title.trim()) {
+  if (typeof title !== 'string' || !title.trim()) {
     return res.status(400).json({ error: "'title' is required." });
   }
 
@@ -232,30 +233,41 @@ router.post('/entries', async (req, res) => {
 });
 
 // -------------------- PUT /api/admin/honoring-aiden/entries/:id --------------------
-// Full replace of title/published/body_json — same "client resends the
-// whole editable shape" convention this feature's other PUT endpoints
-// already use. Three different callers hit this now (EntryFormModal.jsx's
+// Partial update of title/published/body_json: only the fields present in
+// the request body change. Three callers hit this (EntryFormModal.jsx's
 // rename dialog, EntryDetailView.jsx's visibility toggle, and its
-// ContentEditor save) — each seeds its request from the currently-loaded
-// entry and only actually changes its own one field, but all three still
-// send the full set so nothing else gets silently clobbered back to a
-// default. `slug` is deliberately NOT accepted here — immutable after
-// creation, so an entry's URL never changes out from under a link to it.
+// ContentEditor save), and each one only knows about its own field -- the
+// old full-replace shape meant the sidebar rename, which never loads
+// body_json, saved NULL over the whole page. `slug` is deliberately NOT
+// accepted here -- immutable after creation, so an entry's URL never
+// changes out from under a link to it.
 router.put('/entries/:id', async (req, res) => {
   const { id } = req.params;
-  const { title, published, body_json } = req.body;
+  const body = req.body || {};
+  const has = (key) => Object.prototype.hasOwnProperty.call(body, key);
 
-  if (!title || !title.trim()) {
-    return res.status(400).json({ error: "'title' is required." });
+  if (has('title') && (typeof body.title !== 'string' || !body.title.trim())) {
+    return res.status(400).json({ error: "'title' can't be blank." });
+  }
+  if (!has('title') && !has('published') && !has('body_json')) {
+    return res.status(400).json({ error: 'Nothing to update.' });
   }
 
   try {
     const result = await pool.query(
       `UPDATE entry
-       SET title = $1, published = $2, body_json = $3, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $4
+       SET title      = CASE WHEN $1 THEN $2 ELSE title END,
+           published  = CASE WHEN $3 THEN $4 ELSE published END,
+           body_json  = CASE WHEN $5 THEN $6::jsonb ELSE body_json END,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $7
        RETURNING *`,
-      [title.trim(), !!published, toJsonbParam(body_json), id]
+      [
+        has('title'), has('title') ? body.title.trim() : null,
+        has('published'), !!body.published,
+        has('body_json'), toJsonbParam(body.body_json),
+        id,
+      ]
     );
 
     if (result.rowCount === 0) {
@@ -400,7 +412,7 @@ router.patch('/entries/reorder', async (req, res) => {
     await client.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
-    if (client) await client.query('ROLLBACK');
+    await safeRollback(client);
     console.error('Error reordering honoring-aiden entries:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {

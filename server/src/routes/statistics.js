@@ -1,8 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const db = require('../db/pool');
+const requireAdminAuth = require('../middleware/requireAdminAuth');
 
-router.get("/", async (req, res) => {
+router.get("/", requireAdminAuth, async (req, res) => {
   try {
     // We select user_agent to perform more accurate platform detection
     const result = await db.query("SELECT ip_address, user_agent, platform, geo, create_dt FROM counter_tracking");

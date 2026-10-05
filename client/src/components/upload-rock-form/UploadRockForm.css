@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 2000; /* modal tier: above the navbar (~1100), see CLAUDE.md */
 }
 
 /* Dialog box */
@@ -316,7 +316,7 @@
 }
 
 /* Dialog overlay for success/error */
-.dialog-overlay {
+.upload-result-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -326,11 +326,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1500;
+  z-index: 2100; /* above the upload form itself */
 }
 
 /* Dialog box */
-.dialog-box {
+.upload-result-box {
   background: white;
   border-radius: 8px;
   padding: 1.5rem 2rem;
@@ -342,7 +342,7 @@
 }
 
 /* Dialog title */
-.dialog-title {
+.upload-result-title {
   margin-top: 0;
   margin-bottom: 1rem;
   font-weight: 700;
@@ -351,14 +351,14 @@
 }
 
 /* Dialog message */
-.dialog-message {
+.upload-result-message {
   font-size: 1rem;
   color: #555;
   margin-bottom: 1.5rem;
 }
 
 /* Dialog close button */
-.dialog-close-btn {
+.upload-result-close-btn {
   background-color: #007BFF;
   color: white;
   padding: 0.5rem 1.4rem;
@@ -372,7 +372,7 @@
   user-select: none;
 }
 
-.dialog-close-btn:hover {
+.upload-result-close-btn:hover {
   background-color: #0056b3;
   box-shadow: 0 5px 12px rgba(0, 86, 179, 0.6);
 }
@@ -427,7 +427,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 2100; /* above the upload form overlay */
 }
 
 .heic-spinner {

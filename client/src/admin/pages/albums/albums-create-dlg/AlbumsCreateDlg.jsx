@@ -27,6 +27,7 @@ const AlbumsCreateDlg = ({
   const [photos, setPhotos] = useState(photoData);
   const [isValid, setIsValid] = useState(false);
   const [nameError, setNameError] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [uploadQueue, setUploadQueue] = useState([]);
   const [tagsInput, setTagsInput] = useState((albumData.tags || []).join(", "));
 
@@ -52,7 +53,7 @@ const AlbumsCreateDlg = ({
     try {
       const [albumRes, photosRes] = await Promise.all([
         axios.get(`/api/albums/${album.pa_key}`),
-        axios.get(`/api/albums/${album.pa_key}/photos`),
+        axios.get(`/api/albums/${album.pa_key}/photos?includeHidden=1`),
       ]);
       setAlbum(albumRes.data);
       setPhotos(photosRes.data);
@@ -164,6 +165,7 @@ const AlbumsCreateDlg = ({
 
   const handleSubmit = async () => {
     if (!isValid) return;
+    setSaveError("");
     const tags = normalizeTags(tagsInput.split(","));
     try {
       if (!isEdit) {
@@ -175,6 +177,7 @@ const AlbumsCreateDlg = ({
       onSubmit();
     } catch (err) {
       console.error("Save failed:", err);
+      setSaveError(err.response?.data?.error || "Saving the album failed. Please try again.");
     }
   };
 
@@ -232,6 +235,7 @@ const AlbumsCreateDlg = ({
           />
         </label>
         {nameError && <div className={styles.error}>{nameError}</div>}
+        {saveError && <div className={styles.error}>{saveError}</div>}
 
         <label>
           Display Name:

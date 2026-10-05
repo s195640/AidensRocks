@@ -2,11 +2,14 @@ const express = require('express');
 const router = express.Router();
 const syncAlbums = require('../utils/albums/syncAlbums');
 const db = require('../db/pool');
+const safeRollback = require('../utils/db/safeRollback');
 const path = require('path');
 const fs = require('fs-extra');
 const upload = require('../middleware/multer');
 const normalizeTags = require('../utils/normalizeTags');
 const requireAdminAuth = require('../middleware/requireAdminAuth');
+const { optionalAuth } = require('../middleware/requireAuth');
+const includeHidden = require('../utils/includeHidden');
 
 router.post('/sync', requireAdminAuth, async (req, res) => {
   try {
@@ -19,12 +22,27 @@ router.post('/sync', requireAdminAuth, async (req, res) => {
   }
 });
 
-router.get('/', async (req, res) => {
+// An album's `name` is its folder under media/albums, so it must be a
+// plain folder name -- "../.." would let a create/delete/upload reach
+// outside media/albums.
+const ALBUM_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/;
+const isSafeAlbumName = (name) => typeof name === 'string' && ALBUM_NAME_RE.test(name);
+
+router.param('name', (req, res, next, name) => {
+  if (!isSafeAlbumName(name)) {
+    return res.status(400).json({ error: 'Album name may only use letters, numbers, - and _.' });
+  }
+  next();
+});
+
+router.get('/', optionalAuth, async (req, res) => {
   try {
     // Same endpoint the admin list and the public Photos page both use.
     // ?tag=<value> is opt-in filtering (used by the public page); absent
     // entirely preserves current unfiltered behavior for the admin list or
-    // any other consumer.
+    // any other consumer. Hidden albums (and hidden photos in the count)
+    // are left out unless an admin asks for them (?includeHidden=1).
+    const showAll = includeHidden(req);
     const { tag } = req.query;
     const params = [];
     let tagFilter = '';
@@ -66,8 +84,8 @@ router.get('/', async (req, res) => {
           WHERE pt.pa_key = pa.pa_key
         ) AS tags
       FROM PhotoAlbums pa
-      LEFT JOIN Photos p ON pa.pa_key = p.pa_key
-      WHERE 1=1 ${tagFilter}
+      LEFT JOIN Photos p ON pa.pa_key = p.pa_key ${showAll ? '' : 'AND p.show = TRUE'}
+      WHERE 1=1 ${showAll ? '' : 'AND pa.show = TRUE'} ${tagFilter}
       GROUP BY pa.pa_key
       ORDER BY pa.order_num;
     `,
@@ -199,7 +217,7 @@ router.put('/:pa_key', requireAdminAuth, async (req, res) => {
     await client.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
-    if (client) await client.query('ROLLBACK');
+    await safeRollback(client);
     console.error('Album update failed:', err);
     res.status(500).json({ error: 'Failed to update album' });
   } finally {
@@ -234,8 +252,10 @@ router.get('/:pa_key', requireAdminAuth, async (req, res) => {
   }
 });
 
-router.get('/:pa_key/photos', async (req, res) => {
+router.get('/:pa_key/photos', optionalAuth, async (req, res) => {
   const { pa_key } = req.params;
+  // Public: visible photos of a visible album only.
+  const showAll = includeHidden(req);
 
   try {
     const result = await db.query(
@@ -253,8 +273,11 @@ router.get('/:pa_key/photos', async (req, res) => {
         duration_seconds
       FROM Photos
       WHERE pa_key = $1
+        AND ($2 OR (show = TRUE AND EXISTS (
+          SELECT 1 FROM PhotoAlbums pa WHERE pa.pa_key = Photos.pa_key AND pa.show = TRUE
+        )))
       ORDER BY order_num`,
-      [pa_key]
+      [pa_key, showAll]
     );
 
     res.json(result.rows);
@@ -266,6 +289,9 @@ router.get('/:pa_key/photos', async (req, res) => {
 
 router.post('/', requireAdminAuth, async (req, res) => {
   const { name, display_name, desc, show, tags } = req.body;
+  if (!isSafeAlbumName(name)) {
+    return res.status(400).json({ error: 'Album name may only use letters, numbers, - and _.' });
+  }
 
   let client;
   try {
@@ -308,7 +334,7 @@ router.post('/', requireAdminAuth, async (req, res) => {
     await client.query('COMMIT');
     res.status(200).json({ success: true, pa_key });
   } catch (err) {
-    if (client) await client.query('ROLLBACK');
+    await safeRollback(client);
     console.error('Error creating album:', err);
     res.status(500).json({ error: 'Internal server error' });
   } finally {
@@ -364,7 +390,7 @@ router.post("/reorder", requireAdminAuth, async (req, res) => {
     await client.query("COMMIT");
     res.json({ success: true });
   } catch (err) {
-    if (client) await client.query("ROLLBACK");
+    await safeRollback(client);
     console.error("Error reordering albums:", err);
     res.status(500).json({ error: "Failed to reorder albums." });
   } finally {
@@ -396,7 +422,7 @@ router.post("/photos/reorder", requireAdminAuth, async (req, res) => {
     await client.query("COMMIT");
     res.json({ success: true });
   } catch (err) {
-    if (client) await client.query("ROLLBACK");
+    await safeRollback(client);
     console.error("Error reordering albums:", err);
     res.status(500).json({ error: "Failed to reorder albums." });
   } finally {
@@ -449,6 +475,7 @@ router.delete('/photos/:p_key', requireAdminAuth, async (req, res) => {
     );
 
     if (result.rowCount === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Photo not found' });
     }
 
@@ -496,7 +523,7 @@ router.delete('/photos/:p_key', requireAdminAuth, async (req, res) => {
     await client.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
-    if (client) await client.query('ROLLBACK');
+    await safeRollback(client);
     console.error('Photo delete failed:', err);
     res.status(500).json({ error: 'Failed to delete photo' });
   } finally {
@@ -541,7 +568,7 @@ router.put('/photos/:p_key', requireAdminAuth, async (req, res) => {
 router.post('/:name/upload-images', requireAdminAuth, upload.array('files'), async (req, res) => {
   try {
     const albumName = req.params.name;
-    const uploadDir = path.join(__dirname, `../../media/albums/${albumName}/o`);
+    const uploadDir = path.resolve('media', 'albums', albumName, 'o');
 
     await fs.ensureDir(uploadDir);
     console.log(`Upload dir ensured: ${uploadDir}`);
@@ -575,7 +602,7 @@ router.post('/:name/upload-chunk', requireAdminAuth, upload.single('chunk'), asy
     }
 
     const safeName = path.basename(originalName);
-    const uploadDir = path.join(__dirname, `../../media/albums/${albumName}/o`);
+    const uploadDir = path.resolve('media', 'albums', albumName, 'o');
     const tmpDir = path.join(uploadDir, '.tmp');
     await fs.ensureDir(tmpDir);
 

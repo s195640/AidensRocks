@@ -5,27 +5,24 @@ import styles from "./UserCreateEditDlg.module.css";
 const UserCreateEditDlg = ({ user, onSave, onClose, isOpen, users }) => {
   const [displayName, setDisplayName] = useState("");
   const [relation, setRelation] = useState("");
-  const [dob, setDob] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (user) {
       setDisplayName(user.display_name || "");
       setRelation(user.relation || "");
-      setDob(user.dob ? user.dob.split("T")[0] : "");
     } else {
       setDisplayName("");
       setRelation("");
-      setDob("");
     }
     setError("");
   }, [user, isOpen]);
 
-  const handleSaveClick = (e) => {
+  const handleSaveClick = async (e) => {
     if (e) e.preventDefault();
     setError("");
 
-    if (!displayName || !relation || !dob) {
+    if (!displayName || !relation) {
       setError("All fields are required.");
       return;
     }
@@ -35,13 +32,17 @@ const UserCreateEditDlg = ({ user, onSave, onClose, isOpen, users }) => {
         (u) => u.display_name.toLowerCase() === displayName.toLowerCase()
       );
       if (duplicate) {
-        setError(`User "${displayName}" already exists.`);
+        setError(`Artist "${displayName}" already exists.`);
         return;
       }
     }
 
-    onSave({ display_name: displayName, relation, dob });
-    onClose();
+    try {
+      // Users.jsx closes the dialog itself once the save succeeds.
+      await onSave({ display_name: displayName, relation });
+    } catch (err) {
+      setError(err.response?.data?.error || "Saving the artist failed. Please try again.");
+    }
   };
 
   if (!isOpen) return null;
@@ -50,7 +51,7 @@ const UserCreateEditDlg = ({ user, onSave, onClose, isOpen, users }) => {
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
-      title={user ? "Edit User" : "Create User"}
+      title={user ? "Edit Artist" : "Create Artist"}
       buttonPanel={
         <>
           <button onClick={handleSaveClick}>Save</button>
@@ -76,14 +77,6 @@ const UserCreateEditDlg = ({ user, onSave, onClose, isOpen, users }) => {
           type="text"
           value={relation}
           onChange={(e) => setRelation(e.target.value)}
-          required
-        />
-
-        <label>Date of Birth*</label>
-        <input
-          type="date"
-          value={dob}
-          onChange={(e) => setDob(e.target.value)}
           required
         />
       </form>

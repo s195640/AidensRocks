@@ -16,7 +16,7 @@ const MusicAdmin = () => {
   const fetchSongs = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/api/music");
+      const { data } = await axios.get("/api/music?includeHidden=1");
       setSongs(data);
     } catch (err) {
       console.error("Failed to fetch songs:", err);
@@ -63,17 +63,9 @@ const MusicAdmin = () => {
       await fetchSongs(); // refresh list
     } catch (err) {
       console.error("Failed to save song:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleReorder = async () => {
-    setLoading(true);
-    try {
-      await fetchSongs();
-    } catch (err) {
-      console.error("Failed to reorder songs:", err);
+      // Rethrown so the edit dialog stays open and shows its error (it used
+      // to close as if the save had worked).
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -82,17 +74,22 @@ const MusicAdmin = () => {
   const handleDisableEnable = async (m_key) => {
     const song = songs.find((s) => s.m_key === m_key);
     if (!song) return;
-    await handleSave({ m_key, toggleShow: !song.show });
+    try {
+      await handleSave({ m_key, toggleShow: !song.show });
+    } catch (err) {
+      alert(err.response?.data?.error || "Couldn't change whether this song is shown.");
+    }
   };
 
   const handleDelete = async (m_key) => {
-    if (!window.confirm("Delete this user?")) return;
+    if (!window.confirm("Delete this song?")) return;
     try {
       setLoading(true);
       await axios.delete(`/api/music/${m_key}`);
       await fetchSongs(); // refresh list
     } catch (error) {
-      console.error("Failed to delete user:", error);
+      console.error("Failed to delete song:", error);
+      alert(error.response?.data?.error || "Deleting the song failed.");
     } finally {
       setLoading(false);
     }
@@ -119,7 +116,6 @@ const MusicAdmin = () => {
           <MusicTable
             songs={songs}
             loading={loading}
-            handleReorder={handleReorder}
             openFullImageDialog={openFullImageDialog}
             handleDisableEnable={handleDisableEnable}
             handleEdit={openDialog}

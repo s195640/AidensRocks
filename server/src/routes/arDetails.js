@@ -1,6 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const db = require('../db/pool');
+const visibleJourneySql = require('../utils/visibleJourneySql');
+
+// Public stats count only public journey stops (see visibleJourneySql) --
+// hidden/rejected uploads used to inflate "Rocks placed", "Total stops"
+// and the country/state lists.
+const VISIBLE = visibleJourneySql('journey');
 
 // GET /api/ar-details
 router.get("/", async (req, res) => {
@@ -10,8 +16,8 @@ router.get("/", async (req, res) => {
 
     // --- Summary counts ---
     const rocksRes = await client.query("SELECT COUNT(*) AS count FROM Catalog");
-    const rocksFoundRes = await client.query("select count(distinct rock_number) from journey");
-    const journeysRes = await client.query("select count(*) from journey");
+    const rocksFoundRes = await client.query(`select count(distinct rock_number) from journey where ${VISIBLE}`);
+    const journeysRes = await client.query(`select count(*) from journey where ${VISIBLE}`);
     const artistsRes = await client.query("SELECT COUNT(*) AS count FROM Artist");
     const countriesRes = await client.query(`
       select count(distinct
@@ -20,14 +26,14 @@ router.get("/", async (req, res) => {
              ELSE country
         END
       ) from journey
+      where ${VISIBLE}
     `);
-    const statesRes = await client.query("select count(distinct state) from journey where country IN ('United States', 'United States of America')");
+    const statesRes = await client.query(`select count(distinct state) from journey where country IN ('United States', 'United States of America') and ${VISIBLE}`);
 
     // --- Detailed tables ---
     const artistsTable = await client.query(`
       SELECT ra.display_name AS name,
 	  		     ra.relation,
-             EXTRACT(YEAR FROM age(CURRENT_DATE, ra.dob))::int AS age,
              COUNT(ral.rc_key) AS rocks
       FROM Artist ra
       LEFT JOIN Artist_Link ral ON ra.ra_key = ral.ra_key
@@ -44,6 +50,7 @@ router.get("/", async (req, res) => {
         COUNT(*) AS rocks
       FROM journey
       WHERE country IS NOT NULL
+        AND ${VISIBLE}
       GROUP BY
         CASE WHEN country IN ('United States', 'United States of America')
              THEN 'United States'
@@ -56,6 +63,8 @@ router.get("/", async (req, res) => {
       SELECT state AS name, COUNT(*) AS rocks
       FROM journey
       WHERE country IN ('United States', 'United States of America')
+        AND state IS NOT NULL
+        AND ${VISIBLE}
       GROUP BY state
       ORDER BY state;
     `);

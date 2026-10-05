@@ -5,12 +5,15 @@ const { v4: uuidv4 } = require('uuid');
 const ensureDir = require('../utils/ensureDir');
 const upload = require('../middleware/multer');
 const pool = require('../db/pool');
+const safeRollback = require('../utils/db/safeRollback');
 const insertRockSummary = require('../utils/rock-upload/insertRockSummary');
 const saveOriginalImages = require('../utils/rock-upload/saveOriginalImages');
 const handleTracking = require('../utils/rock-upload/handleTracking');
 const saveMetadataFile = require('../utils/rock-upload/saveMetadataFile');
 const processImagesInBackground = require('../utils/rock-upload/processImagesInBackground'); // Import the function
 const sendRockResponseEmail = require('../utils/rock-upload/sendRockResponseEmail');
+const { normalizeEmail, isValidEmail } = require('../utils/auth/password');
+const { publicFormLimiter, publicChunkLimiter } = require('../middleware/publicFormLimiter');
 
 const router = express.Router();
 
@@ -20,6 +23,18 @@ const router = express.Router();
 // to already-staged large files in a single request.
 const STAGING_DIR = path.resolve('media', '.staging');
 const STAGING_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
+// One staged (chunked) file may not grow past this.
+const STAGED_FILE_MAX_BYTES = 2 * 1024 * 1024 * 1024; // 2GB
+
+// The client makes ids like "1728144000000-k3j9x2a1b". Anything else is
+// rejected rather than passed through path.basename: "." used to resolve
+// to the staging folder itself, sweeping every visitor's pending files
+// into this post.
+const STAGING_ID_RE = /^[A-Za-z0-9][A-Za-z0-9-]{7,99}$/;
+const isValidStagingId = (id) => typeof id === 'string' && STAGING_ID_RE.test(id);
+
+// journey varchar(255) columns -- longer values used to surface as a 500.
+const MAX_FIELD = 255;
 
 async function cleanupStaleStaging() {
   try {
@@ -42,7 +57,7 @@ async function cleanupStaleStaging() {
   }
 }
 
-router.post('/upload-rock/stage-chunk', upload.single('chunk'), async (req, res) => {
+router.post('/upload-rock/stage-chunk', publicChunkLimiter, upload.single('chunk'), async (req, res) => {
   try {
     const { stagingId, originalName } = req.body;
     const chunkIndex = Number(req.body.chunkIndex);
@@ -57,11 +72,19 @@ router.post('/upload-rock/stage-chunk', upload.single('chunk'), async (req, res)
     ) {
       return res.status(400).json({ error: 'Missing chunk data' });
     }
+    if (!isValidStagingId(stagingId)) {
+      return res.status(400).json({ error: 'Invalid staging id' });
+    }
 
     cleanupStaleStaging(); // best-effort, fire-and-forget
 
     await fs.ensureDir(STAGING_DIR);
-    const tmpPath = path.join(STAGING_DIR, path.basename(stagingId));
+    const tmpPath = path.join(STAGING_DIR, stagingId);
+    const existing = (await fs.pathExists(tmpPath)) ? (await fs.stat(tmpPath)).size : 0;
+    if (existing + req.file.size > STAGED_FILE_MAX_BYTES) {
+      await fs.remove(tmpPath);
+      return res.status(413).json({ error: 'File is too large.' });
+    }
     await fs.appendFile(tmpPath, req.file.buffer);
 
     res.json({ success: true, complete: chunkIndex >= totalChunks - 1 });
@@ -71,8 +94,10 @@ router.post('/upload-rock/stage-chunk', upload.single('chunk'), async (req, res)
   }
 });
 
-router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
+router.post('/upload-rock', publicFormLimiter, upload.array('images'), async (req, res, next) => {
   let client;
+  let baseDir;
+  let committed = false;
 
   try {
     client = await pool.connect();
@@ -92,6 +117,13 @@ router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return res.status(400).json({ error: 'Invalid or missing date' });
     }
+    const emailNormalized = email?.trim() ? normalizeEmail(email) : '';
+    if (emailNormalized && !isValidEmail(emailNormalized)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+    if ([name, location, emailNormalized].some((v) => typeof v === 'string' && v.trim().length > MAX_FIELD)) {
+      return res.status(400).json({ error: `Name, location and email must be ${MAX_FIELD} characters or fewer.` });
+    }
 
     // Files are either sent inline (small) or pre-staged via chunked upload
     // (large, e.g. video). fileManifest preserves the original selection
@@ -109,7 +141,10 @@ router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
     const fileDescriptors = [];
     for (const entry of manifest) {
       if (entry.type === 'staged') {
-        const stagedPath = path.join(STAGING_DIR, path.basename(entry.stagingId));
+        if (!isValidStagingId(entry.stagingId)) {
+          return res.status(400).json({ error: 'Invalid staging id' });
+        }
+        const stagedPath = path.join(STAGING_DIR, entry.stagingId);
         if (!(await fs.pathExists(stagedPath))) {
           return res.status(400).json({
             error: `Staged file missing or expired: ${entry.originalName}`,
@@ -132,7 +167,7 @@ router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
     const safeRockNumberQr = /^\d+$/.test(rockNumberQr) ? rockNumberQr : 0;
     const locationSafe = location?.trim() || 'unknown';
     const commentSafe = comment?.trim() || 'unknown';
-    const baseDir = path.resolve('media', 'rocks', safeRockNumber, uuid);
+    baseDir = path.resolve('media', 'rocks', safeRockNumber, uuid);
     const originalDir = path.join(baseDir, 'o');
 
     await ensureDir(originalDir);
@@ -146,7 +181,7 @@ router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
       date,
       comment: commentSafe,
       name: name?.trim() || null,
-      email: email?.trim() || null,
+      email: emailNormalized || null,
       timestamp,
       uuid,
     });
@@ -181,6 +216,7 @@ router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
     });
 
     await client.query('COMMIT');
+    committed = true;
 
     res.status(200).json({
       message: 'Rock uploaded successfully',
@@ -190,7 +226,7 @@ router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
     });
 
     // ✅ Run the image processing in the background
-    const emailTrimmed = email?.trim();
+    const emailTrimmed = emailNormalized || undefined;
     setImmediate(() => processImagesInBackground(baseDir, name, safeRockNumber, commentSafe, locationSafe, date, emailTrimmed, rpsKey));
 
     // ✅ If they gave a real rock number and an email, fire the (optional,
@@ -201,7 +237,9 @@ router.post('/upload-rock', upload.array('images'), async (req, res, next) => {
       setImmediate(() => sendRockResponseEmail(rockNumberInt, emailTrimmed, rpsKey));
     }
   } catch (err) {
-    if (client) await client.query('ROLLBACK');
+    await safeRollback(client);
+    // Don't leave a half-written post folder behind for a rolled-back row.
+    if (baseDir && !committed) await fs.remove(baseDir).catch(() => {});
     console.error(err);
     next(err);
   } finally {

@@ -11,7 +11,7 @@ const MusicPanel = () => {
   const fetchSongs = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("/api/music");
+      const res = await axios.get("/api/music?includeHidden=1");
       const sorted = Array.isArray(res.data)
         ? [...res.data].sort((a, b) => (b.play_count || 0) - (a.play_count || 0))
         : [];

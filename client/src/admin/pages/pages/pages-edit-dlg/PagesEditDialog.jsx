@@ -4,6 +4,7 @@ import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import PageContentEditor from "../../../../adminContent/PageContentEditor";
 import EMAIL_PLACEHOLDERS from "../../../../adminContent/emailPlaceholders";
 import EMAIL_SLUGS from "../emailSlugs";
+import { ACCOUNT_PAGE_SLUGS } from "../../../../adminContent/accountPages";
 import styles from "./PagesEditDialog.module.css";
 
 const PagesEditDialog = ({ page, onClose, onSaved }) => {
@@ -12,6 +13,8 @@ const PagesEditDialog = ({ page, onClose, onSaved }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const isEmail = EMAIL_SLUGS.has(page.slug);
+  // Account pages (Sign In etc.) keep their Title in the same subject column.
+  const isAccountPage = ACCOUNT_PAGE_SLUGS.has(page.slug);
   // Only the tokens this specific template actually supports (see
   // emailPlaceholders.js's `pages` filter) — "Response Email" and "Response
   // Email Multi" each get their own set.
@@ -25,7 +28,7 @@ const PagesEditDialog = ({ page, onClose, onSaved }) => {
     try {
       await axios.put(`/api/admin/pages/${page.slug}/draft`, {
         body: draft,
-        ...(isEmail ? { email_subject: subject } : {}),
+        ...(isEmail || isAccountPage ? { email_subject: subject } : {}),
       });
       onSaved();
     } catch (err) {
@@ -84,6 +87,21 @@ const PagesEditDialog = ({ page, onClose, onSaved }) => {
             ))}
             in the subject or body (the editor&apos;s Insert ▾ menu below adds them for you) —
             they get filled in with the real values when you send.
+          </p>
+        </div>
+      )}
+      {isAccountPage && (
+        <div className={styles.subjectField}>
+          <label htmlFor="page-title">Title</label>
+          <input
+            id="page-title"
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="Page title"
+          />
+          <p className={styles.placeholderHint}>
+            Shown as the heading on this page. The editor below is the description under it.
           </p>
         </div>
       )}

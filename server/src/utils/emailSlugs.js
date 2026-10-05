@@ -6,6 +6,16 @@
 // unconditionally, regardless of Active state, since they have no public
 // route to link to. Client-side mirror:
 // client/src/admin/pages/pages/emailSlugs.js.
-const EMAIL_SLUGS = new Set(['response-email', 'response-email-multi']);
+const EMAIL_SLUGS = new Set([
+  'response-email',
+  'response-email-multi',
+  'follow-rocks-email',
+  'account-verify-email',
+  'password-reset-email',
+  'new-journey-email',
+  'new-rock-request-email',
+  'rock-request-reply-email',
+  'send-email-default',
+]);
 
 module.exports = EMAIL_SLUGS;

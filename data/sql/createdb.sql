@@ -500,23 +500,16 @@ CREATE TABLE music (
   order_num integer,
   show BOOLEAN DEFAULT TRUE,
   create_dt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  update_dt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  update_dt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  -- see data/sql/migrations/add_music_play_count.sql
+  play_count integer NOT NULL DEFAULT 0
 );
 
 ALTER TABLE public.music OWNER TO postgres;
 
-CREATE SEQUENCE public.music_m_key_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.music_m_key_seq OWNER TO postgres;
-
-ALTER TABLE ONLY public.music ALTER COLUMN m_key SET DEFAULT nextval('public.music_m_key_seq'::regclass);
+-- (m_key SERIAL above already creates and owns public.music_m_key_seq — a
+-- separate CREATE SEQUENCE for it here made a fresh install fail with
+-- "relation music_m_key_seq already exists".)
 
 CREATE TABLE public.page_content (
     page_slug       character varying(100) PRIMARY KEY,
@@ -526,7 +519,11 @@ CREATE TABLE public.page_content (
     draft_body      text NOT NULL DEFAULT '',
     published_body  text NOT NULL DEFAULT '',
     updated_at      timestamptz DEFAULT CURRENT_TIMESTAMP,
-    published_at    timestamptz
+    published_at    timestamptz,
+    -- Email-template subject (and account-page title) pair -- see
+    -- data/sql/migrations/add_response_email_page.sql.
+    draft_email_subject      text NOT NULL DEFAULT '',
+    published_email_subject  text NOT NULL DEFAULT ''
 );
 
 ALTER TABLE public.page_content OWNER TO postgres;
@@ -622,6 +619,118 @@ WITH body AS (
 )
 INSERT INTO public.page_content (page_slug, nav_label, order_num, visible, draft_body, published_body)
 SELECT 'honoring-aiden', 'Honoring Aiden', 4, true, content, content FROM body;
+
+-- Follow Rocks: nav-only row (hardcoded page, empty body), last in the nav.
+-- The client only shows it to signed-in accounts (level >= 20) -- see
+-- data/sql/migrations/add_account_tables.sql.
+INSERT INTO public.page_content (page_slug, nav_label, order_num, visible)
+VALUES ('follow-rocks', 'Follow Rocks', 8, true);
+
+-- Response Email template row (Page Details → Emails). Copied from data/sql/migrations/add_response_email_page.sql.
+INSERT INTO public.page_content
+  (page_slug, nav_label, order_num, visible, draft_body, published_body, draft_email_subject, published_email_subject)
+SELECT 'response-email', 'Response Email', COALESCE(MAX(order_num), 0) + 1, false, '', '', '', ''
+FROM public.page_content
+ON CONFLICT (page_slug) DO NOTHING;
+
+-- Response Email Multi template row. Copied from data/sql/migrations/add_response_email_multi_page.sql.
+INSERT INTO public.page_content
+  (page_slug, nav_label, order_num, visible, draft_body, published_body, draft_email_subject, published_email_subject)
+SELECT 'response-email-multi', 'Response Email Multi', COALESCE(MAX(order_num), 0) + 1, false, '', '', '', ''
+FROM public.page_content
+ON CONFLICT (page_slug) DO NOTHING;
+
+-- Follow Rocks Email template row (seeded Active). Copied from data/sql/migrations/add_follow_rocks_email_page.sql.
+WITH body AS (
+  SELECT
+    $html$<h2>Rock {ROCK_NUMBER} has a new adventure</h2>
+<p>Rock {ROCK_NUMBER}, one of the rocks you follow, has traveled to {LOCATION} on {DATE}.</p>
+<p>{ROCK_IMAGE}</p>
+<p>{ROCK_JOURNEY_LINK}</p>
+<p>You're receiving this because you turned on rock move emails on your Follow Rocks page.</p>$html$::text AS content,
+    'Rock {ROCK_NUMBER} has a new adventure'::text AS subject
+)
+INSERT INTO public.page_content
+  (page_slug, nav_label, order_num, visible, draft_body, published_body, draft_email_subject, published_email_subject)
+SELECT 'follow-rocks-email', 'Follow Rocks Email',
+       (SELECT COALESCE(MAX(order_num), 0) + 1 FROM public.page_content),
+       true, content, content, subject, subject
+FROM body
+ON CONFLICT (page_slug) DO NOTHING;
+
+-- Remaining site email templates (seeded Active). Copied from data/sql/migrations/add_email_templates.sql.
+INSERT INTO public.page_content
+  (page_slug, nav_label, order_num, visible, draft_body, published_body, draft_email_subject, published_email_subject)
+SELECT t.slug, t.label,
+       (SELECT COALESCE(MAX(order_num), 0) FROM public.page_content) + t.ord,
+       true, t.body, t.body, t.subject, t.subject
+FROM (VALUES
+  (1, 'account-verify-email', 'Verify Account Email',
+   'Verify your Aiden''s Rocks account',
+   $html$<h2>Welcome to Aiden's Rocks</h2>
+<p>Thank you for joining us in following Aiden's rocks around the world.</p>
+<p>Please verify your email address (this link is valid for 24 hours):</p>
+<p>{VERIFY_LINK}</p>
+<p>If you didn't create an account, you can ignore this email.</p>$html$),
+
+  (2, 'password-reset-email', 'Password Reset Email',
+   'Reset your Aiden''s Rocks password',
+   $html$<h2>Reset your password</h2>
+<p>We received a request to reset your password.</p>
+<p>Choose a new password using the link below (valid for 1 hour):</p>
+<p>{RESET_LINK}</p>
+<p>If you didn't ask for this, you can ignore this email.</p>$html$),
+
+  (3, 'new-journey-email', 'New Rock Journey (to admin)',
+   'New Rock Journey: Rock {ROCK_NUMBER}',
+   $html$<h2>New Rock Journey Posted</h2>
+<p><strong>Rock Number:</strong> {ROCK_NUMBER}</p>
+<p><strong>Name:</strong> {NAME}</p>
+<p><strong>Date:</strong> {DATE}</p>
+<p><strong>Location:</strong> {LOCATION}</p>
+<p><strong>Comment:</strong> {COMMENT}</p>
+<p><strong>Email:</strong> {SUBMITTER_EMAIL}</p>
+<p>This is an automated notification from Aidens Rocks.</p>$html$),
+
+  (4, 'new-rock-request-email', 'New Rock Request (to admin)',
+   'New Rock Request from {NAME}',
+   $html$<h2>New Rock Request</h2>
+<p><strong>Name:</strong> {NAME}</p>
+<p><strong>Email:</strong> {EMAIL}</p>
+<p><strong>Address:</strong><br>{ADDRESS}</p>
+<p><strong>Rocks Requested:</strong> {ROCKS_REQUESTED}</p>
+<p><strong>Message:</strong><br>{MESSAGE}</p>
+<p>This is an automated notification from Aidens Rocks.</p>$html$),
+
+  (5, 'rock-request-reply-email', 'Rock Request Reply (default)',
+   'Your Aiden''s Rocks Are On The Way!',
+   $html$<p>Hi {NAME},</p>
+<p>We're so happy to let you know we've sent the rock(s) you requested out to you!</p>
+<p>Rock number(s): {ROCK_NUMBERS}<br>Tracking Number: {TRACKING_NUMBER}</p>
+<p>Thank you so much for helping us remember our son Aiden by giving these rocks a new adventure.</p>
+<p>With love,<br>The Aiden's Rocks Family</p>$html$),
+
+  (6, 'send-email-default', 'Send Email (default)',
+   '',
+   '')
+) AS t(ord, slug, label, subject, body)
+ON CONFLICT (page_slug) DO NOTHING;
+
+-- Account pages (Sign In / Create an Account / Reset Password). Copied from data/sql/migrations/add_account_pages.sql.
+INSERT INTO public.page_content
+  (page_slug, nav_label, order_num, visible, draft_body, published_body, draft_email_subject, published_email_subject)
+SELECT t.slug, t.label,
+       (SELECT COALESCE(MAX(order_num), 0) FROM public.page_content) + t.ord,
+       true, t.body, t.body, t.title, t.title
+FROM (VALUES
+  (1, 'sign-in', 'Sign In', 'Sign In',
+   $html$<p>Follow Aiden's rocks on their journeys.</p>$html$),
+  (2, 'create-account', 'Create an Account', 'Create an Account',
+   $html$<p>Follow rocks you care about and hear when they travel somewhere new.</p>$html$),
+  (3, 'reset-password', 'Reset Password', 'Reset Password',
+   $html$<p>Enter your email and we'll send you a link to choose a new password. This also unlocks a locked account.</p>$html$)
+) AS t(ord, slug, label, title, body)
+ON CONFLICT (page_slug) DO NOTHING;
 
 -- Honoring Aiden entries: one entry per nav item/page — title, auto-slug
 -- (see server/src/routes/honoringAidenAdmin.js), a visibility toggle
@@ -794,3 +903,59 @@ CREATE TABLE IF NOT EXISTS public.rock_requests (
 CREATE INDEX IF NOT EXISTS idx_rock_requests_shipped ON public.rock_requests (shipped);
 
 ALTER TABLE public.rock_requests OWNER TO postgres;
+-- account / account_token / account_follow: site sign-in accounts (visitors
+-- and admin), single-use email verification + password reset tokens, and
+-- the rocks each account follows -- see
+-- data/sql/migrations/add_account_tables.sql for the full rationale.
+
+CREATE TABLE IF NOT EXISTS public.account (
+    id                  serial PRIMARY KEY,
+    email               character varying(255) NOT NULL,
+    first_name          character varying(100),
+    last_name           character varying(100),
+    ra_key              integer REFERENCES public.artist(ra_key) ON DELETE SET NULL,
+    token_version       integer NOT NULL DEFAULT 0,
+    password_hash       character varying(255) NOT NULL,
+    access_level        smallint NOT NULL DEFAULT 10
+                        CHECK (access_level IN (10, 20, 30, 50)),
+    is_locked           boolean NOT NULL DEFAULT false,
+    failed_login_count  integer NOT NULL DEFAULT 0,
+    locked_dt           timestamptz,
+    email_verified_dt   timestamptz,
+    notify_rock_moves   boolean NOT NULL DEFAULT true,
+    last_login_dt       timestamptz,
+    last_seen_dt        timestamptz,
+    create_dt           timestamptz DEFAULT CURRENT_TIMESTAMP,
+    update_dt           timestamptz DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_account_email_lower ON public.account (lower(email));
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_account_ra_key ON public.account (ra_key) WHERE ra_key IS NOT NULL;
+
+ALTER TABLE public.account OWNER TO postgres;
+
+CREATE TABLE IF NOT EXISTS public.account_token (
+    id          serial PRIMARY KEY,
+    account_id  integer NOT NULL REFERENCES public.account(id) ON DELETE CASCADE,
+    token_hash  character(64) NOT NULL UNIQUE,
+    purpose     character varying(20) NOT NULL,   -- 'verify' | 'reset'
+    expires_dt  timestamptz NOT NULL,
+    used_dt     timestamptz,
+    create_dt   timestamptz DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_account_token_account_id ON public.account_token (account_id);
+
+ALTER TABLE public.account_token OWNER TO postgres;
+
+CREATE TABLE IF NOT EXISTS public.account_follow (
+    account_id   integer NOT NULL REFERENCES public.account(id) ON DELETE CASCADE,
+    rock_number  integer NOT NULL,
+    create_dt    timestamptz DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (account_id, rock_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_account_follow_rock_number ON public.account_follow (rock_number);
+
+ALTER TABLE public.account_follow OWNER TO postgres;

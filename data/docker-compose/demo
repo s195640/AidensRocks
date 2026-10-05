@@ -1,17 +1,17 @@
 SERVER_NODE=node1
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=OmegaA..1154
+POSTGRES_PASSWORD=
 POSTGRES_DB=aidensrocks
 DB_HOST=192.168.1.57
 DB_PORT=5432
 DB_USER=postgres
-DB_PASSWORD=OmegaA..1154
+DB_PASSWORD=
 DB_NAME=aidensrocks
 DB_IPS=192.168.1.57,192.168.1.47
 
 KEEPALIVED_INTERFACE=eth0                   # Proxmox host interface
 KEEPALIVED_PRIORITY=101                     # Node1 = 101 (primary), Node2 = 100 (secondary)
-KEEPALIVED_PASSWORD=secret123               # VRRP authentication password
+KEEPALIVED_PASSWORD=
 KEEPALIVED_VIRTUAL_IPS=192.168.1.40/24
 KEEPALIVED_UNICAST_PEERS="#PYTHON2BASH:['192.168.1.47']" #IP address of other node
 KEEPALIVED_STATE=MASTER                     # Node1 = MASTER, Node2 = BACKUP
@@ -24,22 +24,27 @@ BACKUP_INTERVAL=6
 BACKUP_OFFSET=0
 
 #Cloudflare (dns thing)
-CLOUDFLARE_API_TOKEN=_92Y5n8vMScmf6EArIG7sbiAZfVfpFcSGOpaI24u
+CLOUDFLARE_API_TOKEN=
 DOMAINS=aidensrocks.com,www.aidensrocks.com
 PROXIED=false
 UPDATE_INTERVAL=30
 QUIET=1
 IP6_PROVIDER=none
 
-# Admin auth (server/src/routes/auth.js + middleware/requireAdminAuth.js)
+# Account auth (server/src/routes/auth.js + middleware/requireAuth.js).
+# The admin signs in with a DB account (create it with `npm run create-admin`
+# in server/) -- ADMIN_USERNAME/ADMIN_PASSWORD are no longer used.
 # Generate your own JWT_SECRET per deployment, e.g.:
 #   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 # Must be identical across every node in the cluster.
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=1154
 JWT_SECRET=change-me-generate-a-random-hex-string
-JWT_EXPIRES_IN=12h
+JWT_EXPIRES_IN=90d
+# Public base URL used for links in account emails (verify / reset / rock moved).
+PUBLIC_SITE_URL=https://example.com
 
 # Outbound email (server/src/utils/sendEmail.js) — Gmail account + app password.
-EMAIL_USER=AidensRocks.AAA@gmail.com
-EMAIL_PASSWORD=qeilhnkjcqfnsepg
+EMAIL_USER=
+EMAIL_PASSWORD=
+
+# Reverse geocoding for Journey admin (country/state) -- opencagedata.com key.
+OPENCAGE_API_KEY=

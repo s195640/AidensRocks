@@ -118,3 +118,7 @@
     margin-left: 8px;
   }
 }
+.loadError {
+  text-align: center;
+  padding: 2rem 1rem;
+}

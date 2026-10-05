@@ -136,7 +136,7 @@ const RockCollection = ({ path, imagenames, date, location, comment, journeyNumb
       {/* Comment dialog */}
       {isCommentOpen && (
         <div
-          className="dialog-overlay"
+          className="rock-collection-overlay"
           onClick={() => setIsCommentOpen(false)}
           role="dialog"
           aria-modal="true"
@@ -161,7 +161,7 @@ const RockCollection = ({ path, imagenames, date, location, comment, journeyNumb
       {/* Location dialog */}
       {isLocationOpen && (
         <div
-          className="dialog-overlay"
+          className="rock-collection-overlay"
           onClick={() => setIsLocationOpen(false)}
           role="dialog"
           aria-modal="true"

@@ -1,5 +1,6 @@
 const express = require('express');
 const pool = require('../db/pool');
+const safeRollback = require('../utils/db/safeRollback');
 const NodeGeocoder = require("node-geocoder");
 const fs = require("fs");
 const path = require('path');
@@ -15,10 +16,12 @@ const requireAdminAuth = require('../middleware/requireAdminAuth');
 const router = express.Router();
 router.use(requireAdminAuth);
 
-const geocoder = NodeGeocoder({
-  provider: "opencage",
-  apiKey: "18b5ecfa7dbb4fbea8107dc52069ee3c", // your API key
-});
+// OPENCAGE_API_KEY comes from .env (it used to be hard-coded here, i.e. in
+// git). Without one, saving a journey still works -- country/state just
+// aren't looked up (they keep their current values).
+const geocoder = process.env.OPENCAGE_API_KEY
+  ? NodeGeocoder({ provider: "opencage", apiKey: process.env.OPENCAGE_API_KEY })
+  : null;
 
 const accessAsync = fs.promises.access;
 const mkdirAsync = fs.promises.mkdir;
@@ -94,22 +97,44 @@ router.post("/:rps_key/toggle-show", async (req, res) => {
   }
 });
 
-// DELETE /api/journey/:rps_key
+// DELETE /api/journey/:rps_key -- the journey, its image + tracking rows
+// (no FKs to cascade) and its media folder. Used to delete only the
+// journey row, leaving orphaned rows and files behind.
 router.delete("/:rps_key", async (req, res) => {
   const { rps_key } = req.params;
+  let client;
 
   try {
-    const deleteQuery = `DELETE FROM journey WHERE rps_key = $1 RETURNING rps_key`;
-    const { rows } = await pool.query(deleteQuery, [rps_key]);
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const { rows } = await client.query(
+      `DELETE FROM journey WHERE rps_key = $1 RETURNING rps_key, rock_number, uuid`,
+      [rps_key]
+    );
 
     if (rows.length === 0) {
+      await client.query("ROLLBACK");
       return res.status(404).json({ error: "Post not found" });
+    }
+
+    await client.query("DELETE FROM journey_image WHERE rps_key = $1", [rps_key]);
+    await client.query("DELETE FROM journey_tracking WHERE rps_key = $1", [rps_key]);
+    await client.query("COMMIT");
+
+    const { rock_number, uuid } = rows[0];
+    if (uuid) {
+      await fs.promises
+        .rm(path.join("media", "rocks", String(rock_number), uuid), { recursive: true, force: true })
+        .catch((fsErr) => console.error(`⚠️ Couldn't remove media for rps_key=${rps_key}:`, fsErr));
     }
 
     res.json({ message: "Post deleted", rps_key });
   } catch (err) {
+    await safeRollback(client);
     console.error(`DELETE /api/journey/${rps_key} error:`, err);
     res.status(500).json({ error: "Internal server error" });
+  } finally {
+    if (client) client.release();
   }
 });
 
@@ -288,7 +313,7 @@ router.put("/:rps_key", async (req, res) => {
     const uuid = oldRes.rows[0].uuid; // assuming `uuid` is stored in `journey`
 
     // ✅ 2. Reverse geocode (optional)
-    if (latitude && longitude) {
+    if (geocoder && latitude && longitude) {
       try {
         const geoRes = await geocoder.reverse({ lat: latitude, lon: longitude });
         if (geoRes && geoRes.length > 0) {
@@ -300,7 +325,30 @@ router.put("/:rps_key", async (req, res) => {
       }
     }
 
-    // ✅ 3. Perform DB update
+    // ✅ 3. If rock_number changed, move the directory first (string
+    // compare: the column is an int, the body value a string, so `!==`
+    // used to "move" on every save). A failed move stops the save, rather
+    // than updating the row to point at a folder that isn't there.
+    const rockNumberChanged = String(oldRockNumber) !== String(rock_number);
+    const oldDir = path.join("media", "rocks", String(oldRockNumber), String(uuid));
+    const newDir = path.join("media", "rocks", String(rock_number), String(uuid));
+    let moved = false;
+    if (rockNumberChanged && uuid && fs.existsSync(oldDir)) {
+      try {
+        await mkdirAsync(path.dirname(newDir), { recursive: true });
+        await renameAsync(oldDir, newDir);
+        moved = true;
+        console.log(`Moved directory from ${oldDir} → ${newDir}`);
+      } catch (fsErr) {
+        console.error(`⚠️ Failed to move directory for rps_key=${rps_key}:`, fsErr);
+        return res.status(500).json({ error: "Couldn't move this journey's photos to the new rock number." });
+      }
+    }
+
+    // ✅ 4. Perform DB update (moving the folder back if it fails)
+    const moveBack = async () => {
+      if (moved) await renameAsync(newDir, oldDir).catch(() => {});
+    };
     const result = await pool.query(
       `UPDATE journey
        SET rock_number = $1,
@@ -331,32 +379,14 @@ router.put("/:rps_key", async (req, res) => {
         state,
         rps_key,
       ]
-    );
+    ).catch(async (dbErr) => {
+      await moveBack();
+      throw dbErr;
+    });
 
     if (result.rowCount === 0) {
+      await moveBack();
       return res.status(404).json({ error: "Post not found" });
-    }
-
-    // ✅ 4. If rock_number changed, move the directory
-    if (oldRockNumber !== rock_number) {
-      const oldDir = path.join("media", "rocks", String(oldRockNumber), uuid);
-      const newDir = path.join("media", "rocks", String(rock_number), uuid);
-
-      try {
-        // Ensure parent directory exists
-        const newParentDir = path.dirname(newDir);
-        try {
-          await accessAsync(newParentDir, fs.constants.F_OK);
-        } catch {
-          await mkdirAsync(newParentDir, { recursive: true });
-        }
-
-        // Move the folder
-        await renameAsync(oldDir, newDir);
-        console.log(`Moved directory from ${oldDir} → ${newDir}`);
-      } catch (fsErr) {
-        console.error(`⚠️ Failed to move directory for rps_key=${rps_key}:`, fsErr);
-      }
     }
 
     res.json(result.rows[0]);

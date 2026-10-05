@@ -1,0 +1,173 @@
+/* Shared styles for the sign in / sign up / verify / reset pages, based on
+   the original admin Login card. */
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 80px);
+  padding: 80px 16px 2rem;
+  box-sizing: border-box;
+  background: linear-gradient(to right, #6eb7d8, #4a90e2);
+}
+
+.card {
+  background-color: white;
+  padding: 2rem 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 400px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.card h2 {
+  margin: 0 0 0.5rem;
+  color: #333;
+}
+
+.subtitle {
+  margin: 0 0 1.25rem;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem;
+  margin: 0.5rem 0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.button {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  background-color: #6eb7d8;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.button:hover:not(:disabled) {
+  background-color: #589fbe;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  margin: 0.75rem 0 0;
+  color: #c0392b;
+  font-size: 0.95rem;
+}
+
+.success {
+  margin: 0.75rem 0 0;
+  color: #2e7d32;
+  font-size: 0.95rem;
+}
+
+.links {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.links a,
+.linkButton {
+  color: #4a90e2;
+  text-decoration: none;
+}
+
+.linkButton {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.links a:hover {
+  text-decoration: underline;
+}
+
+.rules {
+  list-style: none;
+  padding: 0;
+  margin: 0.25rem 0 0.5rem;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.rules li {
+  color: #999;
+}
+
+.rules li::before {
+  content: "○ ";
+}
+
+.rules li.met {
+  color: #2e7d32;
+}
+
+.rules li.met::before {
+  content: "✓ ";
+}
+
+/* Description from Page Details renders as rich text (<p>s) inside .subtitle. */
+.subtitle p {
+  margin: 0 0 0.5rem;
+}
+
+.subtitle p:last-child {
+  margin-bottom: 0;
+}
+
+.nameRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.nameRow .input {
+  min-width: 0;
+}
+
+/* Password field with a show/hide eye button inside its right edge. */
+.passwordWrap {
+  position: relative;
+}
+
+.passwordInput {
+  padding-right: 2.75rem;
+}
+
+.eyeButton {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0.35rem;
+  line-height: 0;
+  font-size: 1.05rem;
+  color: #888;
+  cursor: pointer;
+}
+
+.eyeButton:hover {
+  color: #4a90e2;
+}

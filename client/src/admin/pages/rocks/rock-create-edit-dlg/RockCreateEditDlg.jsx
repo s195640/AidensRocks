@@ -121,7 +121,9 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
   useEffect(() => {
     if (!selectedRock) return;
     setRockNumber(selectedRock.rock_number || "");
-    setSelectedArtistKeys(selectedRock.artists.map((a) => a.ra_key) || []);
+    // A rock with no artist comes back as [{ ra_key: null }] (LEFT JOIN) --
+    // keeping that null made every save fail.
+    setSelectedArtistKeys((selectedRock.artists || []).map((a) => a.ra_key).filter((k) => k != null));
     setComment(selectedRock.comment || "");
     setImageFile(null);
     setError("");

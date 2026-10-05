@@ -1,120 +1,85 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import RichText from "../../../../adminContent/RichText";
-import applyTemplateValues from "../../../../adminContent/applyTemplateValues";
+import EMAIL_TEMPLATES from "../../../../adminContent/emailTemplates";
 import styles from "./EmailPreview.module.css";
 
 // Standalone admin-only route (not part of the public nav) opened via
 // PagesAdmin's "Preview" button for email-template rows (see emailSlugs.js),
 // and also by the "Send Emails - Catch-up" job (SendEmailsCatchup.jsx) for a
-// specific pending recipient. Reuses the same admin preview endpoint as real
-// pages (draft_body, here alongside draft_email_subject) so it always
-// reflects unsaved-but-draft content, just rendered inside an email-styled
-// mockup instead of the site.
+// specific pending recipient. Shows the *draft* subject/body inside an
+// email-styled mockup.
 //
-// {ROCK_NUMBER} etc. are substituted live, client-side, as the value is
-// typed — leaving a field blank shows the raw placeholder text, same as
-// what an unfilled value looks like if actually sent. Add more fields here
-// (and to `values` below) alongside SendEmailDialog.jsx as more
-// placeholders get introduced.
+// Rendering happens server-side (POST /api/admin/pages/:slug/render) with
+// the same code that really sends the email (server/src/utils/
+// emailTemplates.js), re-rendered as values are typed. The inputs are the
+// template's `fields` (adminContent/emailTemplates.js); a blank field
+// leaves its raw {PLACEHOLDER} text, same as an unfilled value if sent.
 //
-// `rock`/`rocks`/`to` query params seed the rock number field(s) and the
-// displayed recipient -- used by SendEmailsCatchup.jsx to open this already
-// populated instead of requiring the numbers to be re-typed. Plain
-// PagesAdmin "Preview" links omit them and get the same blank fields as
-// before. The fields stay editable either way.
-const MULTI_SLUG = "response-email-multi";
+// A field's `query` param (`rock`/`rocks`) plus `to` pre-fill the inputs
+// and displayed recipient — used by SendEmailsCatchup.jsx. The fields stay
+// editable either way.
+const RENDER_DEBOUNCE_MS = 300;
+
 const EmailPreview = () => {
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
-  const [data, setData] = useState(null);
+  const fields = useMemo(() => EMAIL_TEMPLATES[slug]?.fields || [], [slug]);
+  const [inputs, setInputs] = useState(() =>
+    Object.fromEntries(
+      fields.filter((f) => f.query).map((f) => [f.key, searchParams.get(f.query) || ""])
+    )
+  );
+  const [rendered, setRendered] = useState(null);
   const [error, setError] = useState(false);
-  const [rockNumber, setRockNumber] = useState(searchParams.get("rock") || "");
-  const [rockNumbers, setRockNumbers] = useState(searchParams.get("rocks") || "");
   const to = searchParams.get("to") || "";
-  const isMulti = slug === MULTI_SLUG;
 
   useEffect(() => {
-    axios
-      .get(`/api/admin/pages/${slug}/preview`)
-      .then((res) => setData(res.data))
-      .catch((err) => {
-        console.error("Failed to load email preview:", err);
-        setError(true);
-      });
-  }, [slug]);
-
-  if (error) return <div className={styles.wrapper}>Failed to load preview.</div>;
-  if (!data) return <div className={styles.wrapper}>Loading preview...</div>;
-
-  // Mirrors the same {ROCK_IMAGE}/{ROCK_IMAGES}/{ROCK_NUMBERS_WITH_LINKS}
-  // construction as the server's POST /:slug/send (routes/pagesAdmin.js),
-  // so what's previewed here matches what actually gets sent.
-  const rockNum = parseInt(rockNumber, 10);
-  const parsedRockNumbers = rockNumbers
-    .split(/[,\s]+/)
-    .map((n) => parseInt(n, 10))
-    .filter((n) => n > 0);
-  let values = {};
-  if (isMulti) {
-    if (parsedRockNumbers.length > 0) {
-      values = {
-        ROCK_NUMBERS: parsedRockNumbers.join(", "),
-        ROCK_IMAGES: parsedRockNumbers
-          .map(
-            (n) =>
-              `<div style="display:inline-block;margin:4px;"><img src="https://aidensrocks.com/media/catalog/${n}/a.webp" alt="Rock ${n}" style="max-width:100%;border-radius:8px;" /></div>`
-          )
-          .join(""),
-        ROCK_NUMBERS_WITH_LINKS: parsedRockNumbers
-          .map((n) => `<a href="https://aidensrocks.com/track-the-rocks?rock=${n}">${n}</a>`)
-          .join(", "),
-      };
+    const values = {};
+    for (const f of fields) {
+      const v = (inputs[f.key] || "").trim();
+      if (v) values[f.key] = v;
     }
-  } else if (rockNum > 0) {
-    values = {
-      ROCK_NUMBER: rockNum,
-      ROCK_IMAGE: `<img src="https://aidensrocks.com/media/catalog/${rockNum}/a.webp" alt="Rock ${rockNum}" style="max-width:100%;border-radius:8px;" />`,
-    };
-  }
-  const subject = applyTemplateValues(data.email_subject, values);
-  const body = applyTemplateValues(data.body, values);
+    const timer = setTimeout(() => {
+      axios
+        .post(`/api/admin/pages/${slug}/render`, { values })
+        .then((res) => {
+          setRendered(res.data);
+          setError(false);
+        })
+        .catch((err) => {
+          console.error("Failed to render email preview:", err);
+          setError(true);
+        });
+    }, rendered ? RENDER_DEBOUNCE_MS : 0);
+    return () => clearTimeout(timer);
+    // `rendered` only picks the first-load delay; re-rendering on it would loop.
+  }, [slug, fields, inputs]);
+
+  if (error && !rendered) return <div className={styles.wrapper}>Failed to load preview.</div>;
+  if (!rendered) return <div className={styles.wrapper}>Loading preview...</div>;
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.previewControls}>
-        {isMulti ? (
-          <>
-            <label htmlFor="preview-rock-numbers">
-              Rock numbers (fills in <code>{"{ROCK_NUMBERS}"}</code> and{" "}
-              <code>{"{ROCK_IMAGES}"}</code>)
+      {fields.length > 0 && (
+        <div className={styles.previewControls}>
+          {fields.map((f) => (
+            <label key={f.key} className={styles.fieldLabel}>
+              <span>
+                {f.label} (<code>{`{${f.key}}`}</code>)
+              </span>
+              <input
+                type={f.type || "text"}
+                min={f.type === "number" ? "1" : undefined}
+                value={inputs[f.key] || ""}
+                onChange={(e) => setInputs((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                placeholder={f.placeholder}
+              />
             </label>
-            <input
-              id="preview-rock-numbers"
-              type="text"
-              value={rockNumbers}
-              onChange={(e) => setRockNumbers(e.target.value)}
-              placeholder="123, 124, 125"
-            />
-          </>
-        ) : (
-          <>
-            <label htmlFor="preview-rock-number">
-              Rock number (fills in <code>{"{ROCK_NUMBER}"}</code> and{" "}
-              <code>{"{ROCK_IMAGE}"}</code>)
-            </label>
-            <input
-              id="preview-rock-number"
-              type="number"
-              min="1"
-              value={rockNumber}
-              onChange={(e) => setRockNumber(e.target.value)}
-              placeholder="123"
-            />
-          </>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className={styles.emailCard}>
         <div className={styles.emailHeader}>
@@ -129,11 +94,11 @@ const EmailPreview = () => {
           )}
           <div>
             <span className={styles.headerLabel}>Subject:</span>{" "}
-            {subject || <em>(no subject)</em>}
+            {rendered.subject || <em>(no subject)</em>}
           </div>
         </div>
         <div className={styles.emailBody}>
-          <RichText html={body} />
+          <RichText html={rendered.html} />
         </div>
       </div>
     </div>

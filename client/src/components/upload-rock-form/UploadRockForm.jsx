@@ -5,6 +5,7 @@ import "./UploadRockForm.css";
 import { FaFacebookSquare } from "react-icons/fa";
 import heic2any from "heic2any";
 import ContactReqestRocks from "../contact-request-rocks/ContactReqestRocks";
+import { todayLocal } from "../../utils/localDate";
 
 // Cloudflare (prod host) hard-caps request bodies at 100MB, so anything
 // bigger has to be staged client-side in chunks before the rock post itself
@@ -22,7 +23,7 @@ export default function UploadRockForm({ onClose }) {
   );
   const [location, setLocation] = useState("");
   const [date, setDate] = useState(
-    () => new Date().toISOString().split("T")[0]
+    () => todayLocal()
   );
   const [comment, setComment] = useState("");
   const [images, setImages] = useState([]);
@@ -252,7 +253,7 @@ export default function UploadRockForm({ onClose }) {
       // Reset form fields after success
       setRockNumber("");
       setLocation("");
-      setDate(new Date().toISOString().split("T")[0]);
+      setDate(todayLocal());
       setComment("");
       setImages([]);
       setName("");
@@ -468,16 +469,16 @@ export default function UploadRockForm({ onClose }) {
       </div>
       {/* Submit Success/Error Dialog */}
       {dialog && (
-        <div className="dialog-overlay" role="alertdialog" aria-modal="true">
-          <div className="dialog-box">
-            <h3 className="dialog-title" style={{ textAlign: "center" }}>
+        <div className="upload-result-overlay" role="alertdialog" aria-modal="true">
+          <div className="upload-result-box">
+            <h3 className="upload-result-title" style={{ textAlign: "center" }}>
               {dialog.type === "success" ? "Thank You!" : "Submit Failed"}
             </h3>
-            <div className="dialog-message">{dialog.message}</div>
+            <div className="upload-result-message">{dialog.message}</div>
             <button
               type="button"
               onClick={closeDialog}
-              className="dialog-close-btn"
+              className="upload-result-close-btn"
               autoFocus
             >
               Close

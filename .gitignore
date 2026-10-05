@@ -6,3 +6,8 @@ temp_uploads/
 **/package-lock.json
 **/test_instance/
 /db/
+server/tests/.tmp/
+client/test-results/
+client/playwright-report/
+client/e2e/.auth/
+client/dist-e2e/

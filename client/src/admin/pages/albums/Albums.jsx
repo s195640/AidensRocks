@@ -28,7 +28,7 @@ const Albums = () => {
   const fetchAlbums = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("/api/albums");
+      const res = await axios.get("/api/albums?includeHidden=1");
       setAlbums(res.data);
     } catch (err) {
       console.error("Failed to fetch albums:", err);
@@ -54,7 +54,7 @@ const Albums = () => {
 
   const handleEdit = async (album) => {
     try {
-      const res = await axios.get(`/api/albums/${album.pa_key}/photos`);
+      const res = await axios.get(`/api/albums/${album.pa_key}/photos?includeHidden=1`);
       setEditingAlbum(album);
       setEditingPhotos(res.data);
     } catch (err) {
@@ -126,7 +126,7 @@ const Albums = () => {
   };
 
   const openImagesLightbox = async (album, index = 0) => {
-    const res = await axios.get(`/api/albums/${album.pa_key}/photos`);
+    const res = await axios.get(`/api/albums/${album.pa_key}/photos?includeHidden=1`);
     setImagesLightbox(
       res.data.map((i) => {
         const posterSrc = `/media/albums/${album.name}/webp/${i.name}`;

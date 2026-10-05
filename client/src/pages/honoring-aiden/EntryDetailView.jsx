@@ -124,6 +124,7 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
   const [entry, setEntry] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("edit");
   const [mobileWidth, setMobileWidth] = useState(MOBILE_WIDTH_DEFAULT);
@@ -177,9 +178,15 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
   const [dirty, setDirty] = useState(false);
   const { registerGuard, guardNavigate } = useUnsavedChangesGuard();
 
+  // Each load gets an id; only the newest one may write state, so clicking
+  // quickly through the sidebar can't land a slow earlier response on top
+  // of the entry actually selected.
+  const loadSeq = useRef(0);
   const load = useCallback(() => {
+    const seq = ++loadSeq.current;
     setLoading(true);
     setNotFound(false);
+    setLoadFailed(false);
     setError("");
 
     const request = isAdmin
@@ -188,18 +195,23 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
 
     return request
       .then((data) => {
+        if (seq !== loadSeq.current) return;
         setEntry(data);
         if (!isAdmin) recordViewOnce(slug);
       })
       .catch((err) => {
+        if (seq !== loadSeq.current) return;
         if (err.response?.status === 404) {
           setNotFound(true);
         } else {
           console.error(`Failed to load honoring-aiden entry "${slug}":`, err);
+          setLoadFailed(true);
         }
         setEntry(null);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (seq === loadSeq.current) setLoading(false);
+      });
   }, [slug, isAdmin]);
 
   useEffect(() => {
@@ -221,16 +233,12 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
   // Shared save primitive — throws on failure (unlike handleSaveContent
   // below), so the unsaved-changes guard's own dialog can catch it, show its
   // own error, and keep itself open rather than navigating away on a failed
-  // save. Resubmits title/published unchanged alongside the edited
-  // body_json, same full-replace PUT every other admin action on this entry
-  // uses (see honoringAidenAdminApi.js's own comment).
+  // save. Sends body_json only (see honoringAidenAdminApi.js's own comment).
   const saveContent = useCallback(
     async (content) => {
-      const saved = await honoringAidenAdminApi.updateEntry(entry.id, {
-        title: entry.title,
-        published: entry.published,
-        body_json: content,
-      });
+      // Only the field this view changed -- PUT is a partial update, so a
+      // title renamed from the sidebar since this entry loaded isn't reverted.
+      const saved = await honoringAidenAdminApi.updateEntry(entry.id, { body_json: content });
       setEntry(saved);
       setDirty(false);
       setError("");
@@ -296,11 +304,7 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
   // actually saved.
   const handleToggleActive = async (nextActive) => {
     try {
-      const saved = await honoringAidenAdminApi.updateEntry(entry.id, {
-        title: entry.title,
-        published: nextActive,
-        body_json: entry.body_json,
-      });
+      const saved = await honoringAidenAdminApi.updateEntry(entry.id, { published: nextActive });
       setEntry(saved);
       setError("");
       onEntryChanged?.();
@@ -367,6 +371,15 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
   // unmount/remount this tree, losing the editor's own internal state,
   // mid-edit.
   if (loading && !entry) return null;
+
+  if (loadFailed) {
+    return (
+      <p>
+        This page couldn&apos;t be loaded right now.{" "}
+        <button type="button" onClick={load}>Try again</button>
+      </p>
+    );
+  }
 
   if (notFound || !entry) {
     return <p>This page couldn&apos;t be found.</p>;

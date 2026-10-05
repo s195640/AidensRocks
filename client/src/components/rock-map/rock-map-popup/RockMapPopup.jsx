@@ -8,51 +8,52 @@ export default function RockMapPopup({ rockNumber }) {
   const [progress, setProgress] = useState(0);
   const [groupedRocks, setGroupedRocks] = useState([]);
 
+  // One fetch per rock. This effect used to depend on `loading` too, so
+  // finishing the fetch (loading -> false) fired a second identical request;
+  // `cancelled` drops a late response for a rock no longer shown.
   useEffect(() => {
-    let timer;
+    let cancelled = false;
+    setLoading(true);
+    setProgress(0);
 
     // fake progress bar animation
-    if (loading) {
-      timer = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 90) return prev; // stop at 90% until axios completes
-          return prev + 10;
-        });
-      }, 200);
-    }
+    const timer = setInterval(() => {
+      setProgress((prev) => (prev >= 90 ? prev : prev + 10)); // hold at 90% until axios completes
+    }, 200);
 
     const fetchData = async () => {
       try {
         const res = await axios.get(`/api/rock-posts/${rockNumber}`);
-        const data = res.data;
+        if (cancelled) return;
         const grouped = new Map();
-        data.forEach((entry) => {
+        res.data.forEach((entry) => {
           if (!grouped.get(entry.rock_number)) {
             grouped.set(entry.rock_number, []);
           }
-          grouped
-            .get(entry.rock_number)
-            .push({
-              ...entry,
-              path: `/media/rocks/${entry.rock_number}/${entry.uuid}`,
-            });
+          grouped.get(entry.rock_number).push({
+            ...entry,
+            path: `/media/rocks/${entry.rock_number}/${entry.uuid}`,
+          });
         });
-        setGroupedRocks(
-          Array.from(grouped).map(([key, value]) => ({ key, value }))
-        );
+        setGroupedRocks(Array.from(grouped).map(([key, value]) => ({ key, value })));
       } catch (err) {
         console.error("Error fetching rock data:", err);
       } finally {
         clearInterval(timer);
-        setProgress(100);
-        setLoading(false);
+        if (!cancelled) {
+          setProgress(100);
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
 
-    return () => clearInterval(timer);
-  }, [rockNumber, loading]);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [rockNumber]);
 
   return (
     <div className={styles.popup}>

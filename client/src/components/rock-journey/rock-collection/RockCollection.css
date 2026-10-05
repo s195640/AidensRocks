@@ -127,7 +127,7 @@
   box-sizing: border-box;
 }
 
-.dialog-overlay {
+.rock-collection-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -137,7 +137,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2000; /* modal tier: above the navbar (~1100), see CLAUDE.md */
   padding: 10px;
   box-sizing: border-box;
 }

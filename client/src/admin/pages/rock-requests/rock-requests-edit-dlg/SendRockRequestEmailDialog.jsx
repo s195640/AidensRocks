@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import authFetch from "../../../utils/authFetch";
+import loadDefaultEmail from "../../../../adminContent/loadDefaultEmail";
 import styles from "./SendRockRequestEmailDialog.module.css";
 
 const buildDefaultSubject = () => "Your Aiden's Rocks Are On The Way!";
@@ -28,8 +29,18 @@ const SendRockRequestEmailDialog = ({ request, isOpen, onClose, onSent }) => {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
 
+  // Prefill once per open (and when a different request is opened) -- not
+  // on every new `request` object. The parent rebuilds that object on each
+  // render (e.g. its "Saved" indicator clearing), which used to throw away
+  // whatever the admin had typed here.
+  const requestRef = useRef(request);
+  requestRef.current = request;
+  const rqKey = request?.rq_key;
+
   useEffect(() => {
     if (!isOpen) return;
+    const request = requestRef.current;
+    let cancelled = false;
     setSubject(buildDefaultSubject());
     setBody(buildDefaultBody(request));
     // Only default the checkbox on for a request that isn't shipped yet --
@@ -37,7 +48,22 @@ const SendRockRequestEmailDialog = ({ request, isOpen, onClose, onSent }) => {
     // confusing no-op nobody asked for.
     setMarkShipped(!request.shipped);
     setError("");
-  }, [isOpen, request]);
+
+    // The editable default lives in Page Details ("Rock Request Reply
+    // (default)"); the built-in text above stays if it's missing/inactive.
+    loadDefaultEmail("rock-request-reply-email", {
+      NAME: request.name || "",
+      ROCK_NUMBERS: request.rock_numbers || "not assigned yet",
+      TRACKING_NUMBER: request.tracking_number || "not available yet",
+    }).then((tpl) => {
+      if (cancelled || !tpl) return;
+      setSubject(tpl.subject);
+      setBody(tpl.body);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, rqKey]);
 
   const handleSend = async () => {
     if (!subject.trim() || !body.trim()) return;

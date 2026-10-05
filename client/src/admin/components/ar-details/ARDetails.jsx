@@ -61,7 +61,6 @@ const ARDetails = () => {
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Age</th>
                   <th>Rocks</th>
                 </tr>
               </thead>
@@ -69,7 +68,6 @@ const ARDetails = () => {
                 {details.artistsTable.map((a, idx) => (
                   <tr key={idx}>
                     <td>{a.name}</td>
-                    <td>{a.age ?? "—"}</td>
                     <td>{a.rocks}</td>
                   </tr>
                 ))}

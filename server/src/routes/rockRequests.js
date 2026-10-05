@@ -1,7 +1,11 @@
 const express = require('express');
 const pool = require('../db/pool');
+const safeRollback = require('../utils/db/safeRollback');
 const requireAdminAuth = require('../middleware/requireAdminAuth');
 const sendEmail = require('../utils/sendEmail');
+const { renderEmailTemplate } = require('../utils/emailTemplates');
+const { normalizeEmail, isValidEmail } = require('../utils/auth/password');
+const { publicFormLimiter } = require('../middleware/publicFormLimiter');
 
 const router = express.Router();
 
@@ -9,11 +13,18 @@ const router = express.Router();
 // below, so both paths validate/insert identically. Throws an Error with a
 // `.status` (400) for bad input; callers translate that into the response.
 async function insertRockRequest({ name, email, address, rocksRequested, message }) {
-  const trimmedName = (name || '').trim();
-  const trimmedEmail = (email || '').trim();
-  const trimmedAddress = (address || '').trim();
+  const str = (v) => (v == null ? '' : String(v)).trim();
+  const trimmedName = str(name);
+  const trimmedEmail = normalizeEmail(str(email));
+  const trimmedAddress = str(address);
   const parsedRocksRequested = parseInt(rocksRequested, 10);
-  const trimmedMessage = (message || '').trim();
+  const trimmedMessage = str(message);
+
+  const bad = (msg) => {
+    const err = new Error(msg);
+    err.status = 400;
+    return err;
+  };
 
   if (
     !trimmedName ||
@@ -22,10 +33,14 @@ async function insertRockRequest({ name, email, address, rocksRequested, message
     !Number.isInteger(parsedRocksRequested) ||
     parsedRocksRequested < 1
   ) {
-    const err = new Error('Name, email, address, and a valid number of rocks are required.');
-    err.status = 400;
-    throw err;
+    throw bad('Name, email, address, and a valid number of rocks are required.');
   }
+  // Column limits (name/email varchar 255) used to surface as a 500.
+  if (trimmedName.length > 255) throw bad('Name is too long.');
+  if (!isValidEmail(trimmedEmail)) throw bad('Please enter a valid email address.');
+  if (trimmedAddress.length > 2000) throw bad('Address is too long.');
+  if (trimmedMessage.length > 5000) throw bad('Message is too long.');
+  if (parsedRocksRequested > 100) throw bad('Please request 100 rocks or fewer.');
 
   const { rows } = await pool.query(
     `INSERT INTO rock_requests (name, email, address, rocks_requested, message)
@@ -48,7 +63,7 @@ async function insertRockRequest({ name, email, address, rocksRequested, message
 // the admin auth gate below so it is reachable unauthenticated; a GET or
 // PUT request doesn't match this POST '/' route (method mismatch) and
 // falls through to requireAdminAuth instead.
-router.post('/', async (req, res) => {
+router.post('/', publicFormLimiter, async (req, res) => {
   let inserted;
   try {
     inserted = await insertRockRequest(req.body);
@@ -64,32 +79,27 @@ router.post('/', async (req, res) => {
   res.status(201).json({ rq_key, info: 'Request received' });
 
   // Fire-and-forget: a failed notification email should never turn an
-  // already-saved request into a user-facing failure -- just log it.
-  sendEmail({
-    to: 'AidensRocks.AAA@gmail.com',
-    subject: `New Rock Request from ${name}`,
-    text: `A new rock request has been submitted.
-
-Name: ${name}
-Email: ${email}
-Address: ${address}
-Rocks Requested: ${rocksRequested}
-${message ? `Message: ${message}\n` : ''}`,
-    html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
-          <h2 style="color: #4CAF50;">New Rock Request</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Address:</strong><br/>${address.replace(/\n/g, '<br/>')}</p>
-          <p><strong>Rocks Requested:</strong> ${rocksRequested}</p>
-          ${message ? `<p><strong>Message:</strong><br/>${message.replace(/\n/g, '<br/>')}</p>` : ''}
-          <hr style="border: none; border-top: 1px solid #ccc;" />
-          <p style="font-size: 0.9em; color: #888;">This is an automated notification from Aidens Rocks.</p>
-        </div>
-      `,
-  }).catch((err) => {
-    console.error('Failed to send rock request notification email:', err);
-  });
+  // already-saved request into a user-facing failure -- just log it. Content
+  // is the "New Rock Request (to admin)" template in Page Details; its
+  // Active switch turns this notification off.
+  renderEmailTemplate('new-rock-request-email', {
+    NAME: name,
+    EMAIL: email,
+    ADDRESS: address,
+    ROCKS_REQUESTED: rocksRequested,
+    MESSAGE: message || '(none)',
+  })
+    .then((rendered) => {
+      if (!rendered || !rendered.visible) return;
+      return sendEmail({
+        to: 'AidensRocks.AAA@gmail.com',
+        subject: rendered.subject,
+        html: rendered.html,
+      });
+    })
+    .catch((err) => {
+      console.error('Failed to send rock request notification email:', err);
+    });
 });
 
 // Everything below this line is admin-only.
@@ -268,7 +278,7 @@ router.put('/:rq_key', async (req, res) => {
     await client.query('COMMIT');
     res.json(updateRes.rows[0]);
   } catch (err) {
-    if (client) await client.query('ROLLBACK');
+    await safeRollback(client);
     console.error(`PUT /api/rock-requests/${rq_key} error:`, err);
     res.status(500).json({ error: 'Internal server error' });
   } finally {

@@ -3,7 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { isPlainLeftClick, useUnsavedChangesGuard } from "../../context/UnsavedChangesContext.jsx";
 import styles from "./Navbar.module.css";
 
-const Navbar = ({ navItems }) => {
+// `account`: the signed-in account ({ firstName, ... }) or null when signed
+// out — drives the far-right sign-in heart icon / "Hello, <name>" + Sign out block.
+const Navbar = ({ navItems, account = null }) => {
   const [clicked, setClicked] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -78,8 +80,43 @@ const Navbar = ({ navItems }) => {
         ))}
       </ul>
 
-      <div ref={buttonRef} onClick={toggleMenu} className={styles.mobileToggle}>
-        <i className={clicked ? "fas fa-times" : "fas fa-bars"}></i>
+      <div className={styles.rightGroup}>
+        <div ref={buttonRef} onClick={toggleMenu} className={styles.mobileToggle}>
+          <i className={clicked ? "fas fa-times" : "fas fa-bars"}></i>
+        </div>
+
+        {/* Account block: its own spot at the far right (right of the ☰ on
+            phones), not a menu item. */}
+        <div className={styles.account}>
+          {account ? (
+            <>
+              <span className={styles.welcome}>
+                {account.firstName ? `Hello, ${account.firstName}` : "Hello!"}
+              </span>
+              <Link
+                to="/sign-out"
+                className={styles.signOutLink}
+                onClick={(e) => handleGuardedClick(e, "/sign-out")}
+              >
+                Sign out
+              </Link>
+            </>
+          ) : (
+            // A quiet icon rather than "Sign In" text, so signing in reads
+            // as optional (it's for following rocks), not required.
+            <Link
+              to="/login"
+              className={`${styles.signInLink} ${
+                location.pathname === "/login" ? styles.signInActive : ""
+              }`}
+              title="Follow rocks & get travel updates"
+              aria-label="Sign in to follow rocks"
+              onClick={(e) => handleGuardedClick(e, "/login")}
+            >
+              <i className="far fa-heart" aria-hidden="true"></i>
+            </Link>
+          )}
+        </div>
       </div>
     </nav>
   );

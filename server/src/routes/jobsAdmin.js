@@ -3,10 +3,7 @@ const router = express.Router();
 const db = require("../db/pool");
 const requireAdminAuth = require("../middleware/requireAdminAuth");
 const sendEmail = require("../utils/sendEmail");
-const applyTemplateValues = require("../utils/applyTemplateValues");
-const buildRockImageTag = require("../utils/buildRockImageTag");
-const buildRockImagesTag = require("../utils/buildRockImagesTag");
-const buildRockNumbersWithLinksTag = require("../utils/buildRockNumbersWithLinksTag");
+const { renderEmailTemplate } = require("../utils/emailTemplates");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -93,42 +90,24 @@ router.post("/send-emails-catchup/send", async (req, res) => {
   const isMulti = rockNumbers.length > 1;
   const slug = isMulti ? "response-email-multi" : "response-email";
 
-  const templateValues = isMulti
-    ? {
-        ROCK_NUMBERS: rockNumbers.join(", "),
-        ROCK_IMAGES: buildRockImagesTag(rockNumbers),
-        ROCK_NUMBERS_WITH_LINKS: buildRockNumbersWithLinksTag(rockNumbers),
-      }
-    : {
-        ROCK_NUMBER: rockNumbers[0],
-        ROCK_IMAGE: buildRockImageTag(rockNumbers[0]),
-      };
+  const rawValues = isMulti
+    ? { ROCK_NUMBERS: rockNumbers.join(", ") }
+    : { ROCK_NUMBER: rockNumbers[0] };
 
   try {
-    const templateRes = await db.query(
-      `SELECT published_body, published_email_subject, visible
-       FROM page_content
-       WHERE page_slug = $1`,
-      [slug]
-    );
+    const rendered = await renderEmailTemplate(slug, rawValues);
 
-    if (templateRes.rowCount === 0) {
+    if (!rendered) {
       return res.status(404).json({ error: "Email template not found." });
     }
 
-    const { published_body, published_email_subject, visible } = templateRes.rows[0];
-
-    if (!visible) {
+    if (!rendered.visible) {
       return res.status(400).json({
         error: `The "${isMulti ? "Response Email Multi" : "Response Email"}" template is Inactive -- activate it on Page Details before sending.`,
       });
     }
 
-    await sendEmail({
-      to: trimmedEmail,
-      subject: applyTemplateValues(published_email_subject, templateValues) || "(No subject)",
-      html: applyTemplateValues(published_body, templateValues),
-    });
+    await sendEmail({ to: trimmedEmail, subject: rendered.subject, html: rendered.html });
 
     // Case-insensitive match: GET /send-emails-catchup lowercases email for
     // grouping/display, so the row this came from may not be spelled the

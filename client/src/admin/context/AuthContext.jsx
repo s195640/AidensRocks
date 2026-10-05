@@ -1,7 +1,9 @@
 // src/context/AuthContext.jsx
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import axios from "axios";
-import { TOKEN_KEY } from "../utils/authToken";
+import { getStoredToken, setStoredToken } from "../utils/authToken";
+import { AUTH_UNAUTHORIZED_EVENT } from "../utils/authFetch";
+import { LEVELS } from "../utils/accessLevels";
 
 const AuthContext = createContext();
 
@@ -21,69 +23,105 @@ const applyAuthHeader = (token) => {
 // fires a descendant's effects before an ancestor's in the same commit — so
 // AuthProvider's effect could easily lose that race and the preview request
 // would go out with no Authorization header at all.
-applyAuthHeader(sessionStorage.getItem(TOKEN_KEY));
+applyAuthHeader(getStoredToken());
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // { id, email, accessLevel, notifyRockMoves } or null when signed out.
+  const [account, setAccount] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const clearSession = () => {
-    sessionStorage.removeItem(TOKEN_KEY);
+    setStoredToken(null);
     applyAuthHeader(null);
-    setIsAuthenticated(false);
+    setAccount(null);
   };
 
+  const refreshAccount = useCallback(async () => {
+    const { data } = await axios.get("/api/auth/me");
+    setAccount(data.account);
+    return data.account;
+  }, []);
+
   // Rehydrate on load (e.g. page refresh): the header is already attached
-  // (see above) — this just confirms the stored token is still valid.
+  // (see above) — this confirms the stored token is still valid and loads
+  // the account it belongs to.
   useEffect(() => {
-    const token = sessionStorage.getItem(TOKEN_KEY);
-    if (!token) {
+    if (!getStoredToken()) {
       setIsLoading(false);
       return;
     }
 
-    axios
-      .get("/api/auth/verify")
-      .then(() => setIsAuthenticated(true))
-      .catch(() => clearSession())
+    // Only a 401 means the token is no good. A network error or a 500
+    // while the server restarts used to throw away a 90-day sign-in too.
+    refreshAccount()
+      .catch((err) => {
+        if (err.response?.status === 401) clearSession();
+        else console.error("Couldn't confirm the sign-in:", err);
+      })
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [refreshAccount]);
 
-  // A token that expires/becomes invalid mid-session should log the admin
-  // out cleanly instead of leaving the UI half-authenticated.
+  // A token that expires/becomes invalid mid-session (or an account an
+  // admin just locked) should sign out cleanly instead of leaving the UI
+  // half-authenticated. 403 (signed in, but not allowed) does not sign out.
   useEffect(() => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 && getStoredToken()) {
           clearSession();
         }
         return Promise.reject(error);
       }
     );
-    return () => axios.interceptors.response.eject(interceptor);
+    // Same for admin calls made with authFetch (native fetch).
+    const onUnauthorized = () => {
+      if (getStoredToken()) clearSession();
+    };
+    window.addEventListener(AUTH_UNAUTHORIZED_EVENT, onUnauthorized);
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+      window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, onUnauthorized);
+    };
   }, []);
 
-  const login = async (username, password) => {
+  // Returns { ok: true } or { ok: false, code, message } — code is
+  // "UNVERIFIED" when the server says so (a locked account gets the same
+  // generic failure as a wrong password -- see routes/auth.js /login).
+  const login = async (email, password) => {
     try {
-      const { data } = await axios.post("/api/auth/login", {
-        username,
-        password,
-      });
-      sessionStorage.setItem(TOKEN_KEY, data.token);
+      const { data } = await axios.post("/api/auth/login", { email, password });
+      setStoredToken(data.token);
       applyAuthHeader(data.token);
-      setIsAuthenticated(true);
-      return true;
-    } catch {
-      return false;
+      setAccount(data.account);
+      return { ok: true, account: data.account };
+    } catch (err) {
+      return {
+        ok: false,
+        code: err.response?.data?.code,
+        message:
+          err.response?.data?.error || "Sign in failed. Please try again.",
+      };
     }
   };
 
   const logout = () => clearSession();
 
+  const accessLevel = account?.accessLevel ?? 0;
+
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, isLoading, login, logout }}
+      value={{
+        account,
+        setAccount,
+        isAuthenticated: !!account,
+        isUser: accessLevel >= LEVELS.USER,
+        isAdmin: accessLevel >= LEVELS.ADMIN,
+        isLoading,
+        login,
+        logout,
+        refreshAccount,
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -12,8 +12,13 @@ export default function Dialog({
 }) {
   const [visible, setVisible] = useState(isOpen);
 
+  // Escape + the body scroll lock only while open. A closed-but-mounted
+  // Dialog (e.g. the footer's lyrics dialog) used to reset
+  // body.style.overflow on mount, undoing other scroll locks such as the
+  // mobile nav menu's, and answered Escape while invisible.
   useEffect(() => {
-    if (isOpen) setVisible(true);
+    if (!isOpen) return undefined;
+    setVisible(true);
 
     const handleKeyDown = (e) => {
       if (e.key === "Escape" && onClose) {
@@ -22,11 +27,12 @@ export default function Dialog({
     };
     document.addEventListener("keydown", handleKeyDown);
 
-    document.body.style.overflow = isOpen ? "hidden" : "auto";
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "auto";
+      document.body.style.overflow = previousOverflow;
     };
   }, [isOpen]);
 

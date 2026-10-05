@@ -47,6 +47,9 @@ const JourneyAdminEditDialog = ({
 
   const goToSibling = (index) => {
     if (index < 0 || index >= siblingPosts.length) return;
+    const unsaved =
+      JSON.stringify(formData) !== JSON.stringify(buildFormData(post)) || newImages.length > 0;
+    if (unsaved && !window.confirm("You have unsaved changes on this journey. Discard them?")) return;
     onNavigate(siblingPosts[index]);
   };
 

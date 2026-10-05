@@ -27,3 +27,7 @@
   background-color: #ccc;
   cursor: not-allowed;
 }
+
+.sectionHeading {
+  margin: 1.5rem 0 0.5rem;
+}

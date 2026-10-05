@@ -2,13 +2,20 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool');
+const { optionalAuth } = require('../middleware/requireAuth');
+const { followedRockNumbersSql } = require('../utils/followedRocks');
+const visibleJourneySql = require('../utils/visibleJourneySql');
+
+// "Display Name (Relation)", or just the name when relation is NULL --
+// plain `||` made the whole label NULL for an artist with no relation.
+const ARTIST_LABEL_SQL = `ra.display_name || COALESCE(' (' || ra.relation || ')', '')`;
 
 router.get('/totals', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
         (SELECT COUNT(1) FROM catalog) AS total_rocks,
-        (SELECT COUNT(DISTINCT rock_number) FROM journey WHERE show = TRUE) AS rocks_found
+        (SELECT COUNT(DISTINCT rock_number) FROM journey WHERE ${visibleJourneySql()}) AS rocks_found
     `);
 
     res.json(result.rows[0]);
@@ -41,7 +48,7 @@ router.get('/allrocks', async (req, res) => {
   }
 });
 
-router.get('/', async (req, res) => {
+router.get('/', optionalAuth, async (req, res) => {
   // Paginated by distinct rock (not by raw journey row), since Track the
   // Rocks renders one card per rock_number grouping together all of that
   // rock's journey stops. Defaults preserve the old "give me everything"
@@ -49,6 +56,10 @@ router.get('/', async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const pageSize = Math.max(1, parseInt(req.query.pageSize, 10) || 25);
   const offset = (page - 1) * pageSize;
+  // ?followed=1 (Track the Rocks "only rocks I follow" switch) narrows the
+  // list to the signed-in account's followed rocks; ignored when signed out.
+  const followedAccountId =
+    req.query.followed === '1' && req.account ? req.account.id : null;
 
   try {
     const rockNumbersResult = await pool.query(
@@ -57,13 +68,16 @@ router.get('/', async (req, res) => {
       FROM (
         SELECT rock_number, MAX(date) AS latest_date, MAX(create_dt) AS latest_create_dt
         FROM journey
-        WHERE show = TRUE
+        WHERE ${visibleJourneySql()}
+          AND ($3::int IS NULL OR rock_number IN (
+            ${followedRockNumbersSql('$3::int')}
+          ))
         GROUP BY rock_number
       ) latest
       ORDER BY latest_date DESC, latest_create_dt DESC
       LIMIT $1 OFFSET $2;
       `,
-      [pageSize, offset]
+      [pageSize, offset, followedAccountId]
     );
 
     const totalRocks = rockNumbersResult.rows[0]
@@ -85,7 +99,7 @@ WITH images AS (
 ),
 artists AS (
     SELECT rc.rock_number,
-           ARRAY_AGG(ra.display_name || ' (' || ra.relation || ')') AS artists
+           ARRAY_AGG(${ARTIST_LABEL_SQL}) AS artists
     FROM artist_link ral
     JOIN artist ra ON ra.ra_key = ral.ra_key
     JOIN catalog rc ON rc.rc_key = ral.rc_key
@@ -121,6 +135,9 @@ ORDER BY rps.date DESC, rps.create_dt DESC;
 
 router.get('/:rockNumber', async (req, res) => {
   const { rockNumber } = req.params;
+  if (!/^\d+$/.test(rockNumber)) {
+    return res.status(400).json({ error: 'Rock number must be a whole number.' });
+  }
 
   try {
     const result = await pool.query(
@@ -133,7 +150,7 @@ WITH images AS (
 ),
 artists AS (
     SELECT rc.rock_number, 
-           ARRAY_AGG(ra.display_name || ' (' || ra.relation || ')') AS artists
+           ARRAY_AGG(${ARTIST_LABEL_SQL}) AS artists
     FROM artist_link ral
     JOIN artist ra ON ra.ra_key = ral.ra_key
     JOIN catalog rc ON rc.rc_key = ral.rc_key
@@ -174,7 +191,7 @@ router.get('/locations/all', async (req, res) => {
       SELECT rps_key, rock_number, latitude, longitude, date
       FROM journey
       WHERE rock_number > 0
-        AND show = TRUE
+        AND ${visibleJourneySql()}
         AND latitude IS NOT NULL
         AND longitude IS NOT NULL
       ORDER BY rps_key DESC;

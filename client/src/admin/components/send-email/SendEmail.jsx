@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import Job from "../job/Job";
+import loadDefaultEmail from "../../../adminContent/loadDefaultEmail";
 import styles from "./SendEmail.module.css";
 
 // Same loose "looks like an email" check used client-side by SendEmailDialog/
@@ -11,13 +12,30 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Freeform "Send Email" job: unlike Send Emails - Catch-up (which only
 // re-sends the published response-email template to rock submitters), this
 // lets an admin send an arbitrary subject/message to any address -- no
-// template, no journey/rock bookkeeping, nothing recorded afterward.
+// required template (it only pre-fills from Page Details' "Send Email
+// (default)"), no journey/rock bookkeeping, nothing recorded afterward.
 const SendEmail = () => {
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState(null); // { type: "success" | "error", text }
+  // Starting subject/message from Page Details' "Send Email (default)"
+  // template (empty if it's blank, missing or inactive).
+  const [defaults, setDefaults] = useState({ subject: "", body: "" });
+
+  useEffect(() => {
+    let cancelled = false;
+    loadDefaultEmail("send-email-default").then((tpl) => {
+      if (cancelled || !tpl) return;
+      setDefaults(tpl);
+      setSubject((prev) => prev || tpl.subject);
+      setMessage((prev) => prev || tpl.body);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const trimmedTo = to.trim();
   const trimmedSubject = subject.trim();
@@ -44,8 +62,8 @@ const SendEmail = () => {
       });
       setStatus({ type: "success", text: `Email sent to ${trimmedTo}.` });
       setTo("");
-      setSubject("");
-      setMessage("");
+      setSubject(defaults.subject);
+      setMessage(defaults.body);
     } catch (err) {
       console.error("Failed to send email:", err);
       setStatus({
@@ -60,7 +78,8 @@ const SendEmail = () => {
   return (
     <Job title="Send Email">
       <p className={styles.description}>
-        Sends a one-off email to any address -- no template, nothing recorded afterward.
+        Sends a one-off email to any address -- starts from the &quot;Send Email
+        (default)&quot; text in Page Details, nothing recorded afterward.
       </p>
       <div className={styles.form}>
         <label htmlFor="send-email-to">To</label>

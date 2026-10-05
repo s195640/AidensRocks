@@ -43,3 +43,8 @@ SELECT pglogical.replication_set_add_table('default', 'path_display_name', synch
 -- Rock Requests
 -- New table, zero rows at creation time (no backfill/seed) — explicit false.
 SELECT pglogical.replication_set_add_table('default', 'rock_requests', synchronize_data := false);
+-- User Accounts
+-- New tables, zero rows at creation time (no backfill/seed) — explicit false.
+SELECT pglogical.replication_set_add_table('default', 'account', synchronize_data := false);
+SELECT pglogical.replication_set_add_table('default', 'account_token', synchronize_data := false);
+SELECT pglogical.replication_set_add_table('default', 'account_follow', synchronize_data := false);

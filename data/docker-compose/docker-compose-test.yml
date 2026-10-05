@@ -1,0 +1,32 @@
+# Throwaway stack for the regression suite (server Vitest + client Playwright).
+# See data/ai-build-docs/regression-testing/RUNBOOK.md.
+#
+#   docker compose -p aidensrocks-test -f data/docker-compose/docker-compose-test.yml up -d
+#
+# Own project name, container names and host ports so it can run alongside
+# the dev stack (docker-compose-dev.yml uses 5432 / 1025 / 8025). The DB
+# lives on tmpfs: every `down` + `up` starts from nothing, and the test
+# globalSetup rebuilds the schema from data/sql/createdb.sql on each run.
+services:
+  postgres-test:
+    container_name: aidensrocks-test-db
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: aidensrocks_test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aidensrocks_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+  mailpit-test:
+    container_name: aidensrocks-test-mailpit
+    image: axllent/mailpit:latest
+    ports:
+      - "1026:1025" # SMTP
+      - "8026:8025" # web UI + REST API (tests read caught mail from here)

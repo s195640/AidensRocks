@@ -8,7 +8,6 @@ import styles from "./MusicTable.module.css";
 const MusicTable = ({
   songs,
   loading,
-  handleReorder,
   openFullImageDialog,
   handleDisableEnable,
   handleEdit,
@@ -116,8 +115,6 @@ const MusicTable = ({
         columns={columns}
         data={_data}
         renderCell={renderCell}
-        enableRowDrag
-        onRowReorder={(newData) => handleReorder(newData.map((i) => i.pa_key))}
         loading={loading}
       />
 

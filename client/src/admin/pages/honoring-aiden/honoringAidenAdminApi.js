@@ -53,9 +53,9 @@ const honoringAidenAdminApi = {
   fetchEntryBySlug: (slug) =>
     axios.get(`${BASE}/entries/slug/${slug}`).then((r) => r.data),
 
-  // createEntry: {title} only. updateEntry: always the full
-  // {title, published, body_json} shape — see routes/honoringAidenAdmin.js's
-  // PUT /entries/:id doc comment for why.
+  // createEntry: {title} only. updateEntry: any subset of
+  // {title, published, body_json} -- only the fields sent change (see
+  // routes/honoringAidenAdmin.js's PUT /entries/:id).
   createEntry: (data) => axios.post(`${BASE}/entries`, data).then((r) => r.data),
   updateEntry: (id, data) => axios.put(`${BASE}/entries/${id}`, data).then((r) => r.data),
   archiveEntry: (id) => axios.patch(`${BASE}/entries/${id}/archive`).then((r) => r.data),

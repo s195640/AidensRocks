@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool');
+const safeRollback = require('../utils/db/safeRollback');
 
 router.post('/rock-count', async (req, res) => {
   const {
@@ -66,7 +67,7 @@ router.post('/rock-count', async (req, res) => {
     await client.query('COMMIT');
     res.status(200).json({ message: 'Tracking recorded.' });
   } catch (error) {
-    if (client) await client.query('ROLLBACK');
+    await safeRollback(client);
     console.error('Rock tracking error:', error);
     res.status(500).json({ error: 'Failed to track rock visit' });
   } finally {

@@ -2,8 +2,10 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs-extra');
 
-// Ensure temp directory exists
-const tempDir = path.join(__dirname, '../../media/temp');
+// Ensure temp directory exists. Under media/.staging (like the other
+// upload staging dirs) because express.static never serves dot-folders --
+// media/temp was publicly downloadable while a file sat in it.
+const tempDir = path.resolve('media', '.staging', 'temp');
 fs.ensureDirSync(tempDir);
 
 // Configure multer

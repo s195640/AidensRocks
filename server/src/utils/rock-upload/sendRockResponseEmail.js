@@ -1,7 +1,6 @@
 const db = require('../../db/pool');
 const sendEmail = require('../sendEmail');
-const applyTemplateValues = require('../applyTemplateValues');
-const buildRockImageTag = require('../buildRockImageTag');
+const { renderEmailTemplate } = require('../emailTemplates');
 
 const RESPONSE_EMAIL_SLUG = 'response-email';
 
@@ -27,27 +26,10 @@ const RESPONSE_EMAIL_SLUG = 'response-email';
 // when) a submitter was actually emailed.
 async function sendRockResponseEmail(rockNumber, email, rpsKey) {
   try {
-    const { rows } = await db.query(
-      `SELECT published_body, published_email_subject, visible
-       FROM page_content
-       WHERE page_slug = $1`,
-      [RESPONSE_EMAIL_SLUG]
-    );
+    const rendered = await renderEmailTemplate(RESPONSE_EMAIL_SLUG, { ROCK_NUMBER: rockNumber });
+    if (!rendered || !rendered.visible) return;
 
-    if (rows.length === 0 || !rows[0].visible) return;
-
-    const { published_body, published_email_subject } = rows[0];
-
-    const templateValues = {
-      ROCK_NUMBER: rockNumber,
-      ROCK_IMAGE: buildRockImageTag(rockNumber),
-    };
-
-    await sendEmail({
-      to: email,
-      subject: applyTemplateValues(published_email_subject, templateValues) || '(No subject)',
-      html: applyTemplateValues(published_body, templateValues),
-    });
+    await sendEmail({ to: email, subject: rendered.subject, html: rendered.html });
 
     console.log(`✅ Sent response email to ${email} for rock ${rockNumber}`);
 

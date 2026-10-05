@@ -31,6 +31,8 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
+  /* Keeps the links right-aligned, just left of the account block. */
+  margin-left: auto;
   transition: transform 0.3s ease-in-out;
 }
 
@@ -83,6 +85,62 @@
   transition: none;
 }
 
+/* Right end of the bar: [☰ (phones only)] [account block]. */
+.rightGroup {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: 1.5rem;
+}
+
+/* Sign-in heart icon, or "Hello, <first name>" with Sign out beneath it. */
+.account {
+  display: flex;
+  flex-direction: column;
+  /* "Sign out" centered under "Hello, <name>". */
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.welcome {
+  color: var(--nav-link-color);
+  font-size: 0.7rem;
+  font-weight: 400;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.signOutLink {
+  color: var(--nav-link-color);
+  opacity: 0.8;
+  font-size: 0.7rem;
+  font-weight: 300;
+  text-decoration: underline;
+}
+
+.signOutLink:hover {
+  color: var(--nav-link-hover-color);
+  opacity: 1;
+}
+
+/* Signed out: a quiet heart icon linking to /login. */
+.signInLink {
+  color: var(--nav-link-color);
+  font-size: 1.1rem;
+  opacity: 0.85;
+  padding: 0.25rem;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.signInLink:hover,
+.signInActive {
+  color: var(--nav-link-hover-color);
+  opacity: 1;
+}
+
 .mobileToggle {
   display: none;
   cursor: pointer;
@@ -97,6 +155,8 @@
 @media screen and (max-width: 769px) {
   .navbar {
     height: 50px;
+    /* Account block ("Hello, <name>") sits right at the screen edge. */
+    padding-right: 0.75rem;
   }
 
   .logo {
@@ -113,10 +173,19 @@
     right: 0;
     width: 80vw;
     max-width: 300px;
-    height: 100vh;
+    /* Fill the space below the 50px navbar exactly (dvh tracks mobile
+       browser toolbars) and scroll inside when the items don't fit. */
+    height: calc(100vh - 50px);
+    height: calc(100dvh - 50px);
+    margin: 0;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
     background-color: rgba(0, 0, 0, 0.6);
     box-shadow: 0 40px 60px rgba(0, 0, 0, 0.7);
-    padding: 1.5rem 0 0 1rem;
+    padding: 1.5rem 0 1.5rem 1rem;
     transform: translateX(100%);
     transition: transform 0.3s ease-in-out;
     z-index: 1000;
@@ -127,11 +196,35 @@
   }
 
   .navItem {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
   }
 
   .mobileToggle {
     display: block;
+  }
+
+  .rightGroup {
+    margin-left: auto;
+  }
+
+  .welcome {
+    font-size: 0.62rem;
+    max-width: 90px;
+  }
+
+  .signOutLink {
+    font-size: 0.62rem;
+  }
+
+  /* Phones: the heart moves out of the right-hand account block into the
+     navbar's left padding, at the screen edge left of the logo (the
+     navbar is position: fixed, so this is relative to it). */
+  .signInLink {
+    position: absolute;
+    left: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
   }
 
   .mobileToggle i {

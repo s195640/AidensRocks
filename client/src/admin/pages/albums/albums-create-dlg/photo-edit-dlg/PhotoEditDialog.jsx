@@ -3,11 +3,16 @@ import { useEffect, useState } from "react";
 import Dialog from "../../../../../components/simple-components/dialog/Dialog";
 import styles from "../AlbumsCreateDlg.module.css";
 
+// The API sends photos.date as an ISO timestamp ("2025-05-01T00:00:00.000Z");
+// <input type="date"> only shows YYYY-MM-DD, so it rendered blank.
+const withDateInputValue = (photo) =>
+  photo && typeof photo.date === "string" ? { ...photo, date: photo.date.slice(0, 10) } : photo;
+
 const PhotoEditDialog = ({ isOpen, photo, onClose, onUpdate }) => {
-  const [form, setForm] = useState(photo);
+  const [form, setForm] = useState(() => withDateInputValue(photo));
 
   useEffect(() => {
-    setForm(photo);
+    setForm(withDateInputValue(photo));
   }, [photo]);
 
   const handleChange = (field, value) => {
