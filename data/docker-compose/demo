@@ -45,6 +45,14 @@ PUBLIC_SITE_URL=https://example.com
 # Outbound email (server/src/utils/sendEmail.js) — Gmail account + app password.
 EMAIL_USER=
 EMAIL_PASSWORD=
+# Optional: send through your own domain's SMTP provider instead of Gmail
+# (much better inbox placement -- see data/ai-build-docs/email-deliverability/).
+# SMTP_HOST=smtp.example-provider.com
+# SMTP_PORT=587
+# SMTP_USER=
+# SMTP_PASSWORD=
+# EMAIL_FROM="Aiden's Rocks" <hello@example.com>
+# EMAIL_REPLY_TO=AidensRocks.AAA@gmail.com
 
 # Reverse geocoding for Journey admin (country/state) -- opencagedata.com key.
 OPENCAGE_API_KEY=

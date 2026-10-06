@@ -24,6 +24,15 @@ describe('sign-up and verification', () => {
     expect(tokenFromMail(mail, '/verify-email')).toBeTruthy();
   });
 
+  it('the verify email has a plain-text part and a full HTML document (spam-filter friendly)', async () => {
+    const mail = await waitForMail(email);
+    const token = tokenFromMail(mail, '/verify-email');
+    expect(mail.Text).toContain(`/verify-email?token=${token}`);
+    expect(mail.Text).not.toMatch(/<[a-z]/i);
+    expect(mail.HTML).toMatch(/^<!doctype html>/i);
+    expect(mail.HTML).toContain('<html lang="en">');
+  });
+
   it('an unverified account cannot sign in yet (403 UNVERIFIED)', async () => {
     const res = await api().post('/api/auth/login').send({ email, password: PASSWORD });
     expect(res.status).toBe(403);
