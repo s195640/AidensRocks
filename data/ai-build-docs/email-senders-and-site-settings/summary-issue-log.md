@@ -102,3 +102,14 @@ Feature-scoped log. Plan: `plan.md` in this folder. Append one entry per phase.
 **Deviations from plan:** None.
 **Issues/gotchas encountered:** Earlier migrations in this repo say "run identically on both nodes". That's safe for DDL but not for data statements when the nodes replicate both ways.
 **VERSION:** `0.12.1` → `0.12.2` (patch).
+
+## Phase 4 — Deploy script prunes old Docker images (2026-10-06)
+**Status:** Complete
+**Files changed:** `data/scripts/deploy.ps1`, `VERSION`
+**Incident:** During the 0.12.x deploy, node 1 (192.168.1.55, CT 1057) failed with `dependency failed to start: container database is unhealthy`. Postgres was crash-looping on `could not write lock file "postmaster.pid": No space left on device`. The 49 GB root disk was full: 165 Docker images (41.7 GB, 40.7 GB reclaimable) plus 3.2 GB of build cache had accumulated, because every `up --build` leaves the previous images behind untagged. The database itself was 622 MB. SQL backups (84 GB) are on the `/mnt/aidensrocks` share, not the root disk. Fixed by hand with `docker image prune -a -f` and `docker builder prune -a -f`.
+**Fix:** After a successful `up --build -d`, `deploy.ps1` now runs `docker image prune -f` (untagged/dangling images only) and `docker builder prune -f --filter until=168h` (build cache older than 7 days), then prints `df -h /`. These steps are grouped with `;` so a prune problem can't fail an otherwise good deploy. No volumes or data are ever touched.
+**Follow-ups (not done):**
+- Check node 2 (192.168.1.65) with `df -h /` and `docker system df`, and do a one-off `docker image prune -a -f` there if needed.
+- `pg_backup` keeps hourly full dumps forever (84 GB on the share), so it needs retention.
+- The script still runs `down` on the whole stack (including Postgres and keepalived) before `git pull`, so a failed build leaves the node down. Consider `up -d --build server client` without `down`.
+**VERSION:** `0.12.2` → `0.12.3` (patch).

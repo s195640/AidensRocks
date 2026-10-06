@@ -46,10 +46,18 @@ function Deploy-Node {
     Write-Info "=== Deploying to $TargetHost (CT $Vmid) ==="
 
     # Command run *inside* the LXC container.
+    # Each --build leaves the previous images behind as untagged ("dangling")
+    # images; left alone they filled the 49 GB root disk and Postgres could
+    # no longer start (2026-10-06). After a successful build, remove the
+    # dangling images and build cache older than 7 days (recent cache is kept
+    # so builds stay fast). Only unused images are touched -- never volumes
+    # or data. The prune steps use ";" so a prune problem can't fail an
+    # otherwise good deploy; df shows how much room is left.
     $remoteCmd = "cd $RepoDir && " +
                  "docker compose -f $ComposeFile down && " +
                  "git pull && " +
                  "docker compose -f $ComposeFile up --build -d && " +
+                 "{ docker image prune -f; docker builder prune -f --filter until=168h; df -h /; } && " +
                  "sleep 3 && " +
                  "docker compose -f $ComposeFile ps --status running"
 
