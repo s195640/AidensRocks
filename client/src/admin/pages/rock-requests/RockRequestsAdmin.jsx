@@ -3,7 +3,6 @@ import authFetch from "../../utils/authFetch";
 import AdminContainer from "../../components/admin-base/AdminContainer";
 import RockRequestsAdminTable from "./rock-requests-table/RockRequestsAdminTable";
 import RockRequestsEditDialog from "./rock-requests-edit-dlg/RockRequestsEditDialog";
-import CreateRockRequestDialog from "./rock-requests-create-dlg/CreateRockRequestDialog";
 import ToggleSwitch from "../../../components/simple-components/toggle-switch/ToggleSwitch";
 import styles from "./RockRequestsAdmin.module.css";
 
@@ -121,12 +120,16 @@ const RockRequestsAdmin = () => {
         />
       )}
 
+      {/* Create uses the same dialog as Edit, with no request. */}
       {showCreateDialog && (
-        <CreateRockRequestDialog
+        <RockRequestsEditDialog
+          request={null}
+          rocks={rocks}
           isOpen={showCreateDialog}
           onClose={() => setShowCreateDialog(false)}
           onCreated={() => {
             fetchRequests();
+            fetchRocks();
             setShowCreateDialog(false);
           }}
         />

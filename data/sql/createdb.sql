@@ -699,6 +699,7 @@ FROM (VALUES
 <p><strong>Email:</strong> {EMAIL}</p>
 <p><strong>Address:</strong><br>{ADDRESS}</p>
 <p><strong>Rocks Requested:</strong> {ROCKS_REQUESTED}</p>
+<p><strong>Need Rocks By:</strong> {NEEDED_BY}</p>
 <p><strong>Message:</strong><br>{MESSAGE}</p>
 <p>This is an automated notification from Aidens Rocks.</p>$html$),
 
@@ -884,9 +885,11 @@ ALTER TABLE public.path_display_name OWNER TO postgres;
 CREATE TABLE IF NOT EXISTS public.rock_requests (
     rq_key           serial PRIMARY KEY,
     name             character varying(255) NOT NULL,
-    email            character varying(255) NOT NULL,
-    address          text NOT NULL,
+    email            character varying(255),
+    address          text,
     rocks_requested  integer NOT NULL,
+    needed_by        date,
+    no_rush          boolean NOT NULL DEFAULT false,
     shipped          boolean NOT NULL DEFAULT false,
     tracking_number  character varying(255),
     comments         text,

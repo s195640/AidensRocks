@@ -178,6 +178,57 @@ describe('rock requests (admin)', () => {
     expect((await api().post('/api/rock-requests/1/undelete').set(A)).status).toBe(200);
   });
 
+  it('edits need-by / no rush, and lists the date as plain YYYY-MM-DD', async () => {
+    const base = { name: 'Requester', email: 'requester@example.com', address: '1 Main St', rocks_requested: 2 };
+    expect((await api().put('/api/rock-requests/1').set(A).send({ ...base, needed_by: '2027-03-15' })).status).toBe(200);
+    let row = (await api().get('/api/rock-requests').set(A)).body.find((r) => r.rq_key === 1);
+    expect(row).toMatchObject({ needed_by: '2027-03-15', no_rush: false });
+    expect((await api().put('/api/rock-requests/1').set(A).send({ ...base, needed_by: '2027-03-15', no_rush: true })).status).toBe(200);
+    row = (await api().get('/api/rock-requests').set(A)).body.find((r) => r.rq_key === 1);
+    expect(row).toMatchObject({ needed_by: null, no_rush: true });
+    expect((await api().put('/api/rock-requests/1').set(A).send({ ...base, needed_by: 'nope' })).status).toBe(400);
+  });
+
+  it('admin-create only needs a name and # rocks, and saves every field', async () => {
+    const create = (body) => api().post('/api/rock-requests/admin-create').set(A).send(body);
+    expect((await create({ rocks_requested: 1 })).status).toBe(400);
+    expect((await create({ name: 'Phone' })).status).toBe(400);
+    expect((await create({ name: 'Phone', rocks_requested: 1, email: 'not-an-email' })).status).toBe(400);
+    expect((await create({ name: 'Phone', rocks_requested: 1, rock_numbers: '5555' })).status).toBe(400);
+
+    const bare = await create({ name: 'Phone', rocks_requested: 1, email: '', address: '' });
+    expect(bare.status).toBe(201);
+    expect((await sql('SELECT email, address FROM rock_requests WHERE rq_key = $1', [bare.body.rq_key]))[0])
+      .toEqual({ email: null, address: null });
+
+    const full = await create({
+      name: 'Phone', email: 'phone@example.com', address: '2 Main St', rocks_requested: 1,
+      needed_by: '2020-01-01', message: 'Called in', comments: 'Ship with the next batch',
+      tracking_number: 'TRK9', shipped: true, rock_numbers: '101',
+    });
+    expect(full.status).toBe(201);
+    const row = (await sql(
+      `SELECT to_char(needed_by, 'YYYY-MM-DD') AS needed_by, message, comments, tracking_number, shipped,
+              sent_dt IS NOT NULL AS has_sent_dt
+       FROM rock_requests WHERE rq_key = $1`, [full.body.rq_key]))[0];
+    expect(row).toEqual({
+      needed_by: '2020-01-01', message: 'Called in', comments: 'Ship with the next batch',
+      tracking_number: 'TRK9', shipped: true, has_sent_dt: true,
+    });
+    expect((await sql('SELECT rq_key FROM catalog WHERE rock_number = 101'))[0].rq_key).toBe(full.body.rq_key);
+  });
+
+  it('edit saves the message and refuses Send Email with no address', async () => {
+    const created = await api().post('/api/rock-requests/admin-create').set(A).send({ name: 'No Email', rocks_requested: 1 });
+    const key = created.body.rq_key;
+    const put = await api().put(`/api/rock-requests/${key}`).set(A)
+      .send({ name: 'No Email', rocks_requested: 1, message: 'Edited by admin' });
+    expect(put.status).toBe(200);
+    expect(put.body.message).toBe('Edited by admin');
+    const send = await api().post(`/api/rock-requests/${key}/send-email`).set(A).send({ subject: 'Hi', body: 'Hi' });
+    expect(send.status).toBe(400);
+  });
+
   it('sends the reply email', async () => {
     await clearMail();
     const res = await api().post('/api/rock-requests/1/send-email').set(A).send({ subject: 'On the way', body: 'Hi', markShipped: true });

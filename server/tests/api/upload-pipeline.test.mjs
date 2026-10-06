@@ -174,9 +174,28 @@ describe('input validation', () => {
 });
 
 describe('rock requests (public form)', () => {
-  const ok = { name: 'Req', email: 'req@example.com', address: '1 Road', rocksRequested: 2 };
+  const ok = { name: 'Req', email: 'req@example.com', address: '1 Road', rocksRequested: 2, noRush: true };
+  const isoDay = (offsetDays) => new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10);
   it('accepts a valid request', async () => {
     expect((await api().post('/api/rock-requests').send(ok)).status).toBe(201);
+  });
+  it('stores a need-by date, or no rush (which drops any date)', async () => {
+    const dated = await api().post('/api/rock-requests').send({ ...ok, noRush: false, neededBy: isoDay(30) });
+    expect(dated.status).toBe(201);
+    const rush = await api().post('/api/rock-requests').send({ ...ok, neededBy: isoDay(30) });
+    const rows = await sql(
+      `SELECT rq_key, to_char(needed_by, 'YYYY-MM-DD') AS needed_by, no_rush FROM rock_requests WHERE rq_key = ANY($1::int[]) ORDER BY rq_key`,
+      [[dated.body.rq_key, rush.body.rq_key]]
+    );
+    expect(rows).toEqual([
+      { rq_key: dated.body.rq_key, needed_by: isoDay(30), no_rush: false },
+      { rq_key: rush.body.rq_key, needed_by: null, no_rush: true },
+    ]);
+  });
+  it('ignores admin comments sent to the public form', async () => {
+    const res = await api().post('/api/rock-requests').send({ ...ok, comments: 'sneaky' });
+    expect(res.status).toBe(201);
+    expect((await sql('SELECT comments FROM rock_requests WHERE rq_key = $1', [res.body.rq_key]))[0].comments).toBeNull();
   });
   it('400s bad input instead of 500', async () => {
     for (const bad of [
@@ -185,6 +204,10 @@ describe('rock requests (public form)', () => {
       { ...ok, rocksRequested: 0 },
       { ...ok, rocksRequested: 1000 },
       { ...ok, name: 12345, email: ['x'] },
+      { ...ok, noRush: false },
+      { ...ok, noRush: false, neededBy: isoDay(-5) },
+      { ...ok, noRush: false, neededBy: '2026-02-30' },
+      { ...ok, noRush: false, neededBy: 'soon' },
     ]) {
       expect((await api().post('/api/rock-requests').send(bad)).status).toBe(400);
     }

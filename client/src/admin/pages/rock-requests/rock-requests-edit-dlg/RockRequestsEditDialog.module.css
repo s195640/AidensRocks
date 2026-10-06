@@ -81,3 +81,67 @@
   color: #555;
   white-space: pre-wrap;
 }
+
+/* An input with a checkbox to its right: Need Rocks By / No rush and
+   Tracking Number / Shipped. */
+.inlineRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dialogForm .inlineRow input:not([type="checkbox"]) {
+  flex: 1;
+  width: auto;
+}
+
+.dialogForm .inlineRow input:disabled {
+  background: #eee;
+  color: #999;
+}
+
+.inlineRow .checkboxRow {
+  white-space: nowrap;
+}
+
+/* Request / Admin headings: site blue on a light tint, with their fields
+   indented beneath them behind a matching rule so the two groups read apart. */
+.sectionHeading {
+  margin: 0.75rem 0 0;
+  padding: 0.4rem 0.75rem;
+  background: #eef6fa;
+  border-left: 4px solid rgba(110, 183, 216, 1);
+  border-radius: 4px;
+  color: rgba(60, 133, 166, 1);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.sectionHeading:first-child {
+  margin-top: 0;
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-left: 0.6rem;
+  padding-left: 1rem;
+  border-left: 2px solid #d6eaf3;
+}
+
+.requiredMark {
+  color: #c62828;
+}
+
+.dialogForm .invalid {
+  border-color: #c62828;
+}
+
+.fieldError {
+  color: #c62828;
+  font-size: 0.85rem;
+  margin-top: -0.4rem;
+}

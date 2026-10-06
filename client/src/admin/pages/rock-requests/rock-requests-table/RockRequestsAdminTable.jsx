@@ -48,10 +48,18 @@ const RockRequestsAdminTable = ({
       { key: "email", label: "Email", sortable: true },
       { key: "address", label: "Address", sortable: true },
       { key: "rocks_requested", label: "# Rocks", defaultWidth: 70, sortable: true },
+      {
+        key: "needed_by",
+        label: "Needed By",
+        defaultWidth: 90,
+        sortable: true,
+        // Soonest date first; "No rush" after every date, blanks last.
+        sortValue: (row) => (row.no_rush ? "9999-12-31" : row.needed_by || "9999-12-32"),
+      },
       { key: "shipped", label: "Shipped", defaultWidth: 70, sortable: true },
       { key: "tracking_number", label: "Tracking #", sortable: true },
       { key: "rock_numbers", label: "Rock Numbers", sortable: true },
-      { key: "comments", label: "Comments", sortable: true },
+      { key: "comments", label: "Notes", sortable: true },
       {
         key: "message",
         label: "Message",
@@ -69,8 +77,10 @@ const RockRequestsAdminTable = ({
   const renderCell = (request, colKey) => {
     switch (colKey) {
       case "address":
-        return (
+        return request.address ? (
           <div className={styles.addressCell}>{request.address}</div>
+        ) : (
+          "-"
         );
 
       case "shipped":
@@ -85,6 +95,9 @@ const RockRequestsAdminTable = ({
             />
           </div>
         );
+
+      case "needed_by":
+        return request.no_rush ? "No rush" : request.needed_by || "-";
 
       case "create_dt":
         return request.create_dt ? request.create_dt.replace("T", " ").slice(0, 16) : "-";

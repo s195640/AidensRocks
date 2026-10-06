@@ -240,3 +240,75 @@ Feature-scoped log, separate from other features' logs under `data/ai-build-docs
 **Deviations from plan:** None.
 **Issues/gotchas encountered:** None.
 **VERSION:** `0.5.19` → `0.5.20` (patch, same feature folder).
+
+## Phase 20 — Request A Rock: validate on Submit instead of disabling it (2026-10-06)
+**Status:** Complete
+**Files changed:** `client/src/components/contact-request-rocks/ContactReqestRocks.jsx` (+ `.module.css`), `VERSION`
+**Summary:** The public Request A Rock form's Submit button is no longer disabled until every required field is filled (it's only disabled while sending). Pressing Submit with missing/invalid fields now shows an inline red message under each offending field (Name, Email Address, Address, # Rocks) plus a red border, and nothing is sent. Messages only appear after the first Submit press, then update live as the visitor fixes each field. The form uses `noValidate` so the browser's native tooltips don't compete with the inline messages; email gets a simple format check since native `type="email"` validation is bypassed. Message stays optional.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** None.
+**VERSION:** `0.10.10` → `0.10.11` (patch).
+
+## Phase 21 — Request A Rock: "Need rocks by" date / "No rush" (2026-10-06)
+**Status:** Complete
+**Files changed:** `data/sql/createdb.sql`, `data/sql/migrations/add_needed_by_to_rock_requests.sql` (new), `server/src/routes/rockRequests.js`, `client/src/components/contact-request-rocks/ContactReqestRocks.jsx` (+ `.module.css`), `client/src/admin/pages/rock-requests/rock-requests-create-dlg/CreateRockRequestDialog.jsx` (+ `.module.css`), `client/src/admin/pages/rock-requests/rock-requests-edit-dlg/RockRequestsEditDialog.jsx` (+ `.module.css`), `client/src/admin/pages/rock-requests/rock-requests-table/RockRequestsAdminTable.jsx`, `client/src/adminContent/emailTemplates.js`, `server/tests/api/upload-pipeline.test.mjs`, `server/tests/api/admin-crud.test.mjs`, `VERSION`
+**Summary:** New "Need Rocks By" date field with a "No rush" checkbox, between # Rocks and Message on the public form. Checking No rush greys out (disables) the date. One of the two is required, validated on Submit like the other fields (Phase 20). The date can't be in the past. Data model (approved): `rock_requests.needed_by date NULL` + `no_rush boolean NOT NULL DEFAULT false`. No rush always stores a NULL date. Admin side: sortable "Needed By" column (date, "No rush", or "-" for older requests), editable in the Edit dialog, and required in the admin Create dialog (it shares `insertRockRequest`). New `{NEEDED_BY}` token for the New Rock Request (to admin) email (date or "No rush"). The migration adds that line to the existing template only if the stock "Rocks Requested" line is still there.
+**Decisions:** (1) Required + not-in-the-past is enforced only on create (public + admin-create). The admin PUT only checks the date format, so older requests with neither value, or a date that has since passed, can still be edited. (2) The server's past-date check allows UTC today minus 1 day, so a visitor in another time zone picking their own "today" isn't rejected. (3) `needed_by` is selected via `to_char(..., 'YYYY-MM-DD')` so node-pg doesn't turn the DATE into a local-midnight Date that shifts a day when serialized.
+**Issues/gotchas encountered:** None.
+**VERSION:** `0.10.11` → `0.10.12` (patch).
+
+## Phase 22 — Request A Rock: restyle buttons to match "Upload Your Rock" (2026-10-06)
+**Status:** Complete
+**Files changed:** `client/src/components/contact-request-rocks/ContactReqestRocks.module.css`, `VERSION`
+**Summary:** Submit, Close, and the Close after a request is sent now use the Share Your Rock page's "Upload Your Rock" button style: light-blue fill, white text, rounded corners, soft shadow, and a lift on hover / press-down on click. Hover and press effects are skipped on disabled buttons (Submit while sending, Close while sending), which show at 60% opacity with a not-allowed cursor.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** None.
+**VERSION:** `0.10.12` → `0.10.13` (patch).
+
+## Phase 23 — Upload Your Rock dialog: same button style (2026-10-06)
+**Status:** Complete
+**Files changed:** `client/src/components/upload-rock-form/UploadRockForm.css`, `VERSION`
+**Summary:** Follow-up to Phase 22. The Upload Your Rock dialog's Select Files, Submit, and result-dialog Close buttons now share one rule with the "Upload Your Rock" page-button style (light blue, lift on hover, press on click, 60% opacity when disabled). They replace the old Bootstrap-blue styles and the `.rock-form .submit-btn` rule, whose higher specificity had actually been making Submit green. The header ×, the per-image remove ×, and the "request a new rock" text link are unchanged.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** None.
+**VERSION:** `0.10.13` → `0.10.14` (patch).
+
+## Phase 24 — Admin Create Rock Request: validate on Create instead of disabling it (2026-10-06)
+**Status:** Complete
+**Files changed:** `client/src/admin/pages/rock-requests/rock-requests-create-dlg/CreateRockRequestDialog.jsx` (+ `.module.css`), `VERSION`
+**Summary:** Same pattern as the public form (Phase 20). Create is no longer disabled until the form is complete; it's only disabled while saving. Pressing Create with problems shows a red border and an inline message under each field: Name, Email (required + format), Address, # Rocks (required, at least 1), and Need Rocks By (a date of today or later, or No rush). Messages appear after the first press and update live as fields are fixed. The form uses `noValidate`. The dialog is conditionally mounted, so validation state resets each time it opens.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** None.
+**VERSION:** `0.10.14` → `0.10.15` (patch).
+
+## Phase 25 — Admin Create Rock Request: "Message (from requester)" label + Comments field (2026-10-06)
+**Status:** Complete
+**Files changed:** `client/src/admin/pages/rock-requests/rock-requests-create-dlg/CreateRockRequestDialog.jsx`, `server/src/routes/rockRequests.js`, `server/tests/api/admin-crud.test.mjs`, `server/tests/api/upload-pipeline.test.mjs`, `VERSION`
+**Summary:** In the admin Create dialog, Message is now labeled "Message (from requester)" instead of "(optional)". It is still not required. A new Comments box under it saves to the existing `rock_requests.comments` column, the same field as Comments in the Edit dialog. `insertRockRequest` takes comments as a separate second argument that only `POST /admin-create` passes, so the public `POST /` ignores any `comments` in its body (covered by a test). No data model change. The Edit dialog's Message stays read-only.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** None.
+**VERSION:** `0.10.15` → `0.10.16` (patch).
+
+## Phase 26 — Admin: one Create/Edit dialog, Request/Admin sections, looser admin rules (2026-10-06)
+**Status:** Complete
+**Files changed:** `client/src/admin/pages/rock-requests/rock-requests-edit-dlg/RockRequestsEditDialog.jsx` (+ `.module.css`), `client/src/admin/pages/rock-requests/RockRequestsAdmin.jsx`, `client/src/admin/pages/rock-requests/rock-requests-create-dlg/` (deleted), `client/src/admin/pages/rock-requests/rock-requests-table/RockRequestsAdminTable.jsx`, `client/src/admin/pages/rocks/rock-request-info-dlg/RockRequestInfoDialog.jsx`, `server/src/routes/rockRequests.js`, `data/sql/createdb.sql`, `data/sql/migrations/allow_null_email_address_rock_requests.sql` (new), `server/tests/api/admin-crud.test.mjs`, `VERSION`
+**Summary:**
+- **One dialog.** `CreateRockRequestDialog` is gone. "+ Create Request" opens `RockRequestsEditDialog` with `request={null}`. In that mode the title is "Create Rock Request", the button says Create, Send Email and Last Emailed are hidden, and a successful create closes the dialog. Create can now also set the admin fields (tracking, shipped, rock numbers, notes).
+- **Layout.** A **Request** heading covers Name, Email, Address, # Rocks Requested, Need Rocks By + No rush, and Message (from requester). An **Admin** heading covers Tracking Number with Shipped to its right (same row style as Need Rocks By / No rush), Rock Numbers, Notes (from admin), and Last Emailed (edit only).
+- **Renames.** "Comments" is now "Notes (from admin)" in the dialog, the Rock Requests table column ("Notes"), and the Rocks page's Linked Rock Request popup. The column is still `comments`.
+- **Message is editable** in both create and edit. The PUT route now writes `message`, reversing the original "admin can't change it" rule from `add_message_and_email_dt_to_rock_requests.sql`, per request.
+- **Validation.** Only Name and # Rocks Requested are required for admin (red `*`). Email is checked only if one is typed. Need Rocks By is optional, and past dates are allowed for admin. Same check-on-press pattern as Phases 20/24: inline errors after the first Save/Create, plus the existing rock-number checks.
+- **Server.** New `parseAdminFields` is shared by `POST /admin-create` and `PUT /:rq_key`, both of which now take the same snake_case body. PUT now validates name, # rocks, email format and lengths; before, it accepted anything. Rock-number checking and linking moved into `findRockNumberProblems` / `syncRockNumbers`, which admin-create now also uses inside its own transaction. Shipped on create stamps `sent_dt`. `insertRockRequest` is public-only again (no comments).
+- **Data model (approved).** `rock_requests.email` and `.address` dropped NOT NULL, so a blank one from admin is stored as NULL. The public form still requires both. Send Email returns 400 for a request with no email, and the dialog disables Send Email with "Add an email address to send email". Tables and the Linked Rock Request popup show "-" for a missing email/address.
+- Send Email now gets the saved name/email (they're editable now), not the ones loaded when the dialog opened.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** None.
+**VERSION:** `0.10.16` → `0.10.17` (patch).
+
+## Phase 27 — Admin Rock Request dialog: more obvious Request / Admin headings (2026-10-06)
+**Status:** Complete
+**Files changed:** `client/src/admin/pages/rock-requests/rock-requests-edit-dlg/RockRequestsEditDialog.jsx` (+ `.module.css`), `VERSION`
+**Summary:** The Request and Admin headings are now uppercase, bold, site-blue (`rgba(60,133,166)`) text on a light-blue tint (`#eef6fa`) with a 4px blue left bar, the same look as the site's `.callout`. Each section's fields are wrapped in a `.sectionBody` that is indented about 1.6rem behind a thin light-blue left rule, so the fields read as belonging to their heading. Markup change: each section's fields are now inside a `<div className={styles.sectionBody}>`.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** None.
+**VERSION:** `0.10.17` → `0.10.18` (patch).

@@ -105,21 +105,6 @@
   text-align: center;
 }
 
-/* Submit button */
-.rock-form .submit-btn {
-  padding: 0.6rem 1.2rem;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.rock-form .submit-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* Spinner */
 .spinner {
   display: inline-block;
@@ -190,57 +175,43 @@
   }
 }
 
-.select-images-btn {
-  background-color: #007BFF;
-  /* Bootstrap-like blue */
+/* Select Files, Submit, and the result dialog's Close all match the
+   "Upload Your Rock" button on the Share Your Rock page. */
+.select-images-btn,
+.submit-btn,
+.upload-result-close-btn {
+  background-color: rgba(110, 183, 216, 1);
   color: white;
-  padding: 0.5rem 1.2rem;
+  padding: 0.5rem 1.25rem;
+  font-size: 1rem;
   border: none;
   border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 3px 6px rgba(0, 123, 255, 0.4);
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   user-select: none;
 }
 
-.select-images-btn:hover:not(:disabled) {
-  background-color: #0056b3;
-  box-shadow: 0 5px 12px rgba(0, 86, 179, 0.6);
+.select-images-btn:hover:not(:disabled),
+.submit-btn:hover:not(:disabled),
+.upload-result-close-btn:hover {
+  background-color: rgba(90, 163, 196, 1);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.select-images-btn:disabled {
-  background-color: #a3c0f9;
-  cursor: not-allowed;
-  box-shadow: none;
+.select-images-btn:active:not(:disabled),
+.submit-btn:active:not(:disabled),
+.upload-result-close-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-/* Reuse the same button style for Submit */
-.submit-btn {
-  background-color: #007BFF;
-  /* Same blue as Select Images */
-  color: white;
-  padding: 0.5rem 1.2rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 3px 6px rgba(0, 123, 255, 0.4);
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
-  user-select: none;
-}
-
-.submit-btn:hover:not(:disabled) {
-  background-color: #0056b3;
-  box-shadow: 0 5px 12px rgba(0, 86, 179, 0.6);
-}
-
+.select-images-btn:disabled,
 .submit-btn:disabled {
-  background-color: #a3c0f9;
+  opacity: 0.6;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 /* Container holding select images button and count */
@@ -355,26 +326,6 @@
   font-size: 1rem;
   color: #555;
   margin-bottom: 1.5rem;
-}
-
-/* Dialog close button */
-.upload-result-close-btn {
-  background-color: #007BFF;
-  color: white;
-  padding: 0.5rem 1.4rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 3px 6px rgba(0, 123, 255, 0.4);
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
-  user-select: none;
-}
-
-.upload-result-close-btn:hover {
-  background-color: #0056b3;
-  box-shadow: 0 5px 12px rgba(0, 86, 179, 0.6);
 }
 
 .social-link {

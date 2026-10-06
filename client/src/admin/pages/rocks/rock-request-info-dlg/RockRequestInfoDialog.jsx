@@ -22,10 +22,10 @@ const RockRequestInfoDialog = ({ isOpen, onClose, request }) => {
         <div className={styles.value}>{request.name}</div>
 
         <div className={styles.label}>Email</div>
-        <div className={styles.value}>{request.email}</div>
+        <div className={styles.value}>{request.email || "-"}</div>
 
         <div className={styles.label}>Address</div>
-        <div className={styles.value}>{request.address}</div>
+        <div className={styles.value}>{request.address || "-"}</div>
 
         <div className={styles.label}># Rocks Requested</div>
         <div className={styles.value}>{request.rocks_requested}</div>
@@ -39,7 +39,7 @@ const RockRequestInfoDialog = ({ isOpen, onClose, request }) => {
         <div className={styles.label}>Rock Numbers</div>
         <div className={styles.value}>{request.rock_numbers || "-"}</div>
 
-        <div className={styles.label}>Comments</div>
+        <div className={styles.label}>Notes (from admin)</div>
         <div className={styles.value}>{request.comments || "-"}</div>
 
         <div className={styles.label}>Message (from requester)</div>

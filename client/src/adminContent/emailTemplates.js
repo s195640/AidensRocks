@@ -112,6 +112,7 @@ const EMAIL_TEMPLATES = {
       { key: "EMAIL", label: "Email", placeholder: "jane@example.com" },
       { key: "ADDRESS", label: "Address", placeholder: "123 Main St" },
       { key: "ROCKS_REQUESTED", label: "Rocks requested", placeholder: "2" },
+      { key: "NEEDED_BY", label: "Need rocks by", placeholder: "2026-12-01" },
       { key: "MESSAGE", label: "Message", placeholder: "(none)" },
     ],
     tokens: [
@@ -119,6 +120,7 @@ const EMAIL_TEMPLATES = {
       ["{EMAIL}", "Email"],
       ["{ADDRESS}", "Address"],
       ["{ROCKS_REQUESTED}", "Rocks Requested"],
+      ["{NEEDED_BY}", "Need Rocks By (date or \"No rush\")"],
       ["{MESSAGE}", "Message"],
     ],
   },

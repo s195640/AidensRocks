@@ -3,22 +3,59 @@ import { useState } from "react";
 import axios from "axios";
 import styles from "./ContactReqestRocks.module.css";
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Today's date in the visitor's own time zone, as the YYYY-MM-DD a date input uses.
+const localToday = () => {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
 const ContactRequestRocks = ({ onClose }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [rocksRequested, setRocksRequested] = useState("");
+  const [neededBy, setNeededBy] = useState("");
+  const [noRush, setNoRush] = useState(false);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [attempted, setAttempted] = useState(false);
 
-  const isSubmitEnabled =
-    name.trim() && email.trim() && address.trim() && Number(rocksRequested) >= 1 && !submitting;
+  const rocksCount = Number(rocksRequested);
+  const fieldErrors = {
+    name: !name.trim() ? "Name is required." : "",
+    email: !email.trim()
+      ? "Email address is required."
+      : !EMAIL_PATTERN.test(email.trim())
+        ? "Please enter a valid email address."
+        : "",
+    address: !address.trim() ? "Address is required." : "",
+    rocks:
+      rocksRequested === ""
+        ? "Number of rocks is required."
+        : !Number.isInteger(rocksCount) || rocksCount < 1
+          ? "Please enter at least 1 rock."
+          : "",
+    neededBy: noRush
+      ? ""
+      : !neededBy
+        ? 'Please choose a date, or check "No rush".'
+        : neededBy < localToday()
+          ? "Please choose today or a later date."
+          : "",
+  };
+  // Errors only show after the first Submit press, then update live as fields are fixed.
+  const shownError = (field) => (attempted ? fieldErrors[field] : "");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isSubmitEnabled) return;
+    if (submitting) return;
+    setAttempted(true);
+    if (Object.values(fieldErrors).some(Boolean)) return;
 
     setSubmitting(true);
     setError("");
@@ -28,6 +65,8 @@ const ContactRequestRocks = ({ onClose }) => {
         email,
         address,
         rocksRequested: Number(rocksRequested),
+        neededBy: noRush ? null : neededBy,
+        noRush,
         message,
       });
       setSubmitted(true);
@@ -64,7 +103,7 @@ const ContactRequestRocks = ({ onClose }) => {
               want to see them take off and travel!
             </p>
 
-            <form onSubmit={handleSubmit} className={styles.form}>
+            <form onSubmit={handleSubmit} className={styles.form} noValidate>
               {error && <div className={styles.errorMessage}>{error}</div>}
 
               <label htmlFor="request-name" className={styles.label}>
@@ -73,11 +112,17 @@ const ContactRequestRocks = ({ onClose }) => {
               <input
                 id="request-name"
                 type="text"
-                className={styles.input}
+                className={`${styles.input} ${shownError("name") ? styles.invalid : ""}`}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                required
+                aria-invalid={!!shownError("name")}
+                aria-describedby={shownError("name") ? "request-name-error" : undefined}
               />
+              {shownError("name") && (
+                <div id="request-name-error" className={styles.fieldError}>
+                  {shownError("name")}
+                </div>
+              )}
 
               <label htmlFor="request-email" className={styles.label}>
                 Email Address
@@ -85,24 +130,36 @@ const ContactRequestRocks = ({ onClose }) => {
               <input
                 id="request-email"
                 type="email"
-                className={styles.input}
+                className={`${styles.input} ${shownError("email") ? styles.invalid : ""}`}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
+                aria-invalid={!!shownError("email")}
+                aria-describedby={shownError("email") ? "request-email-error" : undefined}
               />
+              {shownError("email") && (
+                <div id="request-email-error" className={styles.fieldError}>
+                  {shownError("email")}
+                </div>
+              )}
 
               <label htmlFor="request-address" className={styles.label}>
                 Address
               </label>
               <textarea
                 id="request-address"
-                className={styles.textarea}
+                className={`${styles.textarea} ${shownError("address") ? styles.invalid : ""}`}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 rows={3}
                 placeholder="Street, City, State/Province, Postal Code, Country"
-                required
+                aria-invalid={!!shownError("address")}
+                aria-describedby={shownError("address") ? "request-address-error" : undefined}
               />
+              {shownError("address") && (
+                <div id="request-address-error" className={styles.fieldError}>
+                  {shownError("address")}
+                </div>
+              )}
 
               <label htmlFor="request-rocks" className={styles.label}>
                 # Rocks
@@ -112,11 +169,48 @@ const ContactRequestRocks = ({ onClose }) => {
                 type="number"
                 min="1"
                 step="1"
-                className={styles.input}
+                className={`${styles.input} ${shownError("rocks") ? styles.invalid : ""}`}
                 value={rocksRequested}
                 onChange={(e) => setRocksRequested(e.target.value)}
-                required
+                aria-invalid={!!shownError("rocks")}
+                aria-describedby={shownError("rocks") ? "request-rocks-error" : undefined}
               />
+              {shownError("rocks") && (
+                <div id="request-rocks-error" className={styles.fieldError}>
+                  {shownError("rocks")}
+                </div>
+              )}
+
+              <label htmlFor="request-needed-by" className={styles.label}>
+                Need Rocks By
+              </label>
+              <div className={styles.neededByRow}>
+                <input
+                  id="request-needed-by"
+                  type="date"
+                  min={localToday()}
+                  className={`${styles.input} ${shownError("neededBy") ? styles.invalid : ""}`}
+                  value={noRush ? "" : neededBy}
+                  onChange={(e) => setNeededBy(e.target.value)}
+                  disabled={noRush}
+                  aria-invalid={!!shownError("neededBy")}
+                  aria-describedby={shownError("neededBy") ? "request-needed-by-error" : undefined}
+                />
+                <label htmlFor="request-no-rush" className={styles.checkboxLabel}>
+                  <input
+                    id="request-no-rush"
+                    type="checkbox"
+                    checked={noRush}
+                    onChange={(e) => setNoRush(e.target.checked)}
+                  />
+                  No rush
+                </label>
+              </div>
+              {shownError("neededBy") && (
+                <div id="request-needed-by-error" className={styles.fieldError}>
+                  {shownError("neededBy")}
+                </div>
+              )}
 
               <label htmlFor="request-message" className={styles.label}>
                 Message <span className={styles.optional}>(optional)</span>
@@ -134,7 +228,7 @@ const ContactRequestRocks = ({ onClose }) => {
                 <button
                   type="submit"
                   className={styles.submitButton}
-                  disabled={!isSubmitEnabled}
+                  disabled={submitting}
                 >
                   {submitting ? "Sending..." : "Submit"}
                 </button>
