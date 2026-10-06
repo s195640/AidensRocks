@@ -37,6 +37,7 @@ import AllRocks from "./pages/all-rocks/AllRocks.jsx";
 import MusicAdmin from "./admin/pages/music/MusicAdmin.jsx";
 import HonoringAidenAdmin from "./admin/pages/honoring-aiden/HonoringAidenAdmin.jsx";
 import PagesAdmin from "./admin/pages/pages/PagesAdmin.jsx";
+import SettingsAdmin from "./admin/pages/settings/SettingsAdmin.jsx";
 import EmailPreview from "./admin/pages/pages/email-preview/EmailPreview.jsx";
 import PAGE_PATHS from "./adminContent/pagePaths.js";
 import { PreviewProvider } from "./adminContent/PreviewContext.jsx";
@@ -54,6 +55,7 @@ const adminNavItems = [
   { path: "/admin/music", label: "Music" },
   { path: "/admin/pages", label: "Page Details" },
   { path: "/admin/honoring-aiden", label: "Honoring Aiden" },
+  { path: "/admin/settings", label: "Settings" },
   { path: "/", label: "Exit Admin" },
 ];
 
@@ -198,6 +200,14 @@ function AppContent() {
           element={
             <PrivateRoute>
               <PagesAdmin />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <PrivateRoute>
+              <SettingsAdmin />
             </PrivateRoute>
           }
         />

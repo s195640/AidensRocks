@@ -1,6 +1,7 @@
 import UploadRockButton from "./components/UploadRockButton";
 import UploadRockLinkTrigger from "./components/UploadRockLinkTrigger";
 import FacebookLink from "./components/FacebookLink";
+import ContactEmailLink from "./components/ContactEmailLink";
 
 // Single source of truth for portable "chip" components embeddable in page
 // body content: what shows up in the editor's Insert dropdown (filtered by
@@ -29,6 +30,14 @@ const componentRegistry = {
     label: "Facebook Link",
     component: FacebookLink,
     pages: ["share-your-rock"],
+    configFields: [],
+  },
+  // pages: null = every page (but never email templates -- chips need JS,
+  // which email clients don't run; emails use {CONTACT_EMAIL} instead).
+  "contact-email-link": {
+    label: "Contact Email (link)",
+    component: ContactEmailLink,
+    pages: null,
     configFields: [],
   },
 };

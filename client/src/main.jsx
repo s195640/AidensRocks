@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import Tracker from "./components/tracker/Tracker.jsx";
 import { ARProvider } from "./context/ARContext.jsx";
+import { SiteSettingsProvider } from "./context/SiteSettingsContext.jsx";
 import "./index.css";
 // @s195640/content-editor's own stylesheet (ContentEditor/ContentViewer) —
 // loaded once, globally, since both the admin and public usages
@@ -14,10 +15,12 @@ import "@s195640/content-editor/styles.css";
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ARProvider>
-      <Tracker />
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <SiteSettingsProvider>
+        <Tracker />
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </SiteSettingsProvider>
     </ARProvider>
   </React.StrictMode>
 );

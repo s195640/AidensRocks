@@ -257,12 +257,87 @@ describe('pages admin', () => {
     expect(preview.body.subject).toBe('[2 FILE(S) FAILED] Rock upload: Rock 7');
     expect(preview.body.html).toContain('<ul><li>a.jpg: bad</li><li>&lt;b&gt;.mov: worse</li></ul>');
   });
+
+  it('each email has a seeded Sender / Reply-To, and admin emails a Send To', async () => {
+    const render = async (slug) => (await api().post(`/api/admin/pages/${slug}/render`).set(A).send({ values: {} })).body;
+    expect(await render('new-rock-request-email')).toMatchObject({
+      from: "Aiden's Rocks – Requests <requests@aidensrocks.com>",
+      replyTo: 'noreply@aidensrocks.com',
+      to: 'requests@aidensrocks.com',
+    });
+    expect(await render('follow-rocks-email')).toMatchObject({
+      from: "Aiden's Rocks <noreply@aidensrocks.com>",
+      replyTo: 'aidensfamily@aidensrocks.com',
+      to: null,
+    });
+    expect((await render('account-verify-email')).replyTo).toBe('noreply@aidensrocks.com');
+    // {CONTACT_EMAIL} comes from the contact-email setting, as a mailto link.
+    await sql(`UPDATE page_content SET draft_body = '<p>Write to {CONTACT_EMAIL}</p>' WHERE page_slug = 'send-email-default'`);
+    expect((await render('send-email-default')).html).toBe(
+      '<p>Write to <a href="mailto:aidensfamily@aidensrocks.com">aidensfamily@aidensrocks.com</a></p>'
+    );
+    const tpl = await api().get('/api/admin/pages/send-email-default/template').set(A);
+    expect(tpl.body.contactEmail).toBe('aidensfamily@aidensrocks.com');
+  });
+
+  it('Sender / Reply-To / Send To are saved on the draft, validated, and go live on Publish', async () => {
+    const slug = 'new-journey-email';
+    const draft = (extra) => api().put(`/api/admin/pages/${slug}/draft`).set(A).send({ body: '<p>Journey {ROCK_NUMBER}</p>', ...extra });
+    expect((await draft({ email_from: 'not an address' })).status).toBe(400);
+    expect((await draft({ email_from: 'a@b.com, c@d.com' })).status).toBe(400);
+    expect((await draft({ email_reply_to: 'nope' })).status).toBe(400);
+    expect((await draft({ email_to: 'nope' })).status).toBe(400);
+    // Send To only exists on the 4 admin emails; nothing at all on plain pages.
+    expect((await api().put('/api/admin/pages/account-verify-email/draft').set(A).send({ body: 'x', email_to: 'a@b.com' })).status).toBe(400);
+    expect((await api().put('/api/admin/pages/sudc/draft').set(A).send({ body: 'x', email_from: 'a@b.com' })).status).toBe(400);
+
+    const saved = await draft({ email_from: 'Rock Watch <watch@example.com>', email_reply_to: 'family@example.com', email_to: 'inbox@example.com' });
+    expect(saved.status).toBe(200);
+    expect(saved.body).toMatchObject({ email_from: 'Rock Watch <watch@example.com>', email_reply_to: 'family@example.com', email_to: 'inbox@example.com' });
+
+    // Draft is used by Preview / test Send; real sends stay on published until Publish.
+    const rendered = (await api().post(`/api/admin/pages/${slug}/render`).set(A).send({ values: {} })).body;
+    expect(rendered).toMatchObject({ from: 'Rock Watch <watch@example.com>', replyTo: 'family@example.com', to: 'inbox@example.com' });
+    const live = await sql(`SELECT published_email_from, published_email_to FROM page_content WHERE page_slug = $1`, [slug]);
+    expect(live[0]).toEqual({ published_email_from: "Aiden's Rocks – Journeys <journeys@aidensrocks.com>", published_email_to: 'journeys@aidensrocks.com' });
+
+    await clearMail();
+    expect((await api().post(`/api/admin/pages/${slug}/send`).set(A).send({ to: 'tester@example.com', values: { ROCK_NUMBER: '101' } })).status).toBe(200);
+    const sent = await waitForMail('tester@example.com');
+    expect(sent.From).toEqual({ Name: 'Rock Watch', Address: 'watch@example.com' });
+    expect(sent.ReplyTo.map((r) => r.Address)).toEqual(['family@example.com']);
+
+    const published = await api().post(`/api/admin/pages/${slug}/publish`).set(A);
+    expect(published.body).toMatchObject({ published_email_from: 'Rock Watch <watch@example.com>', published_email_to: 'inbox@example.com' });
+
+    // "" clears back to the default; blank Send To falls back to the Sender's address.
+    await draft({ email_from: 'Rock Watch <watch@example.com>', email_reply_to: '', email_to: '' });
+    const cleared = (await api().post(`/api/admin/pages/${slug}/render`).set(A).send({ values: {} })).body;
+    expect(cleared).toMatchObject({ replyTo: null, to: 'watch@example.com' });
+
+    // Put the seeded values back for the rest of the suite.
+    await draft({
+      email_from: "Aiden's Rocks – Journeys <journeys@aidensrocks.com>",
+      email_reply_to: 'noreply@aidensrocks.com',
+      email_to: 'journeys@aidensrocks.com',
+    });
+    await api().post(`/api/admin/pages/${slug}/publish`).set(A);
+  });
 });
 
 describe('settings and path display names', () => {
   it('settings round-trip', async () => {
     expect((await api().put('/api/admin/settings/test-setting').set(A).send({ value: { a: 1 } })).status).toBe(200);
     expect((await api().get('/api/admin/settings/test-setting').set(A)).body.value).toEqual({ a: 1 });
+  });
+
+  it('contact email: validated, and only allow-listed settings are public', async () => {
+    expect((await api().get('/api/site-settings')).body).toEqual({ contactEmail: 'aidensfamily@aidensrocks.com' });
+    expect((await api().put('/api/admin/settings/contact-email').set(A).send({ value: 'nope' })).status).toBe(400);
+    expect((await api().put('/api/admin/settings/contact-email').set(A).send({ value: 'hello@example.com' })).status).toBe(200);
+    // test-setting (saved above) must never leak through the public endpoint.
+    expect((await api().get('/api/site-settings')).body).toEqual({ contactEmail: 'hello@example.com' });
+    await api().put('/api/admin/settings/contact-email').set(A).send({ value: 'aidensfamily@aidensrocks.com' });
   });
 
   it('path display names CRUD', async () => {

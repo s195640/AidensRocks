@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useState, useRef } from "react";
 import { useARContext } from "../../context/ARContext";
+import { useSiteSettings } from "../../context/SiteSettingsContext";
 import "./UploadRockForm.css";
 import { FaFacebookSquare } from "react-icons/fa";
 import heic2any from "heic2any";
@@ -14,6 +15,7 @@ const CHUNK_SIZE = 80 * 1024 * 1024;
 
 export default function UploadRockForm({ onClose }) {
   const { trackerData, rValue } = useARContext();
+  const { contactEmail } = useSiteSettings();
 
   const [rockNumberQr] = useState(() =>
     rValue && /^\d+$/.test(rValue) ? String(rValue) : ""
@@ -263,8 +265,11 @@ export default function UploadRockForm({ onClose }) {
       console.error("Upload failed:", err);
       setDialog({
         type: "error",
-        message:
-          "Sorry, something went wrong. The submit did not work. Please email us instead if it keeps failing: AidensRocks.AAA@gmail.com",
+        message: `Sorry, something went wrong. The submit did not work.${
+          contactEmail
+            ? ` Please email us instead if it keeps failing: ${contactEmail}`
+            : " Please try again later."
+        }`,
       });
     } finally {
       setLoading(false);

@@ -31,3 +31,8 @@
 .sectionHeading {
   margin: 1.5rem 0 0.5rem;
 }
+
+/* Placeholder text in the Emails table's Sender / Reply-To / Send To cells. */
+.muted {
+  color: #888;
+}

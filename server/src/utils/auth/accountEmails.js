@@ -27,7 +27,13 @@ async function sendTemplateOrFallback(slug, email, token, fallback) {
     console.error(`Couldn't load "${slug}" template, using built-in wording:`, err.message);
   }
   if (rendered) {
-    return sendEmail({ to: email, subject: rendered.subject, html: rendered.html });
+    return sendEmail({
+      to: email,
+      from: rendered.from,
+      replyTo: rendered.replyTo,
+      subject: rendered.subject,
+      html: rendered.html,
+    });
   }
   return sendEmail({ to: email, ...fallback });
 }

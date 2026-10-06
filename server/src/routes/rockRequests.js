@@ -3,7 +3,7 @@ const pool = require('../db/pool');
 const safeRollback = require('../utils/db/safeRollback');
 const requireAdminAuth = require('../middleware/requireAdminAuth');
 const sendEmail = require('../utils/sendEmail');
-const { renderEmailTemplate } = require('../utils/emailTemplates');
+const { renderEmailTemplate, getTemplateAddresses } = require('../utils/emailTemplates');
 const { normalizeEmail, isValidEmail } = require('../utils/auth/password');
 const { publicFormLimiter } = require('../middleware/publicFormLimiter');
 
@@ -129,7 +129,8 @@ router.post('/', publicFormLimiter, async (req, res) => {
   // Fire-and-forget: a failed notification email should never turn an
   // already-saved request into a user-facing failure -- just log it. Content
   // is the "New Rock Request (to admin)" template in Page Details; its
-  // Active switch turns this notification off.
+  // Active switch turns this notification off, and its Send To / Sender /
+  // Reply-To decide where it goes and who it's from.
   renderEmailTemplate('new-rock-request-email', {
     NAME: name,
     EMAIL: email,
@@ -140,8 +141,14 @@ router.post('/', publicFormLimiter, async (req, res) => {
   })
     .then((rendered) => {
       if (!rendered || !rendered.visible) return;
+      if (!rendered.to) {
+        console.error('New rock request email has no Send To (Page Details); not sent.');
+        return;
+      }
       return sendEmail({
-        to: 'AidensRocks.AAA@gmail.com',
+        to: rendered.to,
+        from: rendered.from,
+        replyTo: rendered.replyTo,
         subject: rendered.subject,
         html: rendered.html,
       });
@@ -519,7 +526,10 @@ router.post('/:rq_key/send-email', async (req, res) => {
     }
     const wasShipped = rows[0].shipped;
 
-    await sendEmail({ to: rows[0].email, subject, text: body });
+    // Sender / Reply-To come from the "Rock Request Reply (default)"
+    // template that pre-filled this dialog.
+    const { from, replyTo } = await getTemplateAddresses('rock-request-reply-email');
+    await sendEmail({ to: rows[0].email, from, replyTo, subject, text: body });
 
     // sent_dt uses the same false -> true-only transition rule as the PUT
     // route above; email_dt always updates on a successful send.

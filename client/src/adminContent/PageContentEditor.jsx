@@ -37,8 +37,9 @@ export default function PageContentEditor({ page, content, onChange }) {
 
   const isEmail = EMAIL_SLUGS.has(page);
 
+  // Chips render with JS, so they never go in an email template.
   const insertOptions = Object.entries(componentRegistry).filter(
-    ([, entry]) => entry.pages === null || entry.pages?.includes(page)
+    ([, entry]) => (entry.pages === null && !isEmail) || entry.pages?.includes(page)
   );
   const placeholderOptions = isEmail
     ? EMAIL_PLACEHOLDERS.filter((entry) => entry.pages === null || entry.pages?.includes(page))

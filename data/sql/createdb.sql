@@ -523,7 +523,15 @@ CREATE TABLE public.page_content (
     -- Email-template subject (and account-page title) pair -- see
     -- data/sql/migrations/add_response_email_page.sql.
     draft_email_subject      text NOT NULL DEFAULT '',
-    published_email_subject  text NOT NULL DEFAULT ''
+    published_email_subject  text NOT NULL DEFAULT '',
+    -- Email-template Sender / Reply-To / Send To pairs (NULL = default) --
+    -- see data/sql/migrations/add_email_sender_columns.sql.
+    draft_email_from          text,
+    published_email_from      text,
+    draft_email_reply_to      text,
+    published_email_reply_to  text,
+    draft_email_to            text,
+    published_email_to        text
 );
 
 ALTER TABLE public.page_content OWNER TO postgres;
@@ -565,7 +573,7 @@ WITH body AS (
 <li>We want to give plenty of ways/options to share your rock</li>
 <ul>
 <li>Upload the images directly by clicking <div data-component="upload-rock-link" data-props='{}'></div> and filling out the form.</li>
-<li>Send us an email at AidensRocks.AAA@gmail.com</li>
+<li>Send us an email at <span data-component="contact-email-link" data-props='{}'></span></li>
 <li>Share and follow our Facebook: <div data-component="facebook-link" data-props='{}'></div></li>
 </ul>
 </ol>$html$::text AS content
@@ -730,6 +738,28 @@ FROM (VALUES
 ) AS t(ord, slug, label, subject, body)
 ON CONFLICT (page_slug) DO NOTHING;
 
+-- Email templates' Sender / Reply-To / Send To. Copied from data/sql/migrations/add_email_sender_columns.sql.
+UPDATE public.page_content p
+SET draft_email_from = v.sender,     published_email_from = v.sender,
+    draft_email_reply_to = v.reply,  published_email_reply_to = v.reply,
+    draft_email_to = v.send_to,      published_email_to = v.send_to
+FROM (VALUES
+  ('new-rock-request-email',         'Aiden''s Rocks – Requests <requests@aidensrocks.com>', 'noreply@aidensrocks.com',      'requests@aidensrocks.com'),
+  ('new-journey-email',              'Aiden''s Rocks – Journeys <journeys@aidensrocks.com>', 'noreply@aidensrocks.com',      'journeys@aidensrocks.com'),
+  ('upload-files-failed-email',      'Aiden''s Rocks – Failures <failures@aidensrocks.com>', 'noreply@aidensrocks.com',      'failures@aidensrocks.com'),
+  ('upload-processing-failed-email', 'Aiden''s Rocks – Failures <failures@aidensrocks.com>', 'noreply@aidensrocks.com',      'failures@aidensrocks.com'),
+  ('follow-rocks-email',             'Aiden''s Rocks <noreply@aidensrocks.com>',            'aidensfamily@aidensrocks.com', NULL),
+  ('rock-request-reply-email',       'Aiden''s Rocks <noreply@aidensrocks.com>',            'aidensfamily@aidensrocks.com', NULL),
+  ('account-verify-email',           'Aiden''s Rocks <noreply@aidensrocks.com>',            'noreply@aidensrocks.com',      NULL),
+  ('password-reset-email',           'Aiden''s Rocks <noreply@aidensrocks.com>',            'noreply@aidensrocks.com',      NULL),
+  ('response-email',                 'Aiden''s Rocks <noreply@aidensrocks.com>',            'noreply@aidensrocks.com',      NULL),
+  ('response-email-multi',           'Aiden''s Rocks <noreply@aidensrocks.com>',            'noreply@aidensrocks.com',      NULL),
+  ('send-email-default',             'Aiden''s Rocks <noreply@aidensrocks.com>',            'noreply@aidensrocks.com',      NULL)
+) AS v(slug, sender, reply, send_to)
+WHERE p.page_slug = v.slug
+  AND p.draft_email_from IS NULL AND p.published_email_from IS NULL
+  AND p.draft_email_reply_to IS NULL AND p.published_email_reply_to IS NULL;
+
 -- Account pages (Sign In / Create an Account / Reset Password). Copied from data/sql/migrations/add_account_pages.sql.
 INSERT INTO public.page_content
   (page_slug, nav_label, order_num, visible, draft_body, published_body, draft_email_subject, published_email_subject)
@@ -844,6 +874,15 @@ CREATE TABLE IF NOT EXISTS public.setting (
 );
 
 ALTER TABLE public.setting OWNER TO postgres;
+
+-- Site-wide contact email shown to visitors (Contact Us, "email us" error
+-- messages, the Contact Email chip and {CONTACT_EMAIL} in emails). Edited
+-- in Admin → Settings.
+INSERT INTO public.setting (name, value, type, description)
+VALUES ('contact-email', '"aidensfamily@aidensrocks.com"', 'site',
+        'Contact email shown to visitors (Contact Us, error messages, {CONTACT_EMAIL}).')
+ON CONFLICT (name) DO NOTHING;
+
 
 -- entry_media: tracks every image/video uploaded into a given Honoring
 -- Aiden entry's ContentEditor document, independent of whether it's still

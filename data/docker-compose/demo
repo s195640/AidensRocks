@@ -53,6 +53,10 @@ EMAIL_PASSWORD=
 # SMTP_PASSWORD=
 # EMAIL_FROM=Aiden's Rocks <hello@example.com>   (no quotes -- docker compose rejects them here)
 # EMAIL_REPLY_TO=AidensRocks.AAA@gmail.com
+# Each email's own Sender / Reply-To / Send To is set in Admin -> Page Details;
+# the two above are only defaults. Last-resort recipient for an upload-failure
+# alert whose template can't be read (e.g. the database is down):
+# ADMIN_ALERT_EMAIL=AidensRocks.AAA@gmail.com
 
 # Reverse geocoding for Journey admin (country/state) -- opencagedata.com key.
 OPENCAGE_API_KEY=

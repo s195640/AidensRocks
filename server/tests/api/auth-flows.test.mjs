@@ -31,6 +31,9 @@ describe('sign-up and verification', () => {
     expect(mail.Text).not.toMatch(/<[a-z]/i);
     expect(mail.HTML).toMatch(/^<!doctype html>/i);
     expect(mail.HTML).toContain('<html lang="en">');
+    // Sender / Reply-To from the template (Page Details).
+    expect(mail.From).toEqual({ Name: "Aiden's Rocks", Address: 'noreply@aidensrocks.com' });
+    expect(mail.ReplyTo.map((r) => r.Address)).toEqual(['noreply@aidensrocks.com']);
   });
 
   it('an unverified account cannot sign in yet (403 UNVERIFIED)', async () => {

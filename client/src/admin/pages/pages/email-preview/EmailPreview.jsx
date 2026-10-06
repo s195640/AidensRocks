@@ -83,13 +83,19 @@ const EmailPreview = () => {
 
       <div className={styles.emailCard}>
         <div className={styles.emailHeader}>
+          {/* The template's draft Sender / Reply-To / Send To (Page Details). */}
           <div>
-            <span className={styles.headerLabel}>From:</span> Aiden&apos;s Rocks
-            &lt;AidensRocks.AAA@gmail.com&gt;
+            <span className={styles.headerLabel}>From:</span>{" "}
+            {rendered.from || <em>site default sender</em>}
           </div>
-          {to && (
+          {rendered.replyTo && (
             <div>
-              <span className={styles.headerLabel}>To:</span> {to}
+              <span className={styles.headerLabel}>Reply-To:</span> {rendered.replyTo}
+            </div>
+          )}
+          {(to || rendered.to) && (
+            <div>
+              <span className={styles.headerLabel}>To:</span> {to || rendered.to}
             </div>
           )}
           <div>

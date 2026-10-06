@@ -56,11 +56,15 @@ ${html}
 </html>`;
 }
 
-async function sendEmail({ to, subject, text, html, attachments = [] }) {
+// from / replyTo: the per-template Sender / Reply-To from Page Details
+// (renderEmailTemplate returns them). Blank falls back to EMAIL_FROM /
+// EMAIL_REPLY_TO. Note: plain Gmail SMTP (no SMTP_HOST) rewrites From to
+// the Gmail account, so per-template senders only show via a domain sender.
+async function sendEmail({ to, subject, text, html, from, replyTo, attachments = [] }) {
   let transporter = buildTransporter();
 
   let mailOptions = {
-    from: process.env.EMAIL_FROM || `"Aiden's Rocks" <${process.env.EMAIL_USER}>`,
+    from: from || process.env.EMAIL_FROM || `"Aiden's Rocks" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     text,
@@ -81,8 +85,8 @@ async function sendEmail({ to, subject, text, html, attachments = [] }) {
     });
   }
 
-  if (process.env.EMAIL_REPLY_TO) {
-    mailOptions.replyTo = process.env.EMAIL_REPLY_TO;
+  if (replyTo || process.env.EMAIL_REPLY_TO) {
+    mailOptions.replyTo = replyTo || process.env.EMAIL_REPLY_TO;
   }
 
   return transporter.sendMail(mailOptions);

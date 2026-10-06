@@ -58,7 +58,13 @@ async function notifyFollowers(rockNumber, { location, date } = {}) {
 
   for (const { email } of rows) {
     try {
-      await sendEmail({ to: email, subject: rendered.subject, html: rendered.html });
+      await sendEmail({
+        to: email,
+        from: rendered.from,
+        replyTo: rendered.replyTo,
+        subject: rendered.subject,
+        html: rendered.html,
+      });
     } catch (err) {
       console.error(`Rock-moved email to ${email} failed:`, err.message);
     }

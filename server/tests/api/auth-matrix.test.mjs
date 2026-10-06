@@ -36,6 +36,7 @@ const ROUTES = [
   ['GET', '/api/rock-posts/101', 'public'],
   ['GET', '/api/rock-posts/locations/all', 'public'],
   ['POST', '/api/rock-requests', 'public'],
+  ['GET', '/api/site-settings', 'public'],
   ['GET', '/api/albums', 'public'],
   ['GET', '/api/albums/1/photos', 'public'],
   ['GET', '/api/ar-details', 'public'],

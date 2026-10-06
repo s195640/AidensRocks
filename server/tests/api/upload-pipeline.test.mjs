@@ -9,7 +9,9 @@ import { clearMail, listMail, getMail } from '../helpers/mailpit.mjs';
 import { makeImage } from '../helpers/media.mjs';
 import { MEDIA_ROOT } from '../setup/testEnv.mjs';
 
-const ADMIN_INBOX = 'AidensRocks.AAA@gmail.com';
+// Admin emails go to each template's Send To (seeded in createdb.sql).
+const JOURNEYS_INBOX = 'journeys@aidensrocks.com';
+const FAILURES_INBOX = 'failures@aidensrocks.com';
 
 const upload = (fields, files = []) => {
   const req = api().post('/api/upload-rock');
@@ -63,7 +65,7 @@ describe('happy path', () => {
   });
 
   it('emails the admin', async () => {
-    await waitFor(async () => (await listMail(ADMIN_INBOX)).some((m) => /Rock 102/.test(m.Subject)), {
+    await waitFor(async () => (await listMail(JOURNEYS_INBOX)).some((m) => /Rock 102/.test(m.Subject)), {
       label: 'admin new-journey email',
     });
   });
@@ -113,18 +115,19 @@ describe('[S9] one file that fails to process', () => {
       { original_name: 'good.jpg', show: true },
       { original_name: 'broken.jpg', show: false },
     ]);
-    await waitFor(async () => (await listMail(ADMIN_INBOX)).some((m) => /FAILED/.test(m.Subject)), {
+    await waitFor(async () => (await listMail(JOURNEYS_INBOX)).some((m) => /FAILED/.test(m.Subject)), {
       label: 'failure email',
     });
     // Rendered from the "Upload Files Failed" template, in a red box on top
     // of the (Active) New Rock Journey email.
-    const hit = (await listMail(ADMIN_INBOX)).find((m) => /FAILED/.test(m.Subject));
+    const hit = (await listMail(JOURNEYS_INBOX)).find((m) => /FAILED/.test(m.Subject));
     const mail = await getMail(hit.ID);
     expect(mail.Subject).toMatch(/^\[1 FILE\(S\) FAILED\] /);
     expect(mail.HTML).toContain('border:2px solid #c0392b');
     expect(mail.HTML).toMatch(/<li>broken\.jpg: [^<]+<\/li>/);
     expect(mail.HTML).toContain(`journey #${rpsKey}`);
     expect(mail.HTML).toContain('The other 1 file(s) are published.');
+    expect(mail.From).toEqual({ Name: "Aiden's Rocks – Journeys", Address: 'journeys@aidensrocks.com' });
   });
 
   it('nothing processed: stays hidden, admin still told', async () => {
@@ -145,10 +148,10 @@ describe('[S9] one file that fails to process', () => {
     const processImagesInBackground = require('../../src/utils/rock-upload/processImagesInBackground');
     await processImagesInBackground(dir, 'Tester', '101', 'c', 'AllBad', '2025-09-03', '', rpsKey);
     expect((await sql('SELECT show FROM journey WHERE rps_key = $1', [rpsKey]))[0].show).toBe(false);
-    await waitFor(async () => (await listMail(ADMIN_INBOX)).some((m) => /FAILED/.test(m.Subject)), {
+    await waitFor(async () => (await listMail(JOURNEYS_INBOX)).some((m) => /FAILED/.test(m.Subject)), {
       label: 'failure email',
     });
-    const hit = (await listMail(ADMIN_INBOX)).find((m) => /FAILED/.test(m.Subject));
+    const hit = (await listMail(JOURNEYS_INBOX)).find((m) => /FAILED/.test(m.Subject));
     expect((await getMail(hit.ID)).HTML).toContain('Nothing processed, so the journey is still hidden.');
   });
 
@@ -176,10 +179,10 @@ describe('[S9] one file that fails to process', () => {
       );
       const processImagesInBackground = require('../../src/utils/rock-upload/processImagesInBackground');
       await processImagesInBackground(dir, 'Tester', '101', 'c', 'Edited', '2025-09-04', '', rpsKey);
-      await waitFor(async () => (await listMail(ADMIN_INBOX)).some((m) => /^Edited: 1 bad on rock 101$/.test(m.Subject)), {
+      await waitFor(async () => (await listMail(FAILURES_INBOX)).some((m) => /^Edited: 1 bad on rock 101$/.test(m.Subject)), {
         label: 'edited failure email',
       });
-      const hit = (await listMail(ADMIN_INBOX)).find((m) => /^Edited:/.test(m.Subject));
+      const hit = (await listMail(FAILURES_INBOX)).find((m) => /^Edited:/.test(m.Subject));
       const mail = await getMail(hit.ID);
       expect(mail.HTML).toContain('<p>Edited body</p><ul><li>junk.jpg: ');
       expect(mail.HTML).not.toContain('border:2px solid #c0392b');
@@ -194,13 +197,34 @@ describe('[S9] one file that fails to process', () => {
     const dir = path.join(MEDIA_ROOT, 'rocks', '101', 'does-not-exist');
     // ensureDir creates webp/ etc, but o/ is missing, so readdir throws.
     await processImagesInBackground(dir, 'Tester', '101', 'c', 'Crash', '2025-09-05', '', 999999);
-    await waitFor(async () => (await listMail(ADMIN_INBOX)).some((m) => /processing FAILED: Rock 101/.test(m.Subject)), {
+    await waitFor(async () => (await listMail(FAILURES_INBOX)).some((m) => /processing FAILED: Rock 101/.test(m.Subject)), {
       label: 'processing-failed email',
     });
-    const hit = (await listMail(ADMIN_INBOX)).find((m) => /processing FAILED/.test(m.Subject));
+    const hit = (await listMail(FAILURES_INBOX)).find((m) => /processing FAILED/.test(m.Subject));
     const mail = await getMail(hit.ID);
     expect(mail.HTML).toContain('journey #999999');
     expect(mail.HTML).toContain('does-not-exist');
+    expect(mail.From).toEqual({ Name: "Aiden's Rocks – Failures", Address: 'failures@aidensrocks.com' });
+    expect(mail.ReplyTo.map((r) => r.Address)).toEqual(['noreply@aidensrocks.com']);
+  });
+
+  it('with the failure template unreadable, the built-in note goes to ADMIN_ALERT_EMAIL', async () => {
+    await clearMail();
+    const before = process.env.ADMIN_ALERT_EMAIL;
+    process.env.ADMIN_ALERT_EMAIL = 'alerts@example.com';
+    await sql(`UPDATE page_content SET page_slug = 'upload-processing-failed-email-off' WHERE page_slug = 'upload-processing-failed-email'`);
+    try {
+      const processImagesInBackground = require('../../src/utils/rock-upload/processImagesInBackground');
+      const dir = path.join(MEDIA_ROOT, 'rocks', '101', 'also-missing');
+      await processImagesInBackground(dir, 'Tester', '101', 'c', 'Crash', '2025-09-06', '', 999998);
+      await waitFor(async () => (await listMail('alerts@example.com')).some((m) => /processing FAILED: Rock 101/.test(m.Subject)), {
+        label: 'fallback processing-failed email',
+      });
+    } finally {
+      await sql(`UPDATE page_content SET page_slug = 'upload-processing-failed-email' WHERE page_slug = 'upload-processing-failed-email-off'`);
+      if (before === undefined) delete process.env.ADMIN_ALERT_EMAIL;
+      else process.env.ADMIN_ALERT_EMAIL = before;
+    }
   });
 });
 
@@ -238,8 +262,14 @@ describe('input validation', () => {
 describe('rock requests (public form)', () => {
   const ok = { name: 'Req', email: 'req@example.com', address: '1 Road', rocksRequested: 2, noRush: true };
   const isoDay = (offsetDays) => new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10);
-  it('accepts a valid request', async () => {
+  it('accepts a valid request and notifies the Requests inbox from requests@', async () => {
+    await clearMail();
     expect((await api().post('/api/rock-requests').send(ok)).status).toBe(201);
+    await waitFor(async () => (await listMail('requests@aidensrocks.com')).length > 0, { label: 'new request email' });
+    const mail = await getMail((await listMail('requests@aidensrocks.com'))[0].ID);
+    expect(mail.Subject).toBe('New Rock Request from Req');
+    expect(mail.From).toEqual({ Name: "Aiden's Rocks – Requests", Address: 'requests@aidensrocks.com' });
+    expect(mail.ReplyTo.map((r) => r.Address)).toEqual(['noreply@aidensrocks.com']);
   });
   it('stores a need-by date, or no rush (which drops any date)', async () => {
     const dated = await api().post('/api/rock-requests').send({ ...ok, noRush: false, neededBy: isoDay(30) });

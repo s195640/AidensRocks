@@ -1,6 +1,7 @@
 // components/contact-request-rocks/ContactReqestRocks.jsx
 import { useState } from "react";
 import axios from "axios";
+import { useSiteSettings } from "../../context/SiteSettingsContext";
 import styles from "./ContactReqestRocks.module.css";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -13,6 +14,7 @@ const localToday = () => {
 };
 
 const ContactRequestRocks = ({ onClose }) => {
+  const { contactEmail } = useSiteSettings();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
@@ -73,7 +75,9 @@ const ContactRequestRocks = ({ onClose }) => {
     } catch (err) {
       console.error("Rock request submit failed:", err);
       setError(
-        "Sorry, something went wrong. Please email us instead: AidensRocks.AAA@gmail.com"
+        contactEmail
+          ? `Sorry, something went wrong. Please email us instead: ${contactEmail}`
+          : "Sorry, something went wrong. Please try again later."
       );
     } finally {
       setSubmitting(false);

@@ -72,6 +72,9 @@ const PagesAdmin = () => {
               ...p,
               published_body: res.data.published_body,
               published_email_subject: res.data.published_email_subject,
+              published_email_from: res.data.published_email_from,
+              published_email_reply_to: res.data.published_email_reply_to,
+              published_email_to: res.data.published_email_to,
               published_at: res.data.published_at,
             }
             : p
@@ -94,14 +97,31 @@ const PagesAdmin = () => {
       return;
 
     try {
+      const isEmail = EMAIL_SLUGS.has(page.slug);
       const res = await axios.put(`/api/admin/pages/${page.slug}/draft`, {
         body: page.published_body,
         email_subject: page.published_email_subject,
+        ...(isEmail
+          ? {
+              email_from: page.published_email_from || "",
+              email_reply_to: page.published_email_reply_to || "",
+              ...(EMAIL_TEMPLATES[page.slug]?.adminRecipient
+                ? { email_to: page.published_email_to || "" }
+                : {}),
+            }
+          : {}),
       });
       setPages((prev) =>
         prev.map((p) =>
           p.slug === page.slug
-            ? { ...p, draft_body: res.data.body, draft_email_subject: res.data.email_subject }
+            ? {
+                ...p,
+                draft_body: res.data.body,
+                draft_email_subject: res.data.email_subject,
+                draft_email_from: res.data.email_from,
+                draft_email_reply_to: res.data.email_reply_to,
+                draft_email_to: res.data.email_to,
+              }
             : p
         )
       );
@@ -164,6 +184,10 @@ const PagesAdmin = () => {
     { key: "nav_label", label: "Email", sortable: false, defaultWidth: 160 },
     { key: "used_for", label: "Used For", sortable: false, defaultWidth: 240 },
     { key: "published_email_subject", label: "Subject", sortable: false },
+    // Live (published) addresses, like Subject; edits show after Publish.
+    { key: "published_email_from", label: "Sender", sortable: false, defaultWidth: 200 },
+    { key: "published_email_reply_to", label: "Reply-To", sortable: false, defaultWidth: 170 },
+    { key: "published_email_to", label: "Send To", sortable: false, defaultWidth: 170 },
     ...columns.slice(1),
   ];
 
@@ -178,6 +202,19 @@ const PagesAdmin = () => {
     switch (key) {
       case "used_for":
         return EMAIL_TEMPLATES[page.slug]?.description || "";
+
+      // Blank values fall back on the server (see emailTemplates.js).
+      case "published_email_from":
+        return page.published_email_from || <em className={styles.muted}>Site default</em>;
+
+      case "published_email_reply_to":
+        return page.published_email_reply_to || <em className={styles.muted}>Site default</em>;
+
+      case "published_email_to":
+        if (!EMAIL_TEMPLATES[page.slug]?.adminRecipient) {
+          return <em className={styles.muted}>The visitor</em>;
+        }
+        return page.published_email_to || <em className={styles.muted}>Sender&apos;s address</em>;
 
       case "visible": {
         const isEmail = EMAIL_SLUGS.has(page.slug);
@@ -226,7 +263,10 @@ const PagesAdmin = () => {
         const isEmail = EMAIL_SLUGS.has(page.slug);
         const hasUnpublishedChanges =
           page.draft_body !== page.published_body ||
-          page.draft_email_subject !== page.published_email_subject;
+          page.draft_email_subject !== page.published_email_subject ||
+          (page.draft_email_from ?? null) !== (page.published_email_from ?? null) ||
+          (page.draft_email_reply_to ?? null) !== (page.published_email_reply_to ?? null) ||
+          (page.draft_email_to ?? null) !== (page.published_email_to ?? null);
         return (
           <div className={styles.actionsCol}>
             {isEditable && <button onClick={() => setEditingPage(page)}>Edit</button>}

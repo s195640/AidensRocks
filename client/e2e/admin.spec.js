@@ -5,7 +5,7 @@ import { signInAs, trackErrors } from "./helpers";
 const ADMIN_PAGES = [
   "/admin", "/admin/jobs", "/admin/users", "/admin/accounts", "/admin/rocks",
   "/admin/albums", "/admin/journey", "/admin/rock-requests", "/admin/music",
-  "/admin/pages", "/admin/honoring-aiden",
+  "/admin/pages", "/admin/honoring-aiden", "/admin/settings",
 ];
 
 test("signed out, /admin goes to sign in", async ({ page }) => {

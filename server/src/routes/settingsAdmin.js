@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db/pool");
 const requireAdminAuth = require("../middleware/requireAdminAuth");
+const { CONTACT_EMAIL_SETTING } = require("../utils/siteSettings");
+const { isPlainEmail } = require("../utils/emailAddress");
 
 // Admin read/write for the generic `setting` key/value table (see
 // data/sql/migrations/add_setting_table.sql). Rows are addressed by name,
@@ -13,6 +15,14 @@ const NAME_RE = /^[a-z0-9._-]{1,100}$/;
 const MAX_VALUE_BYTES = 64 * 1024;
 
 const COLUMNS = "name, value, type, description, create_dt, update_dt";
+
+// Settings with a known shape are checked before saving; returns an error
+// message, or null if the value is fine. Unknown names (e.g. a job's saved
+// controls) are free-form.
+const VALIDATORS = {
+  [CONTACT_EMAIL_SETTING]: (value) =>
+    isPlainEmail(value) ? null : "Contact email must be a valid email address.",
+};
 
 // GET /:name -- returns one setting, 404 if it has never been saved.
 router.get("/:name", async (req, res) => {
@@ -39,6 +49,9 @@ router.put("/:name", async (req, res) => {
 
   if (!NAME_RE.test(name)) return res.status(400).json({ error: "Invalid setting name." });
   if (value === undefined) return res.status(400).json({ error: "A value is required." });
+
+  const invalid = VALIDATORS[name]?.(value);
+  if (invalid) return res.status(400).json({ error: invalid });
 
   const json = JSON.stringify(value);
   if (Buffer.byteLength(json) > MAX_VALUE_BYTES) {

@@ -4,6 +4,8 @@
 //   description - shown in Page Details' "Used for" column
 //   kind        - "automatic" (the site sends it) or "default" (only
 //                 pre-fills a freeform send the admin edits and sends)
+//   adminRecipient - sent to the family, not a visitor: Page Details shows
+//                 a Send To field (server: ADMIN_RECIPIENT_SLUGS)
 //   required    - always on; the Active switch is locked
 //   requiredReason - why, for the locked switch's tooltip (default: sign-up/reset)
 //   fields      - inputs the Preview and test-Send dialogs collect; `key` is
@@ -87,6 +89,7 @@ const EMAIL_TEMPLATES = {
   "new-journey-email": {
     description: "Sent to you when a new rock journey is posted (photos attached).",
     kind: "automatic",
+    adminRecipient: true,
     fields: [
       ROCK_NUMBER_FIELD,
       { key: "NAME", label: "Name", placeholder: "Jane" },
@@ -108,6 +111,7 @@ const EMAIL_TEMPLATES = {
   "new-rock-request-email": {
     description: "Sent to you when someone submits Request A Rock.",
     kind: "automatic",
+    adminRecipient: true,
     fields: [
       { key: "NAME", label: "Name", placeholder: "Jane" },
       { key: "EMAIL", label: "Email", placeholder: "jane@example.com" },
@@ -151,6 +155,7 @@ const EMAIL_TEMPLATES = {
     description:
       "Sent to you when some files in a rock upload couldn't be processed. If New Rock Journey is Active, it appears in a red box at the top of that email instead. Always on.",
     kind: "automatic",
+    adminRecipient: true,
     required: true,
     requiredReason: "a failed upload always needs someone to look at it",
     fields: [
@@ -180,6 +185,7 @@ const EMAIL_TEMPLATES = {
     description:
       "Sent to you when processing a rock upload fails outright (the journey may still be hidden). Always on.",
     kind: "automatic",
+    adminRecipient: true,
     required: true,
     requiredReason: "a failed upload always needs someone to look at it",
     fields: [
@@ -196,5 +202,11 @@ const EMAIL_TEMPLATES = {
     ],
   },
 };
+
+// {CONTACT_EMAIL} (the Admin → Settings contact email) works in every
+// template; the server fills it in.
+for (const template of Object.values(EMAIL_TEMPLATES)) {
+  template.tokens = [...template.tokens, ["{CONTACT_EMAIL}", "Contact Email"]];
+}
 
 export default EMAIL_TEMPLATES;

@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require("../db/pool");
 const requireAdminAuth = require("../middleware/requireAdminAuth");
 const sendEmail = require("../utils/sendEmail");
-const { renderEmailTemplate } = require("../utils/emailTemplates");
+const { renderEmailTemplate, getTemplateAddresses } = require("../utils/emailTemplates");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -107,7 +107,13 @@ router.post("/send-emails-catchup/send", async (req, res) => {
       });
     }
 
-    await sendEmail({ to: trimmedEmail, subject: rendered.subject, html: rendered.html });
+    await sendEmail({
+      to: trimmedEmail,
+      from: rendered.from,
+      replyTo: rendered.replyTo,
+      subject: rendered.subject,
+      html: rendered.html,
+    });
 
     // Case-insensitive match: GET /send-emails-catchup lowercases email for
     // grouping/display, so the row this came from may not be spelled the
@@ -149,8 +155,12 @@ router.post("/send-email", async (req, res) => {
   }
 
   try {
+    // Sender / Reply-To come from the "Send Email (default)" template.
+    const { from, replyTo } = await getTemplateAddresses("send-email-default");
     await sendEmail({
       to: to.trim(),
+      from,
+      replyTo,
       subject: trimmedSubject,
       text: trimmedMessage,
     });

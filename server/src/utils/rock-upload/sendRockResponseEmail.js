@@ -29,7 +29,13 @@ async function sendRockResponseEmail(rockNumber, email, rpsKey) {
     const rendered = await renderEmailTemplate(RESPONSE_EMAIL_SLUG, { ROCK_NUMBER: rockNumber });
     if (!rendered || !rendered.visible) return;
 
-    await sendEmail({ to: email, subject: rendered.subject, html: rendered.html });
+    await sendEmail({
+      to: email,
+      from: rendered.from,
+      replyTo: rendered.replyTo,
+      subject: rendered.subject,
+      html: rendered.html,
+    });
 
     console.log(`✅ Sent response email to ${email} for rock ${rockNumber}`);
 

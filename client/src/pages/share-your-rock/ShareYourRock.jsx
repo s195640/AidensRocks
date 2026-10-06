@@ -7,6 +7,7 @@ import ContentBody from "../../components/content-body/ContentBody";
 import styles from "./ShareYourRock.module.css";
 import FloatingRockLink from "../../components/floating-rock-link/FloatingRockLink";
 import RichText from "../../adminContent/RichText";
+import ContactEmailLink from "../../adminContent/components/ContactEmailLink";
 import { usePageContent } from "../../adminContent/usePageContent";
 import {
   UploadRockModalProvider,
@@ -94,7 +95,9 @@ const ShareYourRockContent = () => {
                 </a>{" "}
                 and filling out the form.
               </li>
-              <li>Send us an email at AidensRocks.AAA@gmail.com</li>
+              <li>
+                Send us an email at <ContactEmailLink />
+              </li>
               <li>
                 Share and follow our Facebook:{" "}
                 <a

@@ -9,7 +9,30 @@ const notifyFollowers = require('./notifyFollowers');
 const { renderEmailTemplate } = require('../emailTemplates');
 const db = require('../../db/pool');
 
-const ADMIN_EMAIL = 'AidensRocks.AAA@gmail.com';
+// Who these admin emails go to, and from whom, is set per template in Page
+// Details (Send To / Sender / Reply-To). ADMIN_ALERT_EMAIL (.env) is only a
+// last resort for a failure note whose template couldn't be read at all.
+const alertFallback = () => ({
+  from: null,
+  replyTo: null,
+  to: process.env.ADMIN_ALERT_EMAIL || null,
+});
+
+// Sends an admin email, or logs it if there's nowhere to send it.
+async function sendToAdmin(addresses, { subject, html, attachments }) {
+  if (!addresses.to) {
+    console.error(`⚠️ No Send To for admin email "${subject}" (set it in Page Details, or ADMIN_ALERT_EMAIL); not sent.`);
+    return;
+  }
+  await sendEmail({
+    to: addresses.to,
+    from: addresses.from,
+    replyTo: addresses.replyTo,
+    subject,
+    html,
+    attachments,
+  });
+}
 
 const escapeHtml = (v) =>
   String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -20,7 +43,8 @@ const escapeHtml = (v) =>
 // template can't be loaded -- a missing row, or the very DB/template error
 // being reported -- so a failure is never left unreported.
 
-// Some files in an upload didn't process. Returns { subject, html }.
+// Some files in an upload didn't process. Returns { subject, html, from,
+// replyTo, to }.
 async function renderFilesFailedNote(failures, processedCount, rpsKey, rockNumber) {
   const publishStatus = processedCount
     ? `The other ${processedCount} file(s) are published.`
@@ -33,12 +57,13 @@ async function renderFilesFailedNote(failures, processedCount, rpsKey, rockNumbe
       PUBLISH_STATUS: publishStatus,
       FAILED_FILES: failures.map((f) => ({ name: f.name, error: f.error })),
     });
-    if (rendered) return { subject: rendered.subject, html: rendered.html };
+    if (rendered) return rendered;
   } catch (err) {
     console.error('Could not render the upload-files-failed template, using built-in wording:', err.message);
   }
   const items = failures.map((f) => `<li>${escapeHtml(f.name)}: ${escapeHtml(f.error)}</li>`).join('');
   return {
+    ...alertFallback(),
     subject: `[${failures.length} FILE(S) FAILED] Rock upload: Rock ${rockNumber}`,
     html: `<p><strong>${failures.length} file(s) in this upload could not be processed</strong> and are hidden (journey #${rpsKey}).
 ${publishStatus}</p>
@@ -46,7 +71,8 @@ ${publishStatus}</p>
   };
 }
 
-// Processing failed outright (DB, disk, template). Returns { subject, html }.
+// Processing failed outright (DB, disk, template). Returns { subject,
+// html, from, replyTo, to }.
 async function renderProcessingFailedNote(err, rpsKey, rockNumber, baseDir) {
   try {
     const rendered = await renderEmailTemplate('upload-processing-failed-email', {
@@ -55,11 +81,12 @@ async function renderProcessingFailedNote(err, rpsKey, rockNumber, baseDir) {
       ERROR: err.message,
       FOLDER: baseDir,
     });
-    if (rendered) return { subject: rendered.subject, html: rendered.html };
+    if (rendered) return rendered;
   } catch (renderErr) {
     console.error('Could not render the upload-processing-failed template, using built-in wording:', renderErr.message);
   }
   return {
+    ...alertFallback(),
     subject: `Rock upload processing FAILED: Rock ${rockNumber}`,
     html: `<p>Processing the upload for rock ${rockNumber} (journey #${rpsKey}) failed, so it may still be hidden in Journey admin.</p>
 <p>Error: ${escapeHtml(err.message)}</p><p>Folder: ${escapeHtml(baseDir)}</p>`,
@@ -166,7 +193,7 @@ async function processImagesInBackground(baseDir, name, safeRockNumber, commentS
       // The routine notification is switched off, but failures still need
       // a human -- send just the failure note.
       if (failureNote) {
-        await sendEmail({ to: ADMIN_EMAIL, subject: failureNote.subject, html: failureNote.html });
+        await sendToAdmin(failureNote, failureNote);
       }
       return;
     }
@@ -185,9 +212,8 @@ async function processImagesInBackground(baseDir, name, safeRockNumber, commentS
       console.warn(`⚠️ Could not attach images from ${webpDir}:`, err.message);
     }
 
-    // --- Send notification email ---
-    await sendEmail({
-      to: ADMIN_EMAIL,
+    // --- Send notification email (New Rock Journey's Sender / Send To) ---
+    await sendToAdmin(rendered, {
       subject: failures.length ? `[${failures.length} FILE(S) FAILED] ${subject}` : subject,
       html: (failureNote ? failureBox(failureNote.html) : '') + rendered.html,
       attachments,
@@ -200,7 +226,7 @@ async function processImagesInBackground(baseDir, name, safeRockNumber, commentS
     // the admin rather than leaving a hidden journey nobody knows about.
     try {
       const note = await renderProcessingFailedNote(err, rpsKey, safeRockNumber, baseDir);
-      await sendEmail({ to: ADMIN_EMAIL, subject: note.subject, html: note.html });
+      await sendToAdmin(note, note);
     } catch (mailErr) {
       console.error('❌ Could not send the processing-failure email:', mailErr);
     }

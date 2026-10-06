@@ -4,7 +4,13 @@ const db = require("../db/pool");
 const safeRollback = require("../utils/db/safeRollback");
 const requireAdminAuth = require("../middleware/requireAdminAuth");
 const sendEmail = require("../utils/sendEmail");
-const { renderEmailTemplate, REQUIRED_EMAIL_SLUGS } = require("../utils/emailTemplates");
+const {
+  renderEmailTemplate,
+  REQUIRED_EMAIL_SLUGS,
+  ADMIN_RECIPIENT_SLUGS,
+} = require("../utils/emailTemplates");
+const { isPlainEmail, parseSender } = require("../utils/emailAddress");
+const { getContactEmail } = require("../utils/siteSettings");
 const EMAIL_SLUGS = require("../utils/emailSlugs");
 const { LOCKED_ON_PAGE_SLUGS } = require("../utils/accountPageSlugs");
 
@@ -19,6 +25,9 @@ router.get("/", async (req, res) => {
       `SELECT page_slug AS slug, nav_label, order_num, visible,
               draft_body, published_body,
               draft_email_subject, published_email_subject,
+              draft_email_from, published_email_from,
+              draft_email_reply_to, published_email_reply_to,
+              draft_email_to, published_email_to,
               updated_at, published_at
        FROM page_content
        ORDER BY order_num`
@@ -97,6 +106,33 @@ router.patch("/:slug/visible", async (req, res) => {
   }
 });
 
+// Sender / Reply-To / Send To on an email template's draft. Each is
+// optional in the request (undefined = leave as is); "" clears it back to
+// the default. Returns { fields } with the values to store, or { error }.
+function readAddressFields(slug, body) {
+  const fields = {};
+  const isEmail = EMAIL_SLUGS.has(slug);
+  for (const key of ["email_from", "email_reply_to", "email_to"]) {
+    if (body[key] === undefined) continue;
+    if (!isEmail) return { error: "Sender / Reply-To / Send To only apply to email templates." };
+    if (typeof body[key] !== "string") return { error: `'${key}' must be a string.` };
+    fields[key] = body[key].trim() || null;
+  }
+  if (fields.email_from && !parseSender(fields.email_from)) {
+    return { error: "Sender must be one email address, e.g. Aiden's Rocks <noreply@aidensrocks.com>." };
+  }
+  if (fields.email_reply_to && !isPlainEmail(fields.email_reply_to)) {
+    return { error: "Reply-To must be a valid email address." };
+  }
+  if (fields.email_to !== undefined && !ADMIN_RECIPIENT_SLUGS.has(slug)) {
+    return { error: "Send To only applies to emails sent to the family." };
+  }
+  if (fields.email_to && !isPlainEmail(fields.email_to)) {
+    return { error: "Send To must be a valid email address." };
+  }
+  return { fields };
+}
+
 // -------------------- PUT /api/admin/pages/:slug/draft --------------------
 router.put("/:slug/draft", async (req, res) => {
   const { slug } = req.params;
@@ -106,27 +142,49 @@ router.put("/:slug/draft", async (req, res) => {
     return res.status(400).json({ error: "'body' must be a string." });
   }
 
+  const { fields, error } = readAddressFields(slug, req.body);
+  if (error) return res.status(400).json({ error });
+
   try {
     // email_subject is only meaningful for email-template rows; other pages
     // never send it, so COALESCE leaves their (always-empty) value alone.
+    // The address fields are only touched when sent ($n::boolean flags), so
+    // "" can clear one back to the default.
     const result = await db.query(
       `UPDATE page_content
        SET draft_body = $1,
            draft_email_subject = COALESCE($2, draft_email_subject),
+           draft_email_from = CASE WHEN $4 THEN $5 ELSE draft_email_from END,
+           draft_email_reply_to = CASE WHEN $6 THEN $7 ELSE draft_email_reply_to END,
+           draft_email_to = CASE WHEN $8 THEN $9 ELSE draft_email_to END,
            updated_at = CURRENT_TIMESTAMP
        WHERE page_slug = $3
-       RETURNING draft_body, draft_email_subject`,
-      [body, email_subject ?? null, slug]
+       RETURNING draft_body, draft_email_subject, draft_email_from, draft_email_reply_to, draft_email_to`,
+      [
+        body,
+        email_subject ?? null,
+        slug,
+        "email_from" in fields,
+        fields.email_from ?? null,
+        "email_reply_to" in fields,
+        fields.email_reply_to ?? null,
+        "email_to" in fields,
+        fields.email_to ?? null,
+      ]
     );
 
     if (result.rowCount === 0) {
       return res.status(404).json({ error: "Page not found." });
     }
 
+    const row = result.rows[0];
     res.json({
       success: true,
-      body: result.rows[0].draft_body,
-      email_subject: result.rows[0].draft_email_subject,
+      body: row.draft_body,
+      email_subject: row.draft_email_subject,
+      email_from: row.draft_email_from,
+      email_reply_to: row.draft_email_reply_to,
+      email_to: row.draft_email_to,
     });
   } catch (err) {
     console.error("Error saving draft:", err);
@@ -178,7 +236,13 @@ router.post("/:slug/render", async (req, res) => {
       version: "draft",
     });
     if (!rendered) return res.status(404).json({ error: "Page not found." });
-    res.json({ subject: rendered.subject, html: rendered.html });
+    res.json({
+      subject: rendered.subject,
+      html: rendered.html,
+      from: rendered.from,
+      replyTo: rendered.replyTo,
+      to: rendered.to,
+    });
   } catch (err) {
     console.error(`Error rendering email "${slug}":`, err);
     res.status(500).json({ error: "Failed to render email." });
@@ -188,7 +252,8 @@ router.post("/:slug/render", async (req, res) => {
 // -------------------- GET /api/admin/pages/:slug/template --------------------
 // Published subject/body (raw, placeholders intact) + Active, for the
 // "default" templates that pre-fill a freeform send (Rock Request reply,
-// Send Email job) — the client fills in its own values.
+// Send Email job) — the client fills in its own values. contactEmail is
+// included so the client can fill {CONTACT_EMAIL} too.
 router.get("/:slug/template", async (req, res) => {
   const { slug } = req.params;
   if (!EMAIL_SLUGS.has(slug)) {
@@ -201,7 +266,7 @@ router.get("/:slug/template", async (req, res) => {
       [slug]
     );
     if (rows.length === 0) return res.status(404).json({ error: "Page not found." });
-    res.json(rows[0]);
+    res.json({ ...rows[0], contactEmail: await getContactEmail() });
   } catch (err) {
     console.error(`Error fetching template "${slug}":`, err);
     res.status(500).json({ error: "Server error fetching template." });
@@ -233,7 +298,13 @@ router.post("/:slug/send", async (req, res) => {
       return res.status(404).json({ error: "Page not found." });
     }
 
-    await sendEmail({ to: to.trim(), subject: rendered.subject, html: rendered.html });
+    await sendEmail({
+      to: to.trim(),
+      from: rendered.from,
+      replyTo: rendered.replyTo,
+      subject: rendered.subject,
+      html: rendered.html,
+    });
 
     res.json({ success: true });
   } catch (err) {
@@ -251,9 +322,13 @@ router.post("/:slug/publish", async (req, res) => {
       `UPDATE page_content
        SET published_body = draft_body,
            published_email_subject = draft_email_subject,
+           published_email_from = draft_email_from,
+           published_email_reply_to = draft_email_reply_to,
+           published_email_to = draft_email_to,
            published_at = CURRENT_TIMESTAMP
        WHERE page_slug = $1
-       RETURNING published_body, published_email_subject, published_at`,
+       RETURNING published_body, published_email_subject, published_email_from,
+                 published_email_reply_to, published_email_to, published_at`,
       [slug]
     );
 
@@ -265,6 +340,9 @@ router.post("/:slug/publish", async (req, res) => {
       success: true,
       published_body: result.rows[0].published_body,
       published_email_subject: result.rows[0].published_email_subject,
+      published_email_from: result.rows[0].published_email_from,
+      published_email_reply_to: result.rows[0].published_email_reply_to,
+      published_email_to: result.rows[0].published_email_to,
       published_at: result.rows[0].published_at,
     });
   } catch (err) {
