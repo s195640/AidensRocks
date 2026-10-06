@@ -620,11 +620,11 @@ WITH body AS (
 INSERT INTO public.page_content (page_slug, nav_label, order_num, visible, draft_body, published_body)
 SELECT 'honoring-aiden', 'Honoring Aiden', 4, true, content, content FROM body;
 
--- Follow Rocks: nav-only row (hardcoded page, empty body), last in the nav.
+-- My Rocks (slug follow-rocks): nav-only row (hardcoded page, empty body), last in the nav.
 -- The client only shows it to signed-in accounts (level >= 20) -- see
 -- data/sql/migrations/add_account_tables.sql.
 INSERT INTO public.page_content (page_slug, nav_label, order_num, visible)
-VALUES ('follow-rocks', 'Follow Rocks', 8, true);
+VALUES ('follow-rocks', 'My Rocks', 8, true);
 
 -- Response Email template row (Page Details → Emails). Copied from data/sql/migrations/add_response_email_page.sql.
 INSERT INTO public.page_content
@@ -647,7 +647,7 @@ WITH body AS (
 <p>Rock {ROCK_NUMBER}, one of the rocks you follow, has traveled to {LOCATION} on {DATE}.</p>
 <p>{ROCK_IMAGE}</p>
 <p>{ROCK_JOURNEY_LINK}</p>
-<p>You're receiving this because you turned on rock move emails on your Follow Rocks page.</p>$html$::text AS content,
+<p>You're receiving this because you turned on rock move emails on your My Rocks page.</p>$html$::text AS content,
     'Rock {ROCK_NUMBER} has a new adventure'::text AS subject
 )
 INSERT INTO public.page_content

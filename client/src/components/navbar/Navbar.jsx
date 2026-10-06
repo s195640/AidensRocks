@@ -1,7 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { isPlainLeftClick, useUnsavedChangesGuard } from "../../context/UnsavedChangesContext.jsx";
 import styles from "./Navbar.module.css";
+
+// Desktop menu scaling (see .navbar's --nav-fit in Navbar.module.css):
+// smallest scale is 0.7rem text out of the full 1.1rem.
+const DESKTOP_QUERY = "(min-width: 770px)";
+const MIN_NAV_FIT = 0.64;
+const NAV_FIT_STEP = 0.02;
 
 // `account`: the signed-in account ({ firstName, ... }) or null when signed
 // out — drives the far-right sign-in heart icon / "Hello, <name>" + Sign out block.
@@ -10,8 +16,39 @@ const Navbar = ({ navItems, account = null }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { guardNavigate, isDirty } = useUnsavedChangesGuard();
+  const navbarRef = useRef();
   const navRef = useRef();
   const buttonRef = useRef();
+
+  // Desktop: start at full size and step the menu's text/gaps down until
+  // the bar no longer overflows the window (menu items come from the DB,
+  // so their total width isn't known ahead of time). If it still doesn't
+  // fit at the smallest size, let multi-word labels wrap onto two lines.
+  const fitMenu = useCallback(() => {
+    const nav = navbarRef.current;
+    if (!nav) return;
+    nav.style.setProperty("--nav-fit", "1");
+    delete nav.dataset.wrap;
+    if (!window.matchMedia(DESKTOP_QUERY).matches) return;
+    const overflows = () => nav.scrollWidth > nav.clientWidth;
+    let fit = 1;
+    while (overflows() && fit > MIN_NAV_FIT) {
+      fit = Math.max(MIN_NAV_FIT, fit - NAV_FIT_STEP);
+      nav.style.setProperty("--nav-fit", String(fit));
+    }
+    if (overflows()) nav.dataset.wrap = "";
+  }, []);
+
+  useLayoutEffect(() => {
+    fitMenu();
+  }, [fitMenu, navItems, account]);
+
+  useEffect(() => {
+    window.addEventListener("resize", fitMenu);
+    // Re-measure once web fonts finish loading (they change text widths).
+    document.fonts?.ready.then(fitMenu);
+    return () => window.removeEventListener("resize", fitMenu);
+  }, [fitMenu]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -56,8 +93,8 @@ const Navbar = ({ navItems, account = null }) => {
   };
 
   return (
-    <nav className={styles.navbar}>
-      <Link to="/" onClick={(e) => handleGuardedClick(e, "/")}>
+    <nav ref={navbarRef} className={styles.navbar}>
+      <Link to="/" className={styles.logoLink} onClick={(e) => handleGuardedClick(e, "/")}>
         <img src="/logo.webp" alt="Logo" className={styles.logo} />
       </Link>
 

@@ -189,7 +189,7 @@ const FollowRocks = () => {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.pageTitle}>Follow Rocks</h1>
+      <h1 className={styles.pageTitle}>My Rocks</h1>
       <p className={styles.intro}>
         Follow the rocks that mean the most to you and see where Aiden&apos;s adventures
         take them next.

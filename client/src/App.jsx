@@ -78,7 +78,7 @@ function AppContent() {
       .catch((err) => console.error("Failed to load nav pages:", err));
   }, []);
 
-  // Signed-in-only pages (Follow Rocks) are hidden from everyone else, and
+  // Signed-in-only pages (My Rocks) are hidden from everyone else, and
   // Admin (admins only) is the last menu item. Sign In / "Welcome <name>" +
   // Sign out is not a menu item — the navbar shows it in its own spot at
   // the far right (see Navbar.jsx's account block).

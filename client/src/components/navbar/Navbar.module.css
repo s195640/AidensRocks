@@ -152,6 +152,53 @@
   font-size: 1.5rem;
 }
 
+/* Desktop: Navbar.jsx shrinks --nav-fit (1 = full size) until the whole
+   bar fits on one row, so a long menu (e.g. admin) scales its text and
+   gaps down together. Side padding also narrows with the window. */
+@media screen and (min-width: 770px) {
+  .navbar {
+    --nav-item-gap: calc(1rem * var(--nav-fit, 1));
+    padding: 0 clamp(1rem, 3.5vw, 3.125rem);
+  }
+
+  /* Minimum logo-to-Home gap matches the visible gap between menu items
+     (item gap + both links' 0.2rem padding, less Home's own left padding);
+     the nav list's auto margin only adds space on top of this. */
+  .logoLink {
+    display: flex;
+    flex-shrink: 0;
+    margin-right: calc(var(--nav-item-gap) + 0.2rem);
+  }
+
+  /* Don't let flexbox squeeze the list: overflow must show up on the
+     navbar so Navbar.jsx can measure it. */
+  .navList {
+    flex-shrink: 0;
+    gap: var(--nav-item-gap);
+  }
+
+  .navLink {
+    font-size: calc(1.1rem * var(--nav-fit, 1));
+    white-space: nowrap;
+  }
+
+  .rightGroup {
+    flex-shrink: 0;
+    margin-left: clamp(0.5rem, 1.5vw, 1.5rem);
+  }
+
+  /* Still too wide at the smallest size (set by Navbar.jsx): let the list
+     shrink so multi-word labels wrap onto two centered lines. */
+  .navbar[data-wrap] .navList {
+    flex-shrink: 1;
+  }
+
+  .navbar[data-wrap] .navLink {
+    white-space: normal;
+    text-align: center;
+  }
+}
+
 @media screen and (max-width: 769px) {
   .navbar {
     height: 50px;
