@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { api, sql, waitFor, require } from '../helpers/server.mjs';
-import { clearMail, listMail } from '../helpers/mailpit.mjs';
+import { clearMail, listMail, getMail } from '../helpers/mailpit.mjs';
 import { makeImage } from '../helpers/media.mjs';
 import { MEDIA_ROOT } from '../setup/testEnv.mjs';
 
@@ -116,6 +116,15 @@ describe('[S9] one file that fails to process', () => {
     await waitFor(async () => (await listMail(ADMIN_INBOX)).some((m) => /FAILED/.test(m.Subject)), {
       label: 'failure email',
     });
+    // Rendered from the "Upload Files Failed" template, in a red box on top
+    // of the (Active) New Rock Journey email.
+    const hit = (await listMail(ADMIN_INBOX)).find((m) => /FAILED/.test(m.Subject));
+    const mail = await getMail(hit.ID);
+    expect(mail.Subject).toMatch(/^\[1 FILE\(S\) FAILED\] /);
+    expect(mail.HTML).toContain('border:2px solid #c0392b');
+    expect(mail.HTML).toMatch(/<li>broken\.jpg: [^<]+<\/li>/);
+    expect(mail.HTML).toContain(`journey #${rpsKey}`);
+    expect(mail.HTML).toContain('The other 1 file(s) are published.');
   });
 
   it('nothing processed: stays hidden, admin still told', async () => {
@@ -139,6 +148,59 @@ describe('[S9] one file that fails to process', () => {
     await waitFor(async () => (await listMail(ADMIN_INBOX)).some((m) => /FAILED/.test(m.Subject)), {
       label: 'failure email',
     });
+    const hit = (await listMail(ADMIN_INBOX)).find((m) => /FAILED/.test(m.Subject));
+    expect((await getMail(hit.ID)).HTML).toContain('Nothing processed, so the journey is still hidden.');
+  });
+
+  it('the files-failed email still goes out on its own when New Rock Journey is inactive, using the edited template', async () => {
+    await clearMail();
+    await sql(`UPDATE page_content SET visible = false WHERE page_slug = 'new-journey-email'`);
+    await sql(
+      `UPDATE page_content SET published_email_subject = 'Edited: {FAILED_COUNT} bad on rock {ROCK_NUMBER}',
+              published_body = '<p>Edited body</p>{FAILED_FILES}'
+       WHERE page_slug = 'upload-files-failed-email'`
+    );
+    try {
+      const uuid = '88888888-8888-4888-8888-888888888888';
+      const dir = path.join(MEDIA_ROOT, 'rocks', '101', uuid);
+      fs.mkdirSync(path.join(dir, 'o'), { recursive: true });
+      fs.writeFileSync(path.join(dir, 'o', `1_${uuid}.jpg`), Buffer.from('junk'));
+      const [{ rps_key: rpsKey }] = await sql(
+        `INSERT INTO journey (rock_qr_number, rock_number, location, date, uuid, show)
+         VALUES (101, 101, 'Edited', '2025-09-04', $1, false) RETURNING rps_key`,
+        [uuid]
+      );
+      await sql(
+        `INSERT INTO journey_image (rps_key, original_name, current_name, upload_order) VALUES ($1, 'junk.jpg', $2, 1)`,
+        [rpsKey, `1_${uuid}`]
+      );
+      const processImagesInBackground = require('../../src/utils/rock-upload/processImagesInBackground');
+      await processImagesInBackground(dir, 'Tester', '101', 'c', 'Edited', '2025-09-04', '', rpsKey);
+      await waitFor(async () => (await listMail(ADMIN_INBOX)).some((m) => /^Edited: 1 bad on rock 101$/.test(m.Subject)), {
+        label: 'edited failure email',
+      });
+      const hit = (await listMail(ADMIN_INBOX)).find((m) => /^Edited:/.test(m.Subject));
+      const mail = await getMail(hit.ID);
+      expect(mail.HTML).toContain('<p>Edited body</p><ul><li>junk.jpg: ');
+      expect(mail.HTML).not.toContain('border:2px solid #c0392b');
+    } finally {
+      await sql(`UPDATE page_content SET visible = true WHERE page_slug = 'new-journey-email'`);
+    }
+  });
+
+  it('a processing crash sends the "Upload Processing Failed" email', async () => {
+    await clearMail();
+    const processImagesInBackground = require('../../src/utils/rock-upload/processImagesInBackground');
+    const dir = path.join(MEDIA_ROOT, 'rocks', '101', 'does-not-exist');
+    // ensureDir creates webp/ etc, but o/ is missing, so readdir throws.
+    await processImagesInBackground(dir, 'Tester', '101', 'c', 'Crash', '2025-09-05', '', 999999);
+    await waitFor(async () => (await listMail(ADMIN_INBOX)).some((m) => /processing FAILED: Rock 101/.test(m.Subject)), {
+      label: 'processing-failed email',
+    });
+    const hit = (await listMail(ADMIN_INBOX)).find((m) => /processing FAILED/.test(m.Subject));
+    const mail = await getMail(hit.ID);
+    expect(mail.HTML).toContain('journey #999999');
+    expect(mail.HTML).toContain('does-not-exist');
   });
 });
 

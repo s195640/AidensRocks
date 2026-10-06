@@ -16,6 +16,8 @@ const EMAIL_SLUGS = new Set([
   'new-rock-request-email',
   'rock-request-reply-email',
   'send-email-default',
+  'upload-files-failed-email',
+  'upload-processing-failed-email',
 ]);
 
 module.exports = EMAIL_SLUGS;

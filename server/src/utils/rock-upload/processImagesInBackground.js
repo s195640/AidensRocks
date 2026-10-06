@@ -14,15 +14,62 @@ const ADMIN_EMAIL = 'AidensRocks.AAA@gmail.com';
 const escapeHtml = (v) =>
   String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-// Prepended to the admin's new-journey email when some files didn't process.
-function failureNoteHtml(failures, processedCount, rpsKey) {
-  if (!failures.length) return '';
+// The two failure emails come from always-on templates in Page Details
+// ("Upload Files Failed (to admin)" / "Upload Processing Failed (to
+// admin)"). The built-in wording below is only a fallback for when the
+// template can't be loaded -- a missing row, or the very DB/template error
+// being reported -- so a failure is never left unreported.
+
+// Some files in an upload didn't process. Returns { subject, html }.
+async function renderFilesFailedNote(failures, processedCount, rpsKey, rockNumber) {
+  const publishStatus = processedCount
+    ? `The other ${processedCount} file(s) are published.`
+    : 'Nothing processed, so the journey is still hidden.';
+  try {
+    const rendered = await renderEmailTemplate('upload-files-failed-email', {
+      ROCK_NUMBER: rockNumber,
+      JOURNEY_ID: rpsKey,
+      FAILED_COUNT: failures.length,
+      PUBLISH_STATUS: publishStatus,
+      FAILED_FILES: failures.map((f) => ({ name: f.name, error: f.error })),
+    });
+    if (rendered) return { subject: rendered.subject, html: rendered.html };
+  } catch (err) {
+    console.error('Could not render the upload-files-failed template, using built-in wording:', err.message);
+  }
   const items = failures.map((f) => `<li>${escapeHtml(f.name)}: ${escapeHtml(f.error)}</li>`).join('');
-  return `<div style="border:2px solid #c0392b;padding:8px;margin-bottom:12px">
-<p><strong>${failures.length} file(s) in this upload could not be processed</strong> and are hidden (journey #${rpsKey}).
-${processedCount ? `The other ${processedCount} file(s) are published.` : 'Nothing processed, so the journey is still hidden.'}</p>
-<ul>${items}</ul><p>The originals are still on the server.</p></div>`;
+  return {
+    subject: `[${failures.length} FILE(S) FAILED] Rock upload: Rock ${rockNumber}`,
+    html: `<p><strong>${failures.length} file(s) in this upload could not be processed</strong> and are hidden (journey #${rpsKey}).
+${publishStatus}</p>
+<ul>${items}</ul><p>The originals are still on the server.</p>`,
+  };
 }
+
+// Processing failed outright (DB, disk, template). Returns { subject, html }.
+async function renderProcessingFailedNote(err, rpsKey, rockNumber, baseDir) {
+  try {
+    const rendered = await renderEmailTemplate('upload-processing-failed-email', {
+      ROCK_NUMBER: rockNumber,
+      JOURNEY_ID: rpsKey,
+      ERROR: err.message,
+      FOLDER: baseDir,
+    });
+    if (rendered) return { subject: rendered.subject, html: rendered.html };
+  } catch (renderErr) {
+    console.error('Could not render the upload-processing-failed template, using built-in wording:', renderErr.message);
+  }
+  return {
+    subject: `Rock upload processing FAILED: Rock ${rockNumber}`,
+    html: `<p>Processing the upload for rock ${rockNumber} (journey #${rpsKey}) failed, so it may still be hidden in Journey admin.</p>
+<p>Error: ${escapeHtml(err.message)}</p><p>Folder: ${escapeHtml(baseDir)}</p>`,
+  };
+}
+
+// When the new-journey email also goes out, the failure note rides at its
+// top in a red box instead of being a separate email.
+const failureBox = (html) =>
+  `<div style="border:2px solid #c0392b;padding:8px;margin-bottom:12px">${html}</div>`;
 
 async function processImagesInBackground(baseDir, name, safeRockNumber, commentSafe, locationSafe, dateSafe, emailSafe, rpsKey) {
   try {
@@ -111,15 +158,15 @@ async function processImagesInBackground(baseDir, name, safeRockNumber, commentS
       COMMENT: commentSafe,
       SUBMITTER_EMAIL: emailSafe || 'Not provided',
     });
+    const failureNote = failures.length
+      ? await renderFilesFailedNote(failures, processedCount, rpsKey, safeRockNumber)
+      : null;
+
     if (!rendered || !rendered.visible) {
       // The routine notification is switched off, but failures still need
       // a human -- send just the failure note.
-      if (failures.length) {
-        await sendEmail({
-          to: ADMIN_EMAIL,
-          subject: `[${failures.length} FILE(S) FAILED] Rock upload: Rock ${safeRockNumber}`,
-          html: failureNoteHtml(failures, processedCount, rpsKey),
-        });
+      if (failureNote) {
+        await sendEmail({ to: ADMIN_EMAIL, subject: failureNote.subject, html: failureNote.html });
       }
       return;
     }
@@ -142,7 +189,7 @@ async function processImagesInBackground(baseDir, name, safeRockNumber, commentS
     await sendEmail({
       to: ADMIN_EMAIL,
       subject: failures.length ? `[${failures.length} FILE(S) FAILED] ${subject}` : subject,
-      html: failureNoteHtml(failures, processedCount, rpsKey) + rendered.html,
+      html: (failureNote ? failureBox(failureNote.html) : '') + rendered.html,
       attachments,
     });
 
@@ -152,12 +199,8 @@ async function processImagesInBackground(baseDir, name, safeRockNumber, commentS
     // Something outside the per-file loop failed (DB, disk, template): tell
     // the admin rather than leaving a hidden journey nobody knows about.
     try {
-      await sendEmail({
-        to: ADMIN_EMAIL,
-        subject: `Rock upload processing FAILED: Rock ${safeRockNumber}`,
-        html: `<p>Processing the upload for rock ${safeRockNumber} (journey #${rpsKey}) failed, so it may still be hidden in Journey admin.</p>
-<p>Error: ${escapeHtml(err.message)}</p><p>Folder: ${escapeHtml(baseDir)}</p>`,
-      });
+      const note = await renderProcessingFailedNote(err, rpsKey, safeRockNumber, baseDir);
+      await sendEmail({ to: ADMIN_EMAIL, subject: note.subject, html: note.html });
     } catch (mailErr) {
       console.error('❌ Could not send the processing-failure email:', mailErr);
     }

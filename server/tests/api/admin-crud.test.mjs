@@ -248,6 +248,14 @@ describe('pages admin', () => {
   it('Sign In and the required emails cannot be turned off', async () => {
     expect((await api().patch('/api/admin/pages/sign-in/visible').set(A).send({ visible: false })).status).toBe(400);
     expect((await api().patch('/api/admin/pages/password-reset-email/visible').set(A).send({ visible: false })).status).toBe(400);
+    for (const slug of ['upload-files-failed-email', 'upload-processing-failed-email']) {
+      expect((await api().patch(`/api/admin/pages/${slug}/visible`).set(A).send({ visible: false })).status).toBe(400);
+    }
+    const preview = await api().post('/api/admin/pages/upload-files-failed-email/render').set(A)
+      .send({ values: { ROCK_NUMBER: '7', FAILED_COUNT: '2', FAILED_FILES: 'a.jpg: bad; <b>.mov: worse' } });
+    expect(preview.status).toBe(200);
+    expect(preview.body.subject).toBe('[2 FILE(S) FAILED] Rock upload: Rock 7');
+    expect(preview.body.html).toContain('<ul><li>a.jpg: bad</li><li>&lt;b&gt;.mov: worse</li></ul>');
   });
 });
 

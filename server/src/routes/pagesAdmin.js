@@ -73,7 +73,7 @@ router.patch("/:slug/visible", async (req, res) => {
 
   if (REQUIRED_EMAIL_SLUGS.has(slug)) {
     return res.status(400).json({
-      error: "This email is always on — sign-up and password reset depend on it.",
+      error: "This email is always on and can't be turned off.",
     });
   }
 

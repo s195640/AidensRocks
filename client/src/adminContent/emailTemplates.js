@@ -4,7 +4,8 @@
 //   description - shown in Page Details' "Used for" column
 //   kind        - "automatic" (the site sends it) or "default" (only
 //                 pre-fills a freeform send the admin edits and sends)
-//   required    - always on; the Active switch is locked (sign-up/reset)
+//   required    - always on; the Active switch is locked
+//   requiredReason - why, for the locked switch's tooltip (default: sign-up/reset)
 //   fields      - inputs the Preview and test-Send dialogs collect; `key` is
 //                 the raw value sent to the server, which derives any HTML
 //                 placeholders ({ROCK_IMAGE}, links, ...) itself. `query` is
@@ -145,6 +146,54 @@ const EMAIL_TEMPLATES = {
     kind: "default",
     fields: [],
     tokens: [],
+  },
+  "upload-files-failed-email": {
+    description:
+      "Sent to you when some files in a rock upload couldn't be processed. If New Rock Journey is Active, it appears in a red box at the top of that email instead. Always on.",
+    kind: "automatic",
+    required: true,
+    requiredReason: "a failed upload always needs someone to look at it",
+    fields: [
+      ROCK_NUMBER_FIELD,
+      { key: "JOURNEY_ID", label: "Journey #", placeholder: "512" },
+      { key: "FAILED_COUNT", label: "Failed count", placeholder: "1" },
+      {
+        key: "PUBLISH_STATUS",
+        label: "Publish status",
+        placeholder: "The other 3 file(s) are published.",
+      },
+      {
+        key: "FAILED_FILES",
+        label: "Failed files (separate with ;)",
+        placeholder: "IMG_1234.HEIC: unsupported image format; clip.mov: bad codec",
+      },
+    ],
+    tokens: [
+      ["{ROCK_NUMBER}", "Rock Number"],
+      ["{JOURNEY_ID}", "Journey #"],
+      ["{FAILED_COUNT}", "Failed Count"],
+      ["{PUBLISH_STATUS}", "Publish Status (what did/didn't go live)"],
+      ["{FAILED_FILES}", "Failed Files (list)"],
+    ],
+  },
+  "upload-processing-failed-email": {
+    description:
+      "Sent to you when processing a rock upload fails outright (the journey may still be hidden). Always on.",
+    kind: "automatic",
+    required: true,
+    requiredReason: "a failed upload always needs someone to look at it",
+    fields: [
+      ROCK_NUMBER_FIELD,
+      { key: "JOURNEY_ID", label: "Journey #", placeholder: "512" },
+      { key: "ERROR", label: "Error", placeholder: "connect ECONNREFUSED" },
+      { key: "FOLDER", label: "Folder", placeholder: "/app/media/rocks/123/..." },
+    ],
+    tokens: [
+      ["{ROCK_NUMBER}", "Rock Number"],
+      ["{JOURNEY_ID}", "Journey #"],
+      ["{ERROR}", "Error"],
+      ["{FOLDER}", "Folder"],
+    ],
   },
 };
 

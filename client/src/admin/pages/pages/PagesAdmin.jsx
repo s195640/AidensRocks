@@ -194,7 +194,10 @@ const PagesAdmin = () => {
                 isRequired
                   ? isAccountPage
                     ? "Always on: the Sign In page can't be turned off"
-                    : "Always on: needed for sign-up / password reset"
+                    : `Always on: ${
+                        EMAIL_TEMPLATES[page.slug]?.requiredReason ||
+                        "needed for sign-up / password reset"
+                      }`
                   : isAccountPage
                     ? page.visible
                       ? "On — click to turn off (hides its link on Sign In)"

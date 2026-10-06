@@ -51,7 +51,7 @@ EMAIL_PASSWORD=
 # SMTP_PORT=587
 # SMTP_USER=
 # SMTP_PASSWORD=
-# EMAIL_FROM="Aiden's Rocks" <hello@example.com>
+# EMAIL_FROM=Aiden's Rocks <hello@example.com>   (no quotes -- docker compose rejects them here)
 # EMAIL_REPLY_TO=AidensRocks.AAA@gmail.com
 
 # Reverse geocoding for Journey admin (country/state) -- opencagedata.com key.

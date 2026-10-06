@@ -12,9 +12,15 @@ const buildRockJourneyLinkTag = require('./buildRockJourneyLinkTag');
 const escapeHtml = require('./escapeHtml');
 const siteUrl = require('./siteUrl');
 
-// Sign-up and password reset can't work without these, so they always send
-// (their Active switch is locked on in Page Details).
-const REQUIRED_EMAIL_SLUGS = new Set(['account-verify-email', 'password-reset-email']);
+// Always sent; their Active switch is locked on in Page Details. Sign-up
+// and password reset can't work without the first two, and a failed rock
+// upload always needs a human to look at it.
+const REQUIRED_EMAIL_SLUGS = new Set([
+  'account-verify-email',
+  'password-reset-email',
+  'upload-files-failed-email',
+  'upload-processing-failed-email',
+]);
 
 // Token-link placeholders: slug -> [placeholder, route, link text]. The
 // raw TOKEN value is never substituted directly. Previews/test sends have
@@ -23,6 +29,17 @@ const TOKEN_LINKS = {
   'account-verify-email': ['VERIFY_LINK', '/verify-email', 'Verify my email'],
   'password-reset-email': ['RESET_LINK', '/reset-password', 'Reset my password'],
 };
+
+// FAILED_FILES for 'upload-files-failed-email': the real sender passes
+// [{ name, error }]; Page Details' Preview/test Send passes a single-line
+// string, "name: error" entries separated by ";".
+const failedFileLines = (value) =>
+  Array.isArray(value)
+    ? value.map((f) => `${f?.name ?? ''}: ${f?.error ?? ''}`)
+    : String(value ?? '')
+        .split(/;|\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
 
 const parseRockNumbers = (value) =>
   String(value ?? '')
@@ -38,7 +55,7 @@ const parseRockNumbers = (value) =>
 function buildTemplateValues(slug, raw = {}, { forSubject = false } = {}) {
   const values = {};
   for (const [key, value] of Object.entries(raw)) {
-    if (key === 'TOKEN' || value === undefined || value === null) continue;
+    if (key === 'TOKEN' || key === 'FAILED_FILES' || value === undefined || value === null) continue;
     values[key] = forSubject
       ? String(value).replace(/\s*\r?\n\s*/g, ' ')
       : escapeHtml(value).replace(/\r?\n/g, '<br/>');
@@ -65,6 +82,13 @@ function buildTemplateValues(slug, raw = {}, { forSubject = false } = {}) {
       values.ROCK_IMAGES = buildRockImagesTag(rockNumbers);
       values.ROCK_NUMBERS_WITH_LINKS = buildRockNumbersWithLinksTag(rockNumbers);
     }
+  }
+
+  if (raw.FAILED_FILES !== undefined) {
+    const lines = failedFileLines(raw.FAILED_FILES);
+    values.FAILED_FILES = forSubject
+      ? lines.join(', ')
+      : `<ul>${lines.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>`;
   }
 
   const tokenLink = TOKEN_LINKS[slug];

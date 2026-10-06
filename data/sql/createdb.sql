@@ -713,7 +713,20 @@ FROM (VALUES
 
   (6, 'send-email-default', 'Send Email (default)',
    '',
-   '')
+   ''),
+
+  (7, 'upload-files-failed-email', 'Upload Files Failed (to admin)',
+   '[{FAILED_COUNT} FILE(S) FAILED] Rock upload: Rock {ROCK_NUMBER}',
+   $html$<p><strong>{FAILED_COUNT} file(s) in this upload could not be processed</strong> and are hidden (journey #{JOURNEY_ID}).</p>
+<p>{PUBLISH_STATUS}</p>
+{FAILED_FILES}
+<p>The originals are still on the server.</p>$html$),
+
+  (8, 'upload-processing-failed-email', 'Upload Processing Failed (to admin)',
+   'Rock upload processing FAILED: Rock {ROCK_NUMBER}',
+   $html$<p>Processing the upload for rock {ROCK_NUMBER} (journey #{JOURNEY_ID}) failed, so it may still be hidden in Journey admin.</p>
+<p>Error: {ERROR}</p>
+<p>Folder: {FOLDER}</p>$html$)
 ) AS t(ord, slug, label, subject, body)
 ON CONFLICT (page_slug) DO NOTHING;
 

@@ -46,7 +46,7 @@ You own the domain and control DNS, so this is doable. Steps:
    - **SPF** (TXT): authorizes the provider to send for your domain.
    - **DKIM** (CNAME/TXT): the cryptographic signature on each email.
    - **DMARC** (TXT on `_dmarc`): start with `v=DMARC1; p=none; rua=mailto:<you>` to monitor, then tighten to `p=quarantine` once reports look clean.
-3. **Set the prod `.env`:** `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM="Aiden's Rocks" <hello@yourdomain>`, `EMAIL_REPLY_TO=AidensRocks.AAA@gmail.com`. Restart the server. The sender and the site links are now the same domain, which removes the mismatch from point 1.
+3. **Set the prod `.env`:** `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM=Aiden's Rocks <hello@yourdomain>` (no quotes; docker compose rejects a quoted name followed by `<…>`), `EMAIL_REPLY_TO=AidensRocks.AAA@gmail.com`. Restart the server. The sender and the site links are now the same domain, which removes the mismatch from point 1.
 4. **Optional:** register the domain in **Google Postmaster Tools** to watch its reputation and spam rate in Gmail.
 5. **In the meantime**, ask people you know who signed up to mark the email "Not spam" or add the address to their contacts. That trains Gmail for this sender.
 
