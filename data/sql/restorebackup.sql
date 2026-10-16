@@ -18,3 +18,8 @@ DROP DATABASE aidensrocks;
 -- recreate
 CREATE DATABASE aidensrocks;
 psql -h 192.168.1.57 -p 5432 -U postgres -d aidensrocks -f aidensrocks_backup_2025-09-30_19-00.sql
+
+-- if this restore was onto SERVER 1: the backup carried the other server's
+-- sequence values, so put server 1 back in its own key range (it dry-runs by default:
+-- check the NOTICEs, set dry_run = false in the file, run it again)
+psql -h 192.168.1.57 -p 5432 -U postgres -d aidensrocks -f sequenceOffset.sql
