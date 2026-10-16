@@ -309,7 +309,13 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
         URL.revokeObjectURL(entry.previewUrl);
       } catch (err) {
         console.error(err);
-        remaining.push({ ...entry, error: "Error saving this rock. Please try again." });
+        remaining.push({
+          ...entry,
+          error:
+            err.response?.status === 409
+              ? err.response.data.error
+              : "Error saving this rock. Please try again.",
+        });
       }
     }
 

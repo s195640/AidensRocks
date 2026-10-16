@@ -45,7 +45,10 @@ async function cleanupStaleStaging() {
       const entryPath = path.join(STAGING_DIR, entry);
       try {
         const stat = await fs.stat(entryPath);
-        if (now - stat.mtimeMs > STAGING_MAX_AGE_MS) {
+        // Staged rock files only. The subfolders (temp/ = music uploads'
+        // multer dir, honoring-aiden/) belong to other routes; deleting temp/
+        // broke music uploads until the next restart.
+        if (stat.isFile() && now - stat.mtimeMs > STAGING_MAX_AGE_MS) {
           await fs.remove(entryPath);
         }
       } catch {

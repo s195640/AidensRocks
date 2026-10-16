@@ -46,6 +46,9 @@ export async function writeSeedMedia(mediaRoot) {
     }
   }
   fs.mkdirSync(path.join(mediaRoot, 'albums', 'hidden-album', 'o'), { recursive: true });
+  const haDir = path.join(mediaRoot, 'honoring-aiden', '99999999-9999-4999-8999-999999999999');
+  await writeImage(path.join(haDir, 'o', 'original.jpg'), 'jpeg');
+  await writeImage(path.join(haDir, 'webp', 'image.webp'));
   for (const m of [1, 2]) {
     await writeImage(path.join(mediaRoot, 'music', String(m), 'sm.webp'));
     await writeImage(path.join(mediaRoot, 'music', String(m), 'full.webp'));

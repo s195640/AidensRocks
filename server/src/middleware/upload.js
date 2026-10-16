@@ -11,8 +11,13 @@ fs.ensureDirSync(tempDir);
 // Configure multer
 const upload = multer({
   storage: multer.diskStorage({
+    // multer doesn't create a destination given as a function, so make
+    // sure it still exists (it lives under media/.staging, which gets
+    // cleaned up).
     destination: (req, file, cb) => {
-      cb(null, tempDir);
+      fs.ensureDir(tempDir)
+        .then(() => cb(null, tempDir))
+        .catch(cb);
     },
     filename: (req, file, cb) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);

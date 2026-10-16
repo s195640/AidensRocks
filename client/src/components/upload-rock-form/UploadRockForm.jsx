@@ -12,6 +12,9 @@ import { todayLocal } from "../../utils/localDate";
 // bigger has to be staged client-side in chunks before the rock post itself
 // is created.
 const CHUNK_SIZE = 80 * 1024 * 1024;
+// Most the final submit may carry in inline files (headroom under 100MB
+// for the form fields and multipart overhead).
+const INLINE_MAX_BYTES = 80 * 1024 * 1024;
 
 export default function UploadRockForm({ onClose }) {
   const { trackerData, rValue } = useARContext();
@@ -167,11 +170,20 @@ export default function UploadRockForm({ onClose }) {
 
     try {
       // Large files (e.g. video) are staged via chunked upload first, since
-      // Cloudflare hard-caps a single request body at 100MB. Everything else
-      // still rides along in the final multipart request as before.
+      // Cloudflare hard-caps a single request body at 100MB. The rest ride
+      // along in the final multipart request -- but only while their
+      // combined size fits too (two 60MB videos used to make one 120MB
+      // request); once it doesn't, further files are staged as well.
+      let inlineBytes = 0;
       const toStage = images
         .map((imgObj, index) => ({ index, file: imgObj.file }))
-        .filter(({ file }) => file.size > CHUNK_SIZE);
+        .filter(({ file }) => {
+          if (file.size <= CHUNK_SIZE && inlineBytes + file.size <= INLINE_MAX_BYTES) {
+            inlineBytes += file.size;
+            return false;
+          }
+          return true;
+        });
       const totalStageBytes = toStage.reduce((sum, { file }) => sum + file.size, 0);
       let stagedBytesDone = 0;
 

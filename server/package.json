@@ -28,6 +28,7 @@
     "dev": "nodemon --legacy-watch src/app.js",
     "start": "node src/app.js",
     "create-admin": "node scripts/createAdmin.js",
+    "backfill-geo": "node scripts/backfillGeo.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:db:up": "docker compose -p aidensrocks-test -f ../data/docker-compose/docker-compose-test.yml up -d --wait",

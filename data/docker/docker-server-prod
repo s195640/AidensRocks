@@ -5,5 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
 
 WORKDIR /app
 COPY server/src/ /app/src
+# One-off admin scripts (npm run create-admin / backfill-geo).
+COPY server/scripts/ /app/scripts
 COPY server/package.json /app
 RUN npm install

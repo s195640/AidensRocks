@@ -97,6 +97,21 @@ describe('hidden albums, photos and songs [S16]', () => {
   });
 });
 
+describe('[#2] Honoring Aiden and album originals are never served', () => {
+  const ha = '/media/honoring-aiden/99999999-9999-4999-8999-999999999999';
+  it('blocks o/ but still serves the webp copies', async () => {
+    expect((await api().get(`${ha}/o/original.jpg`)).status).toBe(404);
+    expect((await api().get(`${ha}//o/original.jpg`)).status).toBe(404);
+    expect((await api().get(`${ha}/O/original.jpg`)).status).toBe(404);
+    expect((await api().get(`${ha}/webp/image.webp`)).status).toBe(200);
+
+    expect((await api().get('/media/albums/visible-album/o/p1.webp')).status).toBe(404);
+    expect((await api().get('/media/albums//visible-album/o/p1.webp')).status).toBe(404);
+    expect((await api().get('/media/albums/visible-album/webp/p1.webp')).status).toBe(200);
+    expect((await api().get('/media/albums/visible-album/webp300x300/p1.webp')).status).toBe(200);
+  });
+});
+
 describe('pages', () => {
   it('nav lists visible public pages only (no email templates or account pages)', async () => {
     const slugs = (await api().get('/api/pages')).body.map((p) => p.slug);

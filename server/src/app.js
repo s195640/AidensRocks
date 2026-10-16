@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const morgan = require('morgan');
 const recordAppVersion = require('./utils/recordAppVersion');
@@ -21,14 +22,21 @@ app.use(morgan('dev'));
 // metadata.txt (submitter name/email/IP/geo) and o/ (untouched originals,
 // EXIF GPS included). The site only ever shows the webp/ + sm/ copies, so
 // those two stay on disk for the family but are never served.
+// Honoring Aiden and album uploads keep their untouched originals in o/
+// too (rocks/<n>/<uuid>/o, honoring-aiden/<uuid>/o, albums/<name>/o), with
+// the same EXIF GPS -- and the Honoring Aiden one is guessable from the
+// webp URL on the page -- so those aren't served either.
+// Normalized the same way express.static resolves the file: checking the
+// raw path let "/rocks//1/x/o/..." and "/rocks/1/x/./o/..." through.
+const ORIGINALS_RE = /^\/(rocks\/[^/]+\/[^/]+|honoring-aiden\/[^/]+|albums\/[^/]+)\/o(\/|$)/;
 app.use('/media', (req, res, next) => {
   let p;
   try {
-    p = decodeURIComponent(req.path).replace(/\\/g, '/').toLowerCase();
+    p = path.posix.normalize(decodeURIComponent(req.path).replace(/\\/g, '/')).toLowerCase();
   } catch {
     return res.sendStatus(400);
   }
-  if (p.endsWith('/metadata.txt') || /^\/rocks\/[^/]+\/[^/]+\/o(\/|$)/.test(p)) {
+  if (p.endsWith('/metadata.txt') || ORIGINALS_RE.test(p)) {
     return res.sendStatus(404);
   }
   next();

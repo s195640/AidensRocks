@@ -54,6 +54,22 @@ describe('rocks (/api/rocks) [S5 A7]', () => {
     expect(fs.existsSync(path.join(MEDIA_ROOT, 'catalog', '200'))).toBe(true);
   });
 
+  it('[#6] a duplicate rock number is a 409 and leaves the existing rock alone', async () => {
+    const imgPath = path.join(MEDIA_ROOT, 'catalog', '200', 'a.webp');
+    const before = fs.readFileSync(imgPath);
+    const res = await api()
+      .post('/api/rocks')
+      .set(A)
+      .field('rock_number', '200')
+      .field('artist_keys', JSON.stringify([1]))
+      .field('comment', 'dupe')
+      .attach('image', await makeImage('png'), 'other.png');
+    expect(res.status).toBe(409);
+    expect(res.body.error).toMatch(/200 already exists/);
+    expect(await sql('SELECT comment FROM catalog WHERE rock_number = 200')).toEqual([{ comment: 'new' }]);
+    expect(fs.readFileSync(imgPath).equals(before)).toBe(true);
+  });
+
   it('[A7] saving a rock with [null] artists drops the null instead of failing', async () => {
     const res = await api().put('/api/rocks/4').set(A).field('artist_keys', '[null]').field('comment', 'still none');
     expect(res.status).toBe(200);

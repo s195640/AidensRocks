@@ -399,6 +399,10 @@ ALTER TABLE ONLY public.artist
 ALTER TABLE ONLY public.catalog
     ADD CONSTRAINT catalog_pkey PRIMARY KEY (rc_key);
 
+-- One catalog row per rock number (see migrations/add_catalog_rock_number_unique.sql).
+ALTER TABLE ONLY public.catalog
+    ADD CONSTRAINT catalog_rock_number_key UNIQUE (rock_number);
+
 
 --
 -- Name: counter counter_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres

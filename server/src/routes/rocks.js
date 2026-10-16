@@ -98,6 +98,11 @@ router.post('/', upload.single('image'), async (req, res, next) => {
     res.status(201).json({ success: true });
   } catch (err) {
     await safeRollback(client);
+    // catalog_rock_number_key. Caught at the INSERT, before saveImage, so
+    // the existing rock's photo is never overwritten.
+    if (err.code === '23505' && err.constraint === 'catalog_rock_number_key') {
+      return res.status(409).json({ error: `Rock number ${req.body.rock_number} already exists.` });
+    }
     next(err);
   } finally {
     if (client) client.release();

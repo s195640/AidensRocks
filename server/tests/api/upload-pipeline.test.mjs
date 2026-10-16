@@ -77,6 +77,10 @@ describe('happy path', () => {
     const original = fs.readdirSync(path.join(MEDIA_ROOT, 'rocks', '102', res.body.uuid, 'o'))[0];
     expect((await api().get(`${base}/o/${original}`)).status).toBe(404);
     expect((await api().get(`${base}/o%2F${original}`)).status).toBe(404);
+    // Extra slashes that express.static would collapse.
+    expect((await api().get(`/media/rocks//102/${res.body.uuid}/o/${original}`)).status).toBe(404);
+    expect((await api().get(`${base}//o/${original}`)).status).toBe(404);
+    expect((await api().get(`/media//rocks/102/${res.body.uuid}//metadata.txt`)).status).toBe(404);
     const webp = fs.readdirSync(path.join(MEDIA_ROOT, 'rocks', '102', res.body.uuid, 'webp'))[0];
     expect((await api().get(`${base}/webp/${webp}`)).status).toBe(200);
   });
