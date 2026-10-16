@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import Table from "../../../../components/simple-components/table/Table";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
+import { formatLocalDateTime } from "../../../../utils/localDate";
 import styles from "./JourneyAdminTable.module.css";
 
 const JourneyAdminTable = ({
@@ -171,7 +172,7 @@ const JourneyAdminTable = ({
         );
 
       case "email_dt":
-        return post.email_dt ? post.email_dt.replace("T", " ").slice(0, 16) : "-";
+        return post.email_dt ? formatLocalDateTime(post.email_dt) : "-";
 
       case "email_sent":
         return (

@@ -130,7 +130,11 @@ export default function AlbumsCreateTable({ album, photos, setPhotos, onRefresh,
           </div>
         );
       case "date":
-        return photo.date ? new Date(photo.date).toLocaleDateString() : "";
+        // photos.date is a calendar date (sent as UTC midnight) -- format in UTC so
+        // it isn't shown a day early in US time zones.
+        return photo.date
+          ? new Date(photo.date).toLocaleDateString(undefined, { timeZone: "UTC" })
+          : "";
       default:
         return photo[key];
     }

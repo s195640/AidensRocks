@@ -3,6 +3,7 @@ import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import authFetch from "../../../utils/authFetch";
 import SendRockRequestEmailDialog from "./SendRockRequestEmailDialog";
 import RockPopupByNumber from "../../../../components/rock-popup/RockPopupByNumber";
+import { formatLocalDateTime } from "../../../../utils/localDate";
 import styles from "./RockRequestsEditDialog.module.css";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -413,7 +414,7 @@ const RockRequestsEditDialog = ({
               <>
                 <label>Last Emailed</label>
                 <div className={styles.readOnlyField}>
-                  {emailDt ? emailDt.replace("T", " ").slice(0, 16) : "Never"}
+                  {emailDt ? formatLocalDateTime(emailDt) : "Never"}
                 </div>
               </>
             )}

@@ -3,6 +3,7 @@ import Table from "../../../../components/simple-components/table/Table";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import RockPopupByNumber from "../../../../components/rock-popup/RockPopupByNumber";
 import { FaEdit, FaTrash, FaTrashRestore } from "react-icons/fa";
+import { formatLocalDateTime } from "../../../../utils/localDate";
 import styles from "./RockRequestsAdminTable.module.css";
 
 const RockRequestsAdminTable = ({
@@ -100,13 +101,13 @@ const RockRequestsAdminTable = ({
         return request.no_rush ? "No rush" : request.needed_by || "-";
 
       case "create_dt":
-        return request.create_dt ? request.create_dt.replace("T", " ").slice(0, 16) : "-";
+        return request.create_dt ? formatLocalDateTime(request.create_dt) : "-";
 
       case "sent_dt":
-        return request.sent_dt ? request.sent_dt.replace("T", " ").slice(0, 16) : "-";
+        return request.sent_dt ? formatLocalDateTime(request.sent_dt) : "-";
 
       case "email_dt":
-        return request.email_dt ? request.email_dt.replace("T", " ").slice(0, 16) : "-";
+        return request.email_dt ? formatLocalDateTime(request.email_dt) : "-";
 
       case "rock_numbers": {
         const numbers = (request.rock_numbers || "")

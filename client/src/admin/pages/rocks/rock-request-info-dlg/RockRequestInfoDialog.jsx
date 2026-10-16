@@ -1,7 +1,8 @@
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
+import { formatLocalDateTime } from "../../../../utils/localDate";
 import styles from "./RockRequestInfoDialog.module.css";
 
-const formatDt = (dt) => (dt ? dt.replace("T", " ").slice(0, 16) : "-");
+const formatDt = (dt) => (dt ? formatLocalDateTime(dt) : "-");
 
 // Read-only view of a rock_requests row, for a cataloged rock that's
 // currently linked to a request (catalog.rq_key). Nothing here is
