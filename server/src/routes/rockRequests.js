@@ -8,6 +8,7 @@ const { renderEmailTemplate, getTemplateAddresses } = require('../utils/emailTem
 const { normalizeEmail, isValidEmail } = require('../utils/auth/password');
 const { publicFormLimiter } = require('../middleware/publicFormLimiter');
 const { US_STATE_CODES } = require('../utils/usStates');
+const { getMaxRocksPerRequest } = require('../utils/dialogSlugs');
 
 const router = express.Router();
 intParams(router, 'rq_key');
@@ -174,7 +175,11 @@ async function insertRockRequest(body) {
   if (!isValidEmail(trimmedEmail)) throw bad('Please enter a valid email address.');
   const addr = parseAddress(body, { strict: true });
   if (trimmedMessage.length > 5000) throw bad('Message is too long.');
-  if (parsedRocksRequested > 100) throw bad('Please request 100 rocks or fewer.');
+  // The limit set on the Request A Rock dialog in Page Details (100 at most).
+  const maxRocks = await getMaxRocksPerRequest();
+  if (parsedRocksRequested > maxRocks) {
+    throw bad(`Please request ${maxRocks} ${maxRocks === 1 ? 'rock' : 'rocks'} or fewer.`);
+  }
   const needed = parseNeededBy(neededBy, noRush, { requireOne: true, requireFuture: true });
   const originalRequest = buildOriginalRequest({
     source: 'Request A Rock form',

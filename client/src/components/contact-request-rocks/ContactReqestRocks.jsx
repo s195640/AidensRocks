@@ -5,6 +5,9 @@ import useFormFunnel from "../../utils/useFormFunnel";
 import useShownError from "../../utils/useShownError";
 import { useSiteSettings } from "../../context/SiteSettingsContext";
 import { US_STATES } from "../../utils/usStates";
+import RichText from "../../adminContent/RichText";
+import { useDialogContent } from "../../adminContent/useDialogContent";
+import { MAX_ROCKS_CEILING } from "../../adminContent/dialogs";
 import styles from "./ContactReqestRocks.module.css";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -21,6 +24,12 @@ const ContactRequestRocks = ({ onClose, source = null }) => {
   // Site Tracking: opened -> started -> submitted (or abandoned).
   const funnel = useFormFunnel("request_a_rock", source);
   const { contactEmail } = useSiteSettings();
+  // Message, # Rocks note and rock limit come from Page Details → Dialogs.
+  const dialog = useDialogContent("request-a-rock");
+  const rocksNote = dialog.settings.rocksNote || "";
+  const maxRocks = Number.isInteger(dialog.settings.maxRocks)
+    ? Math.min(dialog.settings.maxRocks, MAX_ROCKS_CEILING)
+    : MAX_ROCKS_CEILING;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [usAddress, setUsAddress] = useState(true);
@@ -66,7 +75,9 @@ const ContactRequestRocks = ({ onClose, source = null }) => {
         ? "Number of rocks is required."
         : !Number.isInteger(rocksCount) || rocksCount < 1
           ? "Please enter at least 1 rock."
-          : "",
+          : rocksCount > maxRocks
+            ? `Please request ${maxRocks} ${maxRocks === 1 ? "rock" : "rocks"} or fewer.`
+            : "",
     neededBy: noRush
       ? ""
       : !neededBy
@@ -133,13 +144,16 @@ const ContactRequestRocks = ({ onClose, source = null }) => {
           </>
         ) : (
           <>
-            <p className={styles.callout}>
-              If you would like some rocks sent to you for your upcoming trips, or
-              if you have a special location in mind where you’d like to place an
-              Aiden Rock, please let us know how many you would like and where to
-              send them. We will send them anywhere in the world for free; we just
-              want to see them take off and travel!
-            </p>
+            {/* Nothing until loaded, so the built-in wording never flashes first. */}
+            {!dialog.loading && (
+              <div className={styles.callout}>
+                {dialog.body ? (
+                  <RichText html={dialog.body} />
+                ) : (
+                  <p>{dialog.fallbackMessage}</p>
+                )}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className={styles.form} noValidate>
               {error && <div className={styles.errorMessage}>{error}</div>}
@@ -329,11 +343,13 @@ const ContactRequestRocks = ({ onClose, source = null }) => {
 
               <label htmlFor="request-rocks" className={styles.label}>
                 # Rocks
+                {rocksNote && <span className={styles.rocksNote}>{rocksNote}</span>}
               </label>
               <input
                 id="request-rocks"
                 type="number"
                 min="1"
+                max={maxRocks}
                 step="1"
                 className={`${styles.input} ${shownError("rocks") ? styles.invalid : ""}`}
                 value={rocksRequested}

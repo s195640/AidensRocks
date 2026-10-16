@@ -6,6 +6,7 @@ import EMAIL_PLACEHOLDERS from "../../../../adminContent/emailPlaceholders";
 import EMAIL_SLUGS from "../emailSlugs";
 import EMAIL_TEMPLATES from "../../../../adminContent/emailTemplates";
 import { ACCOUNT_PAGE_SLUGS } from "../../../../adminContent/accountPages";
+import { DIALOG_SLUGS, MAX_ROCKS_CEILING } from "../../../../adminContent/dialogs";
 import styles from "./PagesEditDialog.module.css";
 
 const PagesEditDialog = ({ page, onClose, onSaved }) => {
@@ -14,11 +15,15 @@ const PagesEditDialog = ({ page, onClose, onSaved }) => {
   const [sender, setSender] = useState(page.draft_email_from || "");
   const [replyTo, setReplyTo] = useState(page.draft_email_reply_to || "");
   const [sendTo, setSendTo] = useState(page.draft_email_to || "");
+  // Dialog options (Request A Rock's # Rocks note and limit).
+  const [rocksNote, setRocksNote] = useState(page.draft_settings?.rocksNote || "");
+  const [maxRocks, setMaxRocks] = useState(page.draft_settings?.maxRocks ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const isEmail = EMAIL_SLUGS.has(page.slug);
   // Account pages (Sign In etc.) keep their Title in the same subject column.
   const isAccountPage = ACCOUNT_PAGE_SLUGS.has(page.slug);
+  const isDialog = DIALOG_SLUGS.has(page.slug);
   // Emails sent to the family (not a visitor) also have a Send To.
   const hasSendTo = !!EMAIL_TEMPLATES[page.slug]?.adminRecipient;
   // Only the tokens this specific template actually supports (see
@@ -37,6 +42,10 @@ const PagesEditDialog = ({ page, onClose, onSaved }) => {
         ...(isEmail || isAccountPage ? { email_subject: subject } : {}),
         ...(isEmail ? { email_from: sender, email_reply_to: replyTo } : {}),
         ...(hasSendTo ? { email_to: sendTo } : {}),
+        // Blank Max Rocks = no limit of its own; the server checks the range.
+        ...(isDialog
+          ? { settings: { rocksNote, maxRocks: maxRocks === "" ? null : Number(maxRocks) } }
+          : {}),
       });
       onSaved();
     } catch (err) {
@@ -154,6 +163,38 @@ const PagesEditDialog = ({ page, onClose, onSaved }) => {
           />
           <p className={styles.placeholderHint}>
             Shown as the heading on this page. The editor below is the description under it.
+          </p>
+        </div>
+      )}
+      {isDialog && (
+        <div className={styles.subjectField}>
+          <label htmlFor="dialog-rocks-note"># Rocks Note</label>
+          <input
+            id="dialog-rocks-note"
+            type="text"
+            maxLength={200}
+            value={rocksNote}
+            onChange={(e) => setRocksNote(e.target.value)}
+            placeholder="e.g. (up to 10 per request)"
+          />
+          <p className={styles.placeholderHint}>
+            Shown next to the <strong># Rocks</strong> label. Blank shows nothing.
+          </p>
+          <label htmlFor="dialog-max-rocks">Max Rocks</label>
+          <input
+            id="dialog-max-rocks"
+            type="number"
+            min="1"
+            max={MAX_ROCKS_CEILING}
+            step="1"
+            value={maxRocks}
+            onChange={(e) => setMaxRocks(e.target.value)}
+            placeholder={`Blank = ${MAX_ROCKS_CEILING}`}
+          />
+          <p className={styles.placeholderHint}>
+            The most rocks one request can ask for (1 to {MAX_ROCKS_CEILING}). The editor below is
+            the message under the dialog&apos;s heading. Like the message, these go live when you
+            Publish.
           </p>
         </div>
       )}

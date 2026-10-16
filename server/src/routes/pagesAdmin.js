@@ -13,6 +13,7 @@ const { isPlainEmail, parseSender } = require("../utils/emailAddress");
 const { getContactEmail } = require("../utils/siteSettings");
 const EMAIL_SLUGS = require("../utils/emailSlugs");
 const { LOCKED_ON_PAGE_SLUGS } = require("../utils/accountPageSlugs");
+const { DIALOG_SLUGS, readDialogSettings } = require("../utils/dialogSlugs");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -28,6 +29,7 @@ router.get("/", async (req, res) => {
               draft_email_from, published_email_from,
               draft_email_reply_to, published_email_reply_to,
               draft_email_to, published_email_to,
+              draft_settings, published_settings,
               updated_at, published_at
        FROM page_content
        ORDER BY order_num`
@@ -78,6 +80,10 @@ router.patch("/:slug/visible", async (req, res) => {
 
   if (LOCKED_ON_PAGE_SLUGS.has(slug)) {
     return res.status(400).json({ error: "The Sign In page can't be turned off." });
+  }
+
+  if (DIALOG_SLUGS.has(slug)) {
+    return res.status(400).json({ error: "Dialogs are always on." });
   }
 
   if (REQUIRED_EMAIL_SLUGS.has(slug)) {
@@ -145,6 +151,14 @@ router.put("/:slug/draft", async (req, res) => {
   const { fields, error } = readAddressFields(slug, req.body);
   if (error) return res.status(400).json({ error });
 
+  // A dialog's options (utils/dialogSlugs.js); left as is when not sent.
+  let settings = null;
+  if (req.body.settings !== undefined) {
+    const read = readDialogSettings(slug, req.body.settings);
+    if (read.error) return res.status(400).json({ error: read.error });
+    settings = read.settings;
+  }
+
   try {
     // email_subject is only meaningful for email-template rows; other pages
     // never send it, so COALESCE leaves their (always-empty) value alone.
@@ -157,9 +171,11 @@ router.put("/:slug/draft", async (req, res) => {
            draft_email_from = CASE WHEN $4 THEN $5 ELSE draft_email_from END,
            draft_email_reply_to = CASE WHEN $6 THEN $7 ELSE draft_email_reply_to END,
            draft_email_to = CASE WHEN $8 THEN $9 ELSE draft_email_to END,
+           draft_settings = COALESCE($10::jsonb, draft_settings),
            updated_at = CURRENT_TIMESTAMP
        WHERE page_slug = $3
-       RETURNING draft_body, draft_email_subject, draft_email_from, draft_email_reply_to, draft_email_to`,
+       RETURNING draft_body, draft_email_subject, draft_email_from, draft_email_reply_to, draft_email_to,
+                 draft_settings`,
       [
         body,
         email_subject ?? null,
@@ -170,6 +186,7 @@ router.put("/:slug/draft", async (req, res) => {
         fields.email_reply_to ?? null,
         "email_to" in fields,
         fields.email_to ?? null,
+        settings ? JSON.stringify(settings) : null,
       ]
     );
 
@@ -185,6 +202,7 @@ router.put("/:slug/draft", async (req, res) => {
       email_from: row.draft_email_from,
       email_reply_to: row.draft_email_reply_to,
       email_to: row.draft_email_to,
+      settings: row.draft_settings,
     });
   } catch (err) {
     console.error("Error saving draft:", err);
@@ -198,7 +216,8 @@ router.get("/:slug/preview", async (req, res) => {
 
   try {
     const result = await db.query(
-      `SELECT draft_body, draft_email_subject, visible FROM page_content WHERE page_slug = $1`,
+      `SELECT draft_body, draft_email_subject, visible, draft_settings
+       FROM page_content WHERE page_slug = $1`,
       [slug]
     );
 
@@ -210,6 +229,7 @@ router.get("/:slug/preview", async (req, res) => {
       body: result.rows[0].draft_body,
       email_subject: result.rows[0].draft_email_subject,
       visible: result.rows[0].visible,
+      ...(DIALOG_SLUGS.has(slug) ? { settings: result.rows[0].draft_settings || {} } : {}),
     });
   } catch (err) {
     console.error("Error fetching preview:", err);
@@ -325,10 +345,11 @@ router.post("/:slug/publish", async (req, res) => {
            published_email_from = draft_email_from,
            published_email_reply_to = draft_email_reply_to,
            published_email_to = draft_email_to,
+           published_settings = draft_settings,
            published_at = CURRENT_TIMESTAMP
        WHERE page_slug = $1
        RETURNING published_body, published_email_subject, published_email_from,
-                 published_email_reply_to, published_email_to, published_at`,
+                 published_email_reply_to, published_email_to, published_settings, published_at`,
       [slug]
     );
 
@@ -343,6 +364,7 @@ router.post("/:slug/publish", async (req, res) => {
       published_email_from: result.rows[0].published_email_from,
       published_email_reply_to: result.rows[0].published_email_reply_to,
       published_email_to: result.rows[0].published_email_to,
+      published_settings: result.rows[0].published_settings,
       published_at: result.rows[0].published_at,
     });
   } catch (err) {

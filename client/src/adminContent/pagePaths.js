@@ -15,6 +15,8 @@ const PAGE_PATHS = {
   "sign-in": "/login",
   "create-account": "/sign-up",
   "reset-password": "/forgot-password",
+  // Dialogs (Page Details "Dialogs"): a page that opens the dialog.
+  "request-a-rock": "/?requestRock=1",
 };
 
 export default PAGE_PATHS;

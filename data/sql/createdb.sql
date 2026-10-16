@@ -535,7 +535,11 @@ CREATE TABLE public.page_content (
     draft_email_reply_to      text,
     published_email_reply_to  text,
     draft_email_to            text,
-    published_email_to        text
+    published_email_to        text,
+    -- A dialog's options, e.g. Request A Rock's # Rocks note and limit --
+    -- see data/sql/migrations/0.16-request-rock-dialog/.
+    draft_settings            jsonb NOT NULL DEFAULT '{}'::jsonb,
+    published_settings        jsonb NOT NULL DEFAULT '{}'::jsonb
 );
 
 ALTER TABLE public.page_content OWNER TO postgres;
@@ -778,6 +782,19 @@ FROM (VALUES
   (3, 'reset-password', 'Reset Password', 'Reset Password',
    $html$<p>Enter your email and we'll send you a link to choose a new password. This also unlocks a locked account.</p>$html$)
 ) AS t(ord, slug, label, title, body)
+ON CONFLICT (page_slug) DO NOTHING;
+
+-- Dialogs (Request A Rock). Copied from
+-- data/sql/migrations/0.16-request-rock-dialog/02_oneserver_add_request_a_rock_dialog.sql.
+INSERT INTO public.page_content
+  (page_slug, nav_label, order_num, visible, draft_body, published_body, draft_settings, published_settings)
+SELECT 'request-a-rock', 'Request A Rock',
+       (SELECT COALESCE(MAX(order_num), 0) FROM public.page_content) + 1,
+       true, t.body, t.body, t.settings, t.settings
+FROM (VALUES
+  ($html$<p>If you would like some rocks sent to you for your upcoming trips, or if you have a special location in mind where you’d like to place an Aiden Rock, please let us know how many you would like and where to send them. We will send them anywhere in the world for free; we just want to see them take off and travel!</p>$html$,
+   '{"rocksNote": "", "maxRocks": null}'::jsonb)
+) AS t(body, settings)
 ON CONFLICT (page_slug) DO NOTHING;
 
 -- Honoring Aiden entries: one entry per nav item/page — title, auto-slug

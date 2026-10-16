@@ -68,7 +68,18 @@
   padding: 1rem;
   font-style: italic;
   margin-top: 2rem;
+  margin-bottom: 25px;
   font-size: 1.05rem;
+}
+
+/* The message is editable rich text (Page Details → Dialogs). */
+.callout p {
+  font-size: inherit;
+  margin-bottom: 0.75rem;
+}
+
+.callout p:last-child {
+  margin-bottom: 0;
 }
 
 .form {
@@ -86,6 +97,13 @@
 }
 
 .optional {
+  font-weight: 400;
+  color: #777;
+}
+
+/* Page Details → Dialogs → Request A Rock's "# Rocks note". */
+.rocksNote {
+  margin-left: 0.5rem;
   font-weight: 400;
   color: #777;
 }

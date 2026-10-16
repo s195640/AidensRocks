@@ -9,6 +9,7 @@ import PAGE_PATHS from "../../../adminContent/pagePaths";
 import EMAIL_SLUGS from "./emailSlugs";
 import EMAIL_TEMPLATES from "../../../adminContent/emailTemplates";
 import { ACCOUNT_PAGES, ACCOUNT_PAGE_SLUGS } from "../../../adminContent/accountPages";
+import { DIALOG_SLUGS } from "../../../adminContent/dialogs";
 import styles from "./PagesAdmin.module.css";
 
 // Only these pages were actually converted to CMS-driven body content
@@ -25,6 +26,7 @@ const EDITABLE_SLUGS = new Set([
   "birthdays",
   ...EMAIL_SLUGS,
   ...ACCOUNT_PAGE_SLUGS,
+  ...DIALOG_SLUGS,
 ]);
 
 const PagesAdmin = () => {
@@ -75,6 +77,7 @@ const PagesAdmin = () => {
               published_email_from: res.data.published_email_from,
               published_email_reply_to: res.data.published_email_reply_to,
               published_email_to: res.data.published_email_to,
+              published_settings: res.data.published_settings,
               published_at: res.data.published_at,
             }
             : p
@@ -98,6 +101,7 @@ const PagesAdmin = () => {
 
     try {
       const isEmail = EMAIL_SLUGS.has(page.slug);
+      const isDialog = DIALOG_SLUGS.has(page.slug);
       const res = await axios.put(`/api/admin/pages/${page.slug}/draft`, {
         body: page.published_body,
         email_subject: page.published_email_subject,
@@ -110,6 +114,7 @@ const PagesAdmin = () => {
                 : {}),
             }
           : {}),
+        ...(isDialog ? { settings: page.published_settings || {} } : {}),
       });
       setPages((prev) =>
         prev.map((p) =>
@@ -121,6 +126,7 @@ const PagesAdmin = () => {
                 draft_email_from: res.data.email_from,
                 draft_email_reply_to: res.data.email_reply_to,
                 draft_email_to: res.data.email_to,
+                draft_settings: res.data.settings,
               }
             : p
         )
@@ -149,17 +155,22 @@ const PagesAdmin = () => {
   // Memoized: Table resets its internal row state whenever `data` changes
   // identity, so these must stay stable across unrelated re-renders.
   const sitePages = useMemo(
-    () => pages.filter((p) => !EMAIL_SLUGS.has(p.slug) && !ACCOUNT_PAGE_SLUGS.has(p.slug)),
+    () =>
+      pages.filter(
+        (p) =>
+          !EMAIL_SLUGS.has(p.slug) && !ACCOUNT_PAGE_SLUGS.has(p.slug) && !DIALOG_SLUGS.has(p.slug)
+      ),
     [pages]
   );
   const accountPages = useMemo(() => pages.filter((p) => ACCOUNT_PAGE_SLUGS.has(p.slug)), [pages]);
+  const dialogPages = useMemo(() => pages.filter((p) => DIALOG_SLUGS.has(p.slug)), [pages]);
   const emailPages = useMemo(() => pages.filter((p) => EMAIL_SLUGS.has(p.slug)), [pages]);
 
   const handleReorder = async (newData) => {
     setLoading(true);
     try {
       await axios.post("/api/admin/pages/reorder", {
-        order: [...newData, ...accountPages, ...emailPages].map((p) => p.slug),
+        order: [...newData, ...accountPages, ...dialogPages, ...emailPages].map((p) => p.slug),
       });
       await fetchPages();
     } catch (err) {
@@ -198,10 +209,24 @@ const PagesAdmin = () => {
     ...columns.slice(1),
   ];
 
+  // Dialogs: always on, so no Active column; the note / limit are live values.
+  const dialogColumns = [
+    { key: "nav_label", label: "Dialog", sortable: false, defaultWidth: 160 },
+    { key: "rocks_note", label: "# Rocks Note", sortable: false },
+    { key: "max_rocks", label: "Max Rocks", sortable: false, defaultWidth: 110 },
+    ...columns.slice(2),
+  ];
+
   const renderCell = (page, key) => {
     switch (key) {
       case "used_for":
         return EMAIL_TEMPLATES[page.slug]?.description || "";
+
+      case "rocks_note":
+        return page.published_settings?.rocksNote || <em className={styles.muted}>None</em>;
+
+      case "max_rocks":
+        return page.published_settings?.maxRocks ?? <em className={styles.muted}>No limit (100)</em>;
 
       // Blank values fall back on the server (see emailTemplates.js).
       case "published_email_from":
@@ -266,7 +291,8 @@ const PagesAdmin = () => {
           page.draft_email_subject !== page.published_email_subject ||
           (page.draft_email_from ?? null) !== (page.published_email_from ?? null) ||
           (page.draft_email_reply_to ?? null) !== (page.published_email_reply_to ?? null) ||
-          (page.draft_email_to ?? null) !== (page.published_email_to ?? null);
+          (page.draft_email_to ?? null) !== (page.published_email_to ?? null) ||
+          JSON.stringify(page.draft_settings ?? {}) !== JSON.stringify(page.published_settings ?? {});
         return (
           <div className={styles.actionsCol}>
             {isEditable && <button onClick={() => setEditingPage(page)}>Edit</button>}
@@ -317,6 +343,14 @@ const PagesAdmin = () => {
       <Table
         columns={accountColumns}
         data={accountPages}
+        renderCell={renderCell}
+        loading={loading}
+      />
+
+      <h3 className={styles.sectionHeading}>Dialogs</h3>
+      <Table
+        columns={dialogColumns}
+        data={dialogPages}
         renderCell={renderCell}
         loading={loading}
       />

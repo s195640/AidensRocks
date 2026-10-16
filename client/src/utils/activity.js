@@ -364,6 +364,15 @@ const EXTENSION_RE = /^(chrome|moz|safari(-web)?)-extension:/i;
 // Scripts the Facebook/Instagram in-app browser injects (e.g. its
 // navigation_performance_logger throwing on unload), matched anywhere in a stack.
 const IN_APP_BROWSER_RE = /iabjs:\/\//i;
+// Our code always runs from /assets/ (prod) or /src/, /node_modules/,
+// /@vite/... (dev). A stack whose frames all point elsewhere -- usually the
+// page URL itself, from a script an in-app browser or extension injected --
+// isn't ours to fix.
+const OWN_CODE_RE = /\/(assets|src|node_modules|@[\w-]+)\//;
+function isForeignStack(stack) {
+  const frames = typeof stack === "string" ? stack.match(/https?:\/\/[^\s()]+:\d+:\d+/g) : null;
+  return !!frames && !frames.some((f) => OWN_CODE_RE.test(f));
+}
 const clip = (s, n) => (typeof s === "string" ? s.slice(0, n) : null);
 
 function trackError(type, key, meta, targetId = null) {
@@ -378,7 +387,8 @@ function onWindowError(event) {
   if (
     NOISE_RE.test(message) ||
     EXTENSION_RE.test(source) ||
-    IN_APP_BROWSER_RE.test(`${source}\n${event.error?.stack || ""}`)
+    IN_APP_BROWSER_RE.test(`${source}\n${event.error?.stack || ""}`) ||
+    isForeignStack(event.error?.stack)
   )
     return;
   trackError("client_error", `${message}|${source}|${event.lineno}`, {
@@ -395,7 +405,7 @@ function onRejection(event) {
   if (reason?.isAxiosError) return; // reported as load_error
   const message = reason?.message || String(reason ?? "");
   const stack = reason?.stack || "";
-  if (NOISE_RE.test(message) || EXTENSION_RE.test(stack) || IN_APP_BROWSER_RE.test(stack)) return;
+  if (NOISE_RE.test(message) || EXTENSION_RE.test(stack) || IN_APP_BROWSER_RE.test(stack) || isForeignStack(stack)) return;
   trackError("client_error", `rejection|${message}`, {
     message: clip(message, 500),
     stack: clip(reason?.stack, 2000),

@@ -406,6 +406,53 @@ describe('pages admin', () => {
   });
 });
 
+describe('Dialogs (Request A Rock)', () => {
+  const slug = 'request-a-rock';
+  const draft = (settings) =>
+    api().put(`/api/admin/pages/${slug}/draft`).set(A).send({ body: '<p>Send us a rock request!</p>', settings });
+  const request = (rocksRequested) =>
+    api().post('/api/rock-requests').send({ name: 'Lim', email: 'lim@example.com', address: '1 Road', rocksRequested, noRush: true });
+
+  it('is always on, never in the nav, and validates its settings', async () => {
+    expect((await api().patch(`/api/admin/pages/${slug}/visible`).set(A)).status).toBe(400);
+    expect((await api().get('/api/pages')).body.map((p) => p.slug)).not.toContain(slug);
+    for (const bad of [{ maxRocks: 0 }, { maxRocks: 101 }, { maxRocks: 2.5 }, { maxRocks: 'x' }, { rocksNote: 5 }, { rocksNote: 'x'.repeat(201) }, []]) {
+      expect((await draft(bad)).status).toBe(400);
+    }
+    // Settings only exist on dialogs.
+    expect((await api().put('/api/admin/pages/sudc/draft').set(A).send({ body: 'x', settings: {} })).status).toBe(400);
+  });
+
+  it('message, # Rocks note and limit are drafts until Publish, and the limit is enforced', async () => {
+    const saved = await draft({ rocksNote: ' (up to 3) ', maxRocks: '3' });
+    expect(saved.status).toBe(200);
+    expect(saved.body.settings).toEqual({ rocksNote: '(up to 3)', maxRocks: 3 });
+
+    // Preview shows the draft; the public dialog and the limit stay on published.
+    const preview = (await api().get(`/api/admin/pages/${slug}/preview`).set(A)).body;
+    expect(preview).toMatchObject({ body: '<p>Send us a rock request!</p>', settings: { rocksNote: '(up to 3)', maxRocks: 3 } });
+    expect((await api().get(`/api/pages/${slug}/content`)).body.settings).toEqual({ rocksNote: '', maxRocks: null });
+    expect((await request(4)).status).toBe(201);
+
+    const published = await api().post(`/api/admin/pages/${slug}/publish`).set(A);
+    expect(published.body.published_settings).toEqual({ rocksNote: '(up to 3)', maxRocks: 3 });
+    expect((await api().get(`/api/pages/${slug}/content`)).body).toEqual({
+      body: '<p>Send us a rock request!</p>',
+      settings: { rocksNote: '(up to 3)', maxRocks: 3 },
+    });
+    const over = await request(4);
+    expect(over.status).toBe(400);
+    expect(over.body.error).toBe('Please request 3 rocks or fewer.');
+    expect((await request(3)).status).toBe(201);
+
+    // Blank = back to the 100 ceiling.
+    expect((await draft({ rocksNote: '', maxRocks: '' })).body.settings).toEqual({ rocksNote: '', maxRocks: null });
+    await api().post(`/api/admin/pages/${slug}/publish`).set(A);
+    expect((await request(100)).status).toBe(201);
+    expect((await request(101)).body.error).toBe('Please request 100 rocks or fewer.');
+  });
+});
+
 describe('settings and path display names', () => {
   it('settings round-trip', async () => {
     expect((await api().put('/api/admin/settings/test-setting').set(A).send({ value: { a: 1 } })).status).toBe(200);

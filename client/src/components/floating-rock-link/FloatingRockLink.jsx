@@ -6,7 +6,10 @@ import styles from "./FloatingRockLink.module.css";
 const FloatingRockLink = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [showContactPopup, setShowContactPopup] = useState(false);
+  // ?requestRock=1 opens the dialog straight away (Page Details' Preview).
+  const [showContactPopup, setShowContactPopup] = useState(
+    () => new URLSearchParams(location.search).get("requestRock") === "1"
+  );
 
   const handleRequestClick = () => {
     setShowContactPopup(true);
