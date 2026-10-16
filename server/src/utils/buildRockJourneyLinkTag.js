@@ -3,8 +3,10 @@
 // client/src/pages/track-the-rocks/TrackTheRocks.jsx's ?rock= deep link).
 // Same hardcoded site URL as buildRockImageTag/buildRockNumbersWithLinksTag
 // so the admin's preview (EmailPreview.jsx) matches what's sent.
+// &from=email-* marks the visit as coming from one of our emails for site
+// tracking (data/ai-build-docs/site-tracking/); the page ignores it otherwise.
 function buildRockJourneyLinkTag(rockNumber) {
-  return `<a href="https://aidensrocks.com/track-the-rocks?rock=${rockNumber}">See Rock ${rockNumber}'s journey</a>`;
+  return `<a href="https://aidensrocks.com/track-the-rocks?rock=${rockNumber}&from=email-follow">See Rock ${rockNumber}'s journey</a>`;
 }
 
 module.exports = buildRockJourneyLinkTag;

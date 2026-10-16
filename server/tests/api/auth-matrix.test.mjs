@@ -59,6 +59,7 @@ const ROUTES = [
   // admin: dashboard data that used to be public [S4 S18]
   ['GET', '/api/server-health', 'admin', { skipAdminCall: true }], // admin call does real network lookups
   ['GET', '/api/statistics', 'admin'],
+  ['GET', '/api/statistics/daily', 'admin'],
   ['GET', '/api/unmatched-path', 'admin'],
 
   // admin

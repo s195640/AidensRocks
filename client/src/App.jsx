@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import axios from "axios";
 import styles from "./App.module.css";
@@ -15,10 +15,6 @@ import Map from "./pages/map/Map.jsx";
 
 import PrivateRoute from "./admin/components/PrivateRoute.jsx";
 import { AuthProvider, useAuth } from "./admin/context/AuthContext.jsx";
-import Admin from "./admin/pages/admin/Admin.jsx";
-import Albums from "./admin/pages/albums/Albums.jsx";
-import Jobs from "./admin/pages/jobs/Jobs.jsx";
-import AccountsAdmin from "./admin/pages/accounts/AccountsAdmin.jsx";
 import { LEVELS } from "./admin/utils/accessLevels.js";
 import SignIn from "./pages/account/SignIn.jsx";
 import SignUp from "./pages/account/SignUp.jsx";
@@ -27,21 +23,28 @@ import VerifyEmail from "./pages/account/VerifyEmail.jsx";
 import ForgotPassword from "./pages/account/ForgotPassword.jsx";
 import ResetPassword from "./pages/account/ResetPassword.jsx";
 import FollowRocks from "./pages/follow-rocks/FollowRocks.jsx";
-import Rocks from "./admin/pages/rocks/Rocks.jsx";
-import Users from "./admin/pages/users/Users.jsx";
 import Sudc from "./pages/sudc/Sudc.jsx";
 import TrackTheRocks from "./pages/track-the-rocks/TrackTheRocks.jsx";
-import JourneyAdmin from "./admin/pages/journey/JourneyAdmin.jsx";
-import RockRequestsAdmin from "./admin/pages/rock-requests/RockRequestsAdmin.jsx";
 import AllRocks from "./pages/all-rocks/AllRocks.jsx";
-import MusicAdmin from "./admin/pages/music/MusicAdmin.jsx";
-import HonoringAidenAdmin from "./admin/pages/honoring-aiden/HonoringAidenAdmin.jsx";
-import PagesAdmin from "./admin/pages/pages/PagesAdmin.jsx";
-import SettingsAdmin from "./admin/pages/settings/SettingsAdmin.jsx";
-import EmailPreview from "./admin/pages/pages/email-preview/EmailPreview.jsx";
 import PAGE_PATHS from "./adminContent/pagePaths.js";
 import { PreviewProvider } from "./adminContent/PreviewContext.jsx";
 import { UnsavedChangesProvider } from "./context/UnsavedChangesContext.jsx";
+
+// The admin pages load on demand, so visitors to the public site never
+// download admin code (or Recharts, used only by the dashboard).
+const Admin = lazy(() => import("./admin/pages/admin/Admin.jsx"));
+const Albums = lazy(() => import("./admin/pages/albums/Albums.jsx"));
+const Jobs = lazy(() => import("./admin/pages/jobs/Jobs.jsx"));
+const AccountsAdmin = lazy(() => import("./admin/pages/accounts/AccountsAdmin.jsx"));
+const Rocks = lazy(() => import("./admin/pages/rocks/Rocks.jsx"));
+const Users = lazy(() => import("./admin/pages/users/Users.jsx"));
+const JourneyAdmin = lazy(() => import("./admin/pages/journey/JourneyAdmin.jsx"));
+const RockRequestsAdmin = lazy(() => import("./admin/pages/rock-requests/RockRequestsAdmin.jsx"));
+const MusicAdmin = lazy(() => import("./admin/pages/music/MusicAdmin.jsx"));
+const HonoringAidenAdmin = lazy(() => import("./admin/pages/honoring-aiden/HonoringAidenAdmin.jsx"));
+const PagesAdmin = lazy(() => import("./admin/pages/pages/PagesAdmin.jsx"));
+const SettingsAdmin = lazy(() => import("./admin/pages/settings/SettingsAdmin.jsx"));
+const EmailPreview = lazy(() => import("./admin/pages/pages/email-preview/EmailPreview.jsx"));
 
 const adminNavItems = [
   { path: "/admin", label: "Dashboard" },
@@ -95,6 +98,7 @@ function AppContent() {
         navItems={isAdminRoute ? adminNavItems : visiblePublicNavItems}
         account={isAuthenticated ? account : null}
       />
+      <Suspense fallback={<div className={styles.loading}>Loading...</div>}>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
@@ -231,6 +235,7 @@ function AppContent() {
         {/* Catch-all: any unmatched path logs a hit and redirects home */}
         <Route path="*" element={<NotFoundRedirect />} />
       </Routes>
+      </Suspense>
       <Footer />
     </div>
   );

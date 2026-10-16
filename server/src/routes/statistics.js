@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require('../db/pool');
 const requireAdminAuth = require('../middleware/requireAdminAuth');
+const { platformFromUserAgent, PLATFORMS } = require('../utils/platformFromUserAgent');
 
 router.get("/", requireAdminAuth, async (req, res) => {
   try {
@@ -38,23 +39,7 @@ router.get("/", requireAdminAuth, async (req, res) => {
     // Visitors by Platform (Second Table) - Logic using user_agent
     const platformMap = {};
     rows.forEach(row => {
-      const ua = row.user_agent || "";
-      let displayPlatform = "Other";
-
-      // Improved detection logic using User Agent
-      if (/android/i.test(ua)) {
-        displayPlatform = "Android";
-      } else if (/iPhone|iPod/.test(ua)) {
-        displayPlatform = "iPhone";
-      } else if (/iPad/.test(ua)) {
-        displayPlatform = "iPad";
-      } else if (/Macintosh|MacIntel/.test(ua)) {
-        displayPlatform = "Mac";
-      } else if (/Windows|Win32|Win64/.test(ua)) {
-        displayPlatform = "Windows";
-      } else if (/Linux/.test(ua)) {
-        displayPlatform = "Linux";
-      }
+      const displayPlatform = platformFromUserAgent(row.user_agent);
 
       if (!platformMap[displayPlatform]) {
         platformMap[displayPlatform] = { total: 0, ips: new Set() };
@@ -72,6 +57,86 @@ router.get("/", requireAdminAuth, async (req, res) => {
     res.json(data);
   } catch (err) {
     console.error("Error calculating statistics:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+const DAILY_RANGES = { "7": 7, "30": 30, "90": 90, year: null, all: null };
+
+// "YYYY-MM-DD" for a Date as seen in `tz`.
+const dayIn = (date, tz) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+
+// Calendar-day arithmetic on "YYYY-MM-DD" strings (UTC, so no DST drift).
+const addDays = (day, n) => {
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+
+// Visitors by Day panel: one row per calendar day in the viewer's timezone
+// (`tz`, an IANA name; defaults to UTC), total visits + unique IPs, overall
+// and per platform. Days with no visits are included as zeros so the chart's
+// x-axis is continuous.
+router.get("/daily", requireAdminAuth, async (req, res) => {
+  const range = String(req.query.range || "30");
+  if (!(range in DAILY_RANGES)) {
+    return res.status(400).json({ error: "range must be one of 7, 30, 90, year, all" });
+  }
+  const tz = String(req.query.tz || "UTC");
+  let today;
+  try {
+    today = dayIn(new Date(), tz);
+  } catch {
+    return res.status(400).json({ error: "Invalid timezone" });
+  }
+
+  let start = null;
+  if (DAILY_RANGES[range]) start = addDays(today, -(DAILY_RANGES[range] - 1));
+  else if (range === "year") start = `${today.slice(0, 4)}-01-01`;
+
+  try {
+    const { rows } = await db.query(
+      `SELECT to_char((create_dt AT TIME ZONE $1)::date, 'YYYY-MM-DD') AS day, ip_address, user_agent
+         FROM counter_tracking
+        WHERE create_dt IS NOT NULL
+          AND ($2::date IS NULL OR (create_dt AT TIME ZONE $1)::date >= $2::date)`,
+      [tz, start]
+    );
+
+    if (!start) {
+      start = rows.reduce((min, r) => (r.day < min ? r.day : min), today);
+    }
+
+    const emptyBucket = () => ({ total: 0, ips: new Set() });
+    const byDay = new Map();
+    for (let day = start; day <= today; day = addDays(day, 1)) {
+      byDay.set(day, { all: emptyBucket(), platforms: Object.fromEntries(PLATFORMS.map((p) => [p, emptyBucket()])) });
+    }
+
+    for (const row of rows) {
+      const bucket = byDay.get(row.day);
+      if (!bucket) continue; // a create_dt in the future relative to `today`
+      const platform = bucket.platforms[platformFromUserAgent(row.user_agent)];
+      bucket.all.total += 1;
+      bucket.all.ips.add(row.ip_address);
+      platform.total += 1;
+      platform.ips.add(row.ip_address);
+    }
+
+    const counts = (b) => ({ total: b.total, unique: b.ips.size });
+    res.json({
+      range,
+      tz,
+      platforms: PLATFORMS,
+      days: [...byDay].map(([date, b]) => ({
+        date,
+        ...counts(b.all),
+        platforms: Object.fromEntries(PLATFORMS.map((p) => [p, counts(b.platforms[p])])),
+      })),
+    });
+  } catch (err) {
+    console.error("Error calculating daily visitors:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });

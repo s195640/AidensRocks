@@ -4,3 +4,10 @@
   min-height: 100vh;
   background-color: #f3f4f6;
 }
+
+/* Shown briefly while an admin page's code downloads (lazy-loaded). */
+.loading {
+  padding: 100px 20px;
+  text-align: center;
+  color: #666;
+}
