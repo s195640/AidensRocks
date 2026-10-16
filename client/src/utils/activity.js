@@ -361,6 +361,9 @@ export function skipPageView(path = window.location.pathname) {
 // ------------------------------------------------------------------ errors
 const NOISE_RE = /ResizeObserver loop|Script error\.?$|^Non-Error promise rejection/i;
 const EXTENSION_RE = /^(chrome|moz|safari(-web)?)-extension:/i;
+// Scripts the Facebook/Instagram in-app browser injects (e.g. its
+// navigation_performance_logger throwing on unload), matched anywhere in a stack.
+const IN_APP_BROWSER_RE = /iabjs:\/\//i;
 const clip = (s, n) => (typeof s === "string" ? s.slice(0, n) : null);
 
 function trackError(type, key, meta, targetId = null) {
@@ -372,7 +375,12 @@ function trackError(type, key, meta, targetId = null) {
 function onWindowError(event) {
   const message = event.message || event.error?.message || "";
   const source = event.filename || "";
-  if (NOISE_RE.test(message) || EXTENSION_RE.test(source)) return;
+  if (
+    NOISE_RE.test(message) ||
+    EXTENSION_RE.test(source) ||
+    IN_APP_BROWSER_RE.test(`${source}\n${event.error?.stack || ""}`)
+  )
+    return;
   trackError("client_error", `${message}|${source}|${event.lineno}`, {
     message: clip(message, 500),
     stack: clip(event.error?.stack, 2000),
@@ -386,7 +394,8 @@ function onRejection(event) {
   const reason = event.reason;
   if (reason?.isAxiosError) return; // reported as load_error
   const message = reason?.message || String(reason ?? "");
-  if (NOISE_RE.test(message) || EXTENSION_RE.test(reason?.stack || "")) return;
+  const stack = reason?.stack || "";
+  if (NOISE_RE.test(message) || EXTENSION_RE.test(stack) || IN_APP_BROWSER_RE.test(stack)) return;
   trackError("client_error", `rejection|${message}`, {
     message: clip(message, 500),
     stack: clip(reason?.stack, 2000),

@@ -41,6 +41,11 @@ const RockRequestsAdminTable = ({
   const pendingData = activeData.filter((r) => !r.shipped);
   const shippedData = activeData.filter((r) => r.shipped);
 
+  const totals = (rows) => {
+    const rocks = rows.reduce((sum, r) => sum + (Number(r.rocks_requested) || 0), 0);
+    return `(${rows.length} ${rows.length === 1 ? "request" : "requests"}, ${rocks} ${rocks === 1 ? "rock" : "rocks"})`;
+  };
+
   const defaultSort = { key: "create_dt", direction: "desc" };
 
   const columns = useMemo(
@@ -180,7 +185,7 @@ const RockRequestsAdminTable = ({
   return (
     <>
       <div className={styles.sectionHeadingRow}>
-        <h3 className={styles.sectionHeading}>Pending</h3>
+        <h3 className={styles.sectionHeading}>Pending {totals(pendingData)}</h3>
         <input
           type="text"
           placeholder="Search name, email, address, tracking #..."
@@ -202,7 +207,7 @@ const RockRequestsAdminTable = ({
         />
       )}
 
-      <h3 className={styles.sectionHeading}>Shipped</h3>
+      <h3 className={styles.sectionHeading}>Shipped {totals(shippedData)}</h3>
       {shippedData.length === 0 ? (
         <p className={styles.emptyMessage}>No shipped rock requests yet.</p>
       ) : (
