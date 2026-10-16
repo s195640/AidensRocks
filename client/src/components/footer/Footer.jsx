@@ -2,6 +2,8 @@ import { useState } from "react";
 import ContactPopup from "../contact-popup/ContactPopup";
 import styles from "./Footer.module.css";
 import ARAudioPlayer from "../ar-audio-player/ARAudioPlayer";
+import { track } from "../../utils/activity";
+import ErrorBoundary from "../error-boundary/ErrorBoundary";
 
 const Footer = () => {
   const [showContactPopup, setShowContactPopup] = useState(false);
@@ -9,11 +11,12 @@ const Footer = () => {
   const handleContactClick = (e) => {
     e.preventDefault();
     setShowContactPopup(true);
+    track("contact_open");
   };
 
   return (
     <>
-      <div className={styles.footerContent}>
+      <div className={styles.footerContent} data-activity-where="footer">
         <div className={styles.footerContentInner}>
           <ul>
             <li>
@@ -37,7 +40,10 @@ const Footer = () => {
           </ul>
         </div>
       </div>
-      <ARAudioPlayer />
+      {/* A broken player quietly disappears rather than taking the page down. */}
+      <ErrorBoundary where="music" variant="hidden">
+        <ARAudioPlayer />
+      </ErrorBoundary>
 
       {showContactPopup && <ContactPopup onClose={() => setShowContactPopup(false)} />}
     </>

@@ -30,6 +30,7 @@ const ROUTES = [
   ['GET', '/api/ip', 'public'],
   ['GET', '/api/location', 'public'],
   ['POST', '/api/rock-count', 'public'],
+  ['POST', '/api/activity', 'public'],
   ['GET', '/api/rock-posts/totals', 'public'],
   ['GET', '/api/rock-posts/allrocks', 'public'],
   ['GET', '/api/rock-posts', 'public'],
@@ -60,6 +61,14 @@ const ROUTES = [
   ['GET', '/api/server-health', 'admin', { skipAdminCall: true }], // admin call does real network lookups
   ['GET', '/api/statistics', 'admin'],
   ['GET', '/api/statistics/daily', 'admin'],
+  ['GET', '/api/admin/site-health/errors', 'admin'],
+  ['GET', `/api/admin/site-health/errors/${X}`, 'admin'],
+  ['PUT', `/api/admin/site-health/errors/${X}`, 'admin'],
+  ['GET', '/api/admin/site-health/slow', 'admin'],
+  ['GET', '/api/admin/site-health/speed', 'admin'],
+  ...['visitors', 'activity', 'forms', 'albums', 'searches', 'journeys', 'music', 'outbound', 'scroll', 'top', 'glance'].map(
+    (panel) => ['GET', `/api/admin/activity/${panel}`, 'admin']
+  ),
   ['GET', '/api/unmatched-path', 'admin'],
 
   // admin

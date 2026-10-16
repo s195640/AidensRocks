@@ -1,7 +1,10 @@
+import { track } from "../../utils/activity";
+
 const CustomCloseComponent = ({ audioPlayerState, onClose, windowSize }) => {
   const audioEl = audioPlayerState?.elementRefs?.audioEl;
 
   const handleClose = () => {
+    track("player_close");
     if (audioEl) {
       audioEl.pause();
       audioEl.currentTime = 0;

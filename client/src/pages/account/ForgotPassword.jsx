@@ -1,4 +1,5 @@
 import { useState } from "react";
+import useShownError from "../../utils/useShownError";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { useAccountPage } from "../../adminContent/useAccountPage";
@@ -9,6 +10,7 @@ const ForgotPassword = () => {
   const page = useAccountPage("reset-password");
   const [email, setEmail] = useState("");
   const [error, setError] = useState(null);
+  useShownError("forgot_password", error);
   const [done, setDone] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 

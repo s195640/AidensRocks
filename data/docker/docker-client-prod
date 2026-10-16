@@ -10,9 +10,18 @@ COPY client/package*.json client/.npmrc ./
 # other config to pick it up.
 RUN --mount=type=secret,id=github_token,env=GITHUB_TOKEN npm install
 COPY client .
+# vite.config.js bakes the site version into the build from ../VERSION.
+COPY VERSION /VERSION
 RUN npm run build
+# Hidden source maps (vite.config.js) move out of the public web root into
+# /sourcemaps/<version>/assets, for readable error stack traces on the admin
+# dashboard. They're never served.
+RUN mkdir -p "/sourcemaps/$(cat /VERSION)/assets"  && find dist -name '*.map' -exec mv {} "/sourcemaps/$(cat /VERSION)/assets/" \;
 
 # Production stage (static file server)
 FROM nginx:stable-alpine
 COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /sourcemaps /sourcemaps
+COPY ./data/docker/client-entrypoint/40-copy-sourcemaps.sh /docker-entrypoint.d/40-copy-sourcemaps.sh
+RUN chmod +x /docker-entrypoint.d/40-copy-sourcemaps.sh
 COPY ./data/nginx/nginx.conf /etc/nginx/nginx.conf

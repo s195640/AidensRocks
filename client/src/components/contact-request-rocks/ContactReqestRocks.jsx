@@ -1,6 +1,8 @@
 // components/contact-request-rocks/ContactReqestRocks.jsx
 import { useState } from "react";
 import axios from "axios";
+import useFormFunnel from "../../utils/useFormFunnel";
+import useShownError from "../../utils/useShownError";
 import { useSiteSettings } from "../../context/SiteSettingsContext";
 import { US_STATES } from "../../utils/usStates";
 import styles from "./ContactReqestRocks.module.css";
@@ -15,7 +17,9 @@ const localToday = () => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
-const ContactRequestRocks = ({ onClose }) => {
+const ContactRequestRocks = ({ onClose, source = null }) => {
+  // Site Tracking: opened -> started -> submitted (or abandoned).
+  const funnel = useFormFunnel("request_a_rock", source);
   const { contactEmail } = useSiteSettings();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -33,6 +37,7 @@ const ContactRequestRocks = ({ onClose }) => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  useShownError("rock_request", error);
   const [attempted, setAttempted] = useState(false);
 
   const rocksCount = Number(rocksRequested);
@@ -77,7 +82,12 @@ const ContactRequestRocks = ({ onClose }) => {
     e.preventDefault();
     if (submitting) return;
     setAttempted(true);
-    if (Object.values(fieldErrors).some(Boolean)) return;
+    if (Object.values(fieldErrors).some(Boolean)) {
+      // Which fields were missing / invalid -- never what was typed.
+      const fields = Object.keys(fieldErrors).filter((k) => fieldErrors[k]);
+      funnel.failed(`validation:${fields.join(",")}`);
+      return;
+    }
 
     setSubmitting(true);
     setError("");
@@ -94,8 +104,10 @@ const ContactRequestRocks = ({ onClose }) => {
         message,
       });
       setSubmitted(true);
+      funnel.submitted({ rocks: Number(rocksRequested) || null });
     } catch (err) {
       console.error("Rock request submit failed:", err);
+      funnel.failed(err.response ? `server_${err.response.status}` : "network");
       setError(
         contactEmail
           ? `Sorry, something went wrong. Please email us instead: ${contactEmail}`
@@ -107,7 +119,7 @@ const ContactRequestRocks = ({ onClose }) => {
   };
 
   return (
-    <div className={styles.popupOverlay}>
+    <div className={styles.popupOverlay} onChangeCapture={funnel.onChangeCapture}>
       <div className={styles.popupContent}>
         <h2>Request A Rock</h2>
 

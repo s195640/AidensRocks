@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import RockTable from "../../components/rock-journey/rock-table/RockTable";
 import styles from "./TrackTheRocks.module.css";
+import { reportShownError, track } from "../../utils/activity";
 import RockJourneyDialog from "../../components/rock-map/rock-journey-dialog/RockJourneyDialog";
 import TotalRocks from "../../components/total-rocks/TotalRocks";
 import ToggleSwitch from "../../components/simple-components/toggle-switch/ToggleSwitch";
@@ -13,6 +14,9 @@ function TrackTheRocks() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [rockNumber, setRockNumber] = useState("");
   const [selectedRock, setSelectedRock] = useState(null);
+  // Site Tracking: how the open rock was reached -- a search, or a shared
+  // ?rock= link (with &from=email-* when it came from one of our emails).
+  const [opened, setOpened] = useState({ source: null, from: null });
   const { isUser } = useAuth();
   const [followedOnly, setFollowedOnly] = useState(false);
   const showFollowedOnly = isUser && followedOnly;
@@ -24,6 +28,7 @@ function TrackTheRocks() {
   useEffect(() => {
     const num = parseInt(searchParams.get("rock"), 10);
     if (num > 0) {
+      setOpened({ source: "link", from: searchParams.get("from") });
       setSelectedRock(num);
     }
   }, [searchParams]);
@@ -40,9 +45,11 @@ function TrackTheRocks() {
   const handleSearchSubmit = () => {
     const num = parseInt(rockNumber, 10);
     if (!num || num <= 0) {
+      reportShownError("track_rock_number", "Please enter a valid rock number > 0");
       alert("Please enter a valid rock number > 0");
       return;
     }
+    setOpened({ source: "search", from: null });
     setSelectedRock(num);
     setIsDialogOpen(false);
   };
@@ -125,7 +132,19 @@ function TrackTheRocks() {
       )}
 
       {/* 🗺️ Rock Journey Dialog (same dialog used on the map page) */}
-      <RockJourneyDialog rockNumber={selectedRock} onClose={handleClosePopup} />
+      <RockJourneyDialog
+        rockNumber={selectedRock}
+        onClose={handleClosePopup}
+        source={opened.source}
+        onResult={(found) => {
+          const targetId = String(selectedRock);
+          if (opened.source === "search") {
+            track("rock_search", { targetId, meta: { page: "track_the_rocks", input: "search", found } });
+          } else if (opened.source === "link") {
+            track("rock_link", { targetId, meta: { found, from: opened.from } });
+          }
+        }}
+      />
     </div>
   );
 }

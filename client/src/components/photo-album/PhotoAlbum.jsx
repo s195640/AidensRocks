@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
+import useShownError from "../../utils/useShownError";
 import { Play } from "lucide-react";
 import { RowsPhotoAlbum } from "react-photo-album";
 import "react-photo-album/rows.css";
@@ -12,6 +13,7 @@ import styles from "./PhotoAlbum.module.css";
 const PhotoAlbum = ({ onAlbumClick, tag = "main", title = "Photo Albums" }) => {
   const [photos, setPhotos] = useState([]);
   const [loadFailed, setLoadFailed] = useState(false);
+  useShownError("albums_load", loadFailed && "The photo albums couldn't be loaded right now.");
 
   useEffect(() => {
     let cancelled = false;

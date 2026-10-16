@@ -41,8 +41,8 @@
     flex-direction: column;
   }
 
-  /* Order: 1. Visitors by Day, 2. Music, 3. Honoring Aiden, 4. Path Hits,
-     5. ARDetails, 6. Statistics, 7. Server Health */
+  /* Order: 1. Visitors by Day, 2. Site Health, 3. Music, 4. Honoring Aiden,
+     5. Path Hits, 6. ARDetails, 7. Statistics, 8. Server Health */
   .leftColumn {
     display: contents;
     /* Flattens the div so we can reorder children */
@@ -57,29 +57,34 @@
     order: 2;
   }
 
-  /* Music */
+  /* Site Health */
   .leftColumn>div:nth-child(3) {
     order: 3;
   }
 
-  /* Honoring Aiden */
+  /* Music */
   .leftColumn>div:nth-child(4) {
     order: 4;
   }
 
-  /* Path Hits */
-  .rightColumn {
+  /* Honoring Aiden */
+  .leftColumn>div:nth-child(5) {
     order: 5;
   }
 
-  /* ARDetails */
-  .leftColumn>div:nth-child(5) {
+  /* Path Hits */
+  .rightColumn {
     order: 6;
   }
 
-  /* Statistics */
+  /* ARDetails */
   .leftColumn>div:nth-child(6) {
     order: 7;
+  }
+
+  /* Statistics */
+  .leftColumn>div:nth-child(7) {
+    order: 8;
   }
 
   /* Server Health */

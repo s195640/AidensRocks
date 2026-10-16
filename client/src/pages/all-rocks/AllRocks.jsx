@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
+import useShownError from "../../utils/useShownError";
 import { RowsPhotoAlbum } from "react-photo-album";
 import Lightbox from "yet-another-react-lightbox";
 import Captions from "yet-another-react-lightbox/plugins/captions";
@@ -28,6 +29,7 @@ export default function AllRocks() {
   const [selectedArtist, setSelectedArtist] = useState("All Artists");
   const [index, setIndex] = useState(-1);
   const [loadFailed, setLoadFailed] = useState(false);
+  useShownError("allrocks_load", loadFailed && "The rocks couldn't be loaded right now.");
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {

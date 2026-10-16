@@ -44,3 +44,36 @@ export async function latestMailTo(request, to) {
   }
   throw new Error(`no mail to ${to}`);
 }
+
+// Site activity: every batch / event the page sends to /api/activity, read
+// from the outgoing requests (Site Tracking).
+// Normal sends are read from the request; sends made on the way out of a
+// page go by navigator.sendBeacon, whose body Playwright doesn't expose,
+// so those are copied out from inside the page.
+export function collectActivity(page) {
+  const batches = [];
+  page.on("request", (req) => {
+    const body = req.postData();
+    if (req.method() === "POST" && req.url().endsWith("/api/activity") && body) {
+      batches.push(JSON.parse(body));
+    }
+  });
+  page.exposeFunction("__activityBeacon", (body) => batches.push(JSON.parse(body))).catch(() => {});
+  page
+    .addInitScript(() => {
+      const send = navigator.sendBeacon.bind(navigator);
+      navigator.sendBeacon = (url, data) => {
+        if (String(url).endsWith("/api/activity") && data?.text) {
+          data.text().then((t) => window.__activityBeacon?.(t)).catch(() => {});
+        }
+        return send(url, data);
+      };
+    })
+    .catch(() => {});
+  return {
+    batches,
+    events: () => batches.flatMap((b) => b.events || []),
+  };
+}
+
+export const ofType = (events, type) => events.filter((e) => e.type === type);

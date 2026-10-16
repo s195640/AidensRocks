@@ -3,6 +3,9 @@ const path = require('path');
 const cors = require('cors');
 const morgan = require('morgan');
 const recordAppVersion = require('./utils/recordAppVersion');
+const { errorCapture } = require('./middleware/errorCapture');
+const recordServerError = require('./utils/errors/recordServerError');
+const { startScheduledJobs } = require('./utils/scheduledJobs');
 
 require('dotenv').config();
 
@@ -17,6 +20,8 @@ app.use(cors());
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 app.use(morgan('dev'));
+// Error tracking: records any request that ends in a 5xx.
+app.use(errorCapture);
 
 // Static files. Rock uploads keep private data next to the public images:
 // metadata.txt (submitter name/email/IP/geo) and o/ (untouched originals,
@@ -58,6 +63,9 @@ app.use('/api/server-health', require('./routes/serverHealth'));
 app.use("/api/ar-details", require("./routes/arDetails"));
 app.use("/api/music", require("./routes/music"));
 app.use("/api/statistics", require("./routes/statistics"));
+app.use("/api/activity", require("./routes/activity"));
+app.use("/api/admin/site-health", require("./routes/siteHealthAdmin"));
+app.use("/api/admin/activity", require("./routes/activityAdmin"));
 app.use("/api/unmatched-path", require("./routes/unmatchedPath"));
 app.use("/api/admin/path-display-names", require("./routes/pathDisplayNameAdmin"));
 app.use("/api/pages", require("./routes/pages"));
@@ -73,11 +81,9 @@ app.use("/api/follows", require("./routes/follows"));
 // Health Check
 app.get('/health', (req, res) => res.send('OK'));
 
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something broke!' });
-});
+// Global error handler: 4xx for client errors (bad JSON, too large, upload
+// limits), 500 for everything else -- see middleware/errorHandler.js.
+app.use(require('./middleware/errorHandler'));
 
 // Exported (and only listening when run directly -- `node src/app.js` /
 // nodemon) so the regression suite can drive it in-process with supertest.
@@ -87,12 +93,15 @@ if (require.main === module) {
   // background upload job) shouldn't take the whole site down.
   process.on('unhandledRejection', (reason) => {
     console.error('Unhandled promise rejection:', reason);
+    recordServerError(reason instanceof Error ? reason : new Error(String(reason)), { kind: 'process' });
   });
 
   const PORT = process.env.PORT || 8000;
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running at http://localhost:${PORT}`);
     recordAppVersion();
+    // Daily error summary; only where RUN_SCHEDULED_JOBS=true (one prod node).
+    startScheduledJobs();
   });
 }
 

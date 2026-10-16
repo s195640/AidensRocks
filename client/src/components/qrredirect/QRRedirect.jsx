@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { skipPageView, track } from "../../utils/activity";
 
 export default function QRRedirect() {
   const navigate = useNavigate();
@@ -19,6 +20,10 @@ export default function QRRedirect() {
 
     const params = new URLSearchParams(location.search);
     const r = params.get("r");
+
+    // Site activity: a QR scan (with the rock number), not a page view.
+    skipPageView(location.pathname);
+    track("qr_scan", { targetId: r || null });
 
     if (r) {
       sessionStorage.setItem("rock_num_qr", r);

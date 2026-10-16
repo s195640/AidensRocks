@@ -31,7 +31,7 @@ const ShareYourRockContent = () => {
     document
       .querySelector(".additional-content")
       ?.scrollIntoView({ behavior: "smooth" });
-    open();
+    open("floating_button");
     setSearchParams({}, { replace: true });
   }, [searchParams]);
 
@@ -44,7 +44,7 @@ const ShareYourRockContent = () => {
       ) : (
         <>
           <h2>Aiden&apos;s Rocks</h2>
-          <button onClick={open} className={styles.uploadBtn}>
+          <button onClick={() => open("page_button")} className={styles.uploadBtn}>
             Upload Your Rock
           </button>
           <p>
@@ -88,7 +88,7 @@ const ShareYourRockContent = () => {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    open();
+                    open("page_link");
                   }}
                 >
                   here

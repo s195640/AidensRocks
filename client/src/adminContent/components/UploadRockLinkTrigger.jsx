@@ -8,7 +8,7 @@ export default function UploadRockLinkTrigger() {
       href="#"
       onClick={(e) => {
         e.preventDefault();
-        open();
+        open("page_link");
       }}
     >
       here

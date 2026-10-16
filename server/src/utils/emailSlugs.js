@@ -18,6 +18,8 @@ const EMAIL_SLUGS = new Set([
   'send-email-default',
   'upload-files-failed-email',
   'upload-processing-failed-email',
+  'error-new-email',
+  'error-daily-summary-email',
 ]);
 
 module.exports = EMAIL_SLUGS;

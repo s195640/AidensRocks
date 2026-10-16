@@ -1,4 +1,6 @@
 import { useState } from "react";
+import useShownError from "../../utils/useShownError";
+import { track } from "../../utils/activity";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../admin/context/AuthContext";
@@ -11,6 +13,7 @@ const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  useShownError("signin", error);
   const [errorCode, setErrorCode] = useState(null);
   const [notice, setNotice] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -33,6 +36,7 @@ const SignIn = () => {
     const result = await login(email, password);
     setSubmitting(false);
     if (result.ok) {
+      track("sign_in");
       // Close the phone keyboard and start the next page at the top — a
       // programmatic navigate keeps this page's scroll position (often
       // scrolled down to the form on a phone), unlike the navbar links,

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import useShownError from "../../utils/useShownError";
+import { track } from "../../utils/activity";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { ContentEditor, ContentViewer, ContentJsonViewer } from "@s195640/content-editor";
@@ -79,6 +81,9 @@ function recordViewOnce(slug) {
     return;
   }
 
+  // Site Tracking: same trigger as the view_count bump (once per session).
+  track("entry_view", { targetId: slug });
+
   axios.post(`/api/honoring-aiden/entries/${slug}/view`).catch((err) => {
     console.error(`Failed to record honoring-aiden view for "${slug}":`, err);
   });
@@ -126,6 +131,9 @@ export default function EntryDetailView({ isAdmin = false, onEntryChanged }) {
   const [notFound, setNotFound] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [error, setError] = useState("");
+  useShownError("entry_load", loadFailed && "This page couldn't be loaded right now.");
+  useShownError("entry_not_found", notFound && "This page couldn't be found.");
+  useShownError("entry_action", error);
   const [activeTab, setActiveTab] = useState("edit");
   const [mobileWidth, setMobileWidth] = useState(MOBILE_WIDTH_DEFAULT);
   const [uploadDialog, setUploadDialog] = useState({ open: false, fileName: "", percent: 0 });

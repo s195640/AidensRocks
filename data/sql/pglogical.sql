@@ -48,3 +48,9 @@ SELECT pglogical.replication_set_add_table('default', 'rock_requests', synchroni
 SELECT pglogical.replication_set_add_table('default', 'account', synchronize_data := false);
 SELECT pglogical.replication_set_add_table('default', 'account_token', synchronize_data := false);
 SELECT pglogical.replication_set_add_table('default', 'account_follow', synchronize_data := false);
+-- Site Tracking
+-- New tables, zero rows at creation time (no backfill/seed) — explicit false.
+SELECT pglogical.replication_set_add_table('default', 'visit', synchronize_data := false);
+SELECT pglogical.replication_set_add_table('default', 'site_event', synchronize_data := false);
+SELECT pglogical.replication_set_add_table('default', 'server_error', synchronize_data := false);
+SELECT pglogical.replication_set_add_table('default', 'error_group', synchronize_data := false);

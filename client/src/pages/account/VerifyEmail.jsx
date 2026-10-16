@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import useShownError from "../../utils/useShownError";
 import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import styles from "./Account.module.css";
@@ -10,6 +11,7 @@ const VerifyEmail = () => {
   const [message, setMessage] = useState(
     token ? "" : "This verification link is missing its token."
   );
+  useShownError("verify_email", status === "error" && message);
   // Tokens are single-use: guard against StrictMode's double effect run
   // consuming it once and then reporting the second call as "expired".
   const sent = useRef(false);

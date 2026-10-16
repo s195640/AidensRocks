@@ -1,8 +1,14 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import appVersion from "./appVersion.js";
 
 export default defineConfig({
   plugins: [react()],
+  define: { __APP_VERSION__: JSON.stringify(appVersion()) },
+  // "hidden": .map files are generated but not linked from the code, so
+  // browsers never ask for them. The prod build moves them off the public
+  // site to the server, for readable error stack traces (Site Health).
+  build: { sourcemap: "hidden" },
   server: {
     host: "0.0.0.0",
     port: 4173,

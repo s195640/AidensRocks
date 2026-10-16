@@ -1,4 +1,5 @@
 import { useState } from "react";
+import useShownError from "../../utils/useShownError";
 import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import PasswordFields from "./PasswordFields";
@@ -11,6 +12,7 @@ const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState(null);
+  useShownError("reset_password", error);
   const [done, setDone] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 

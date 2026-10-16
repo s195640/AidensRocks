@@ -1,6 +1,7 @@
 // src/components/RockTable.jsx
 import axios from "axios";
 import { useEffect, useRef, useState } from "react";
+import useShownError from "../../../utils/useShownError";
 import RockJourney from "../RockJourney";
 import "./RockTable.css";
 
@@ -20,6 +21,7 @@ const RockTable = ({ followedOnly = false }) => {
   // didn't match the rows, re-requested pages forever.)
   const [exhausted, setExhausted] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  useShownError("rocktable_load", loadError && "Couldn't load rocks.");
   const [retry, setRetry] = useState(0);
   const sentinelRef = useRef(null);
 

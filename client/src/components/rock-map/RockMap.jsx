@@ -1,10 +1,12 @@
 // src/components/RockMap.jsx
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import styles from "./RockMap.module.css";
 import RockJourneyDialog from "./rock-journey-dialog/RockJourneyDialog";
+import { track } from "../../utils/activity";
+import useTypedSearch from "../../utils/useTypedSearch";
 import Dialog from "../simple-components/dialog/Dialog";
 
 // Fix default marker icons (needed for React + Webpack/Vite)
@@ -77,6 +79,23 @@ export default function RockMap({ pins = [], followedSet = new Set(), canFilterF
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
   ];
 
+  // Site Tracking: rock numbers typed into the two live search boxes. A pin
+  // click also fills the Rock # box; that's a map_pin, not a typed search.
+  const pinFilled = useRef(null);
+  const commitHighlight = useTypedSearch(highlightQuery, (q) => {
+    if (q === pinFilled.current) return;
+    track("rock_search", {
+      targetId: q,
+      meta: { page: "map", input: "highlight", found: pins.some((pin) => pin.label === q) },
+    });
+  });
+  const commitFilter = useTypedSearch(rockNumberQuery, (q) =>
+    track("rock_search", {
+      targetId: q,
+      meta: { page: "map", input: "filter", found: pins.some((pin) => pin.label.includes(q)) },
+    })
+  );
+
   const toggleFilter = (key) => {
     setFilters((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -128,6 +147,8 @@ export default function RockMap({ pins = [], followedSet = new Set(), canFilterF
               icon={isHighlighted ? greenIcon : isFollowed ? orangeIcon : defaultIcon}
               eventHandlers={{
                 click: () => {
+                  track("map_pin", { targetId: pin.label });
+                  pinFilled.current = pin.label;
                   setSelectedRock(pin.label);
                   setHighlightQuery(pin.label);
                 },
@@ -153,7 +174,11 @@ export default function RockMap({ pins = [], followedSet = new Set(), canFilterF
           placeholder="Rock #"
           aria-label="Highlight rock number"
           value={highlightQuery}
-          onChange={(e) => setHighlightQuery(e.target.value)}
+          onChange={(e) => {
+            pinFilled.current = null; // typed by the visitor from here on
+            setHighlightQuery(e.target.value);
+          }}
+          onBlur={commitHighlight}
         />
         {highlightQuery && (
           <button
@@ -183,6 +208,7 @@ export default function RockMap({ pins = [], followedSet = new Set(), canFilterF
             placeholder="e.g. 123"
             value={rockNumberQuery}
             onChange={(e) => setRockNumberQuery(e.target.value)}
+            onBlur={commitFilter}
           />
         </label>
 
@@ -217,6 +243,7 @@ export default function RockMap({ pins = [], followedSet = new Set(), canFilterF
       <RockJourneyDialog
         rockNumber={selectedRock}
         onClose={() => setSelectedRock(null)}
+        source="map_pin"
       />
     </div>
   );

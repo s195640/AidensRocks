@@ -1,0 +1,92 @@
+/* src/admin/pages/activity/ActivityAdmin.module.css */
+.container {
+  padding: 20px;
+  padding-top: 80px;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.title {
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+/* The shared filter bar stays in view while scrolling the panels. */
+.bar {
+  position: sticky;
+  top: 60px;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.segBtn,
+.segActive {
+  border: none;
+  border-right: 1px solid #ccc;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.segmented > :last-child {
+  border-right: none;
+}
+
+.segBtn {
+  background: #fff;
+  color: #444;
+}
+
+.segBtn:hover {
+  background: #f3f3f3;
+}
+
+.segActive {
+  background: #333;
+  color: #fff;
+}
+
+.toggle {
+  font-size: 0.9rem;
+  color: #444;
+  white-space: nowrap;
+}
+
+.refreshBtn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #555;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 1100px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

@@ -1,6 +1,6 @@
 # Site-Wide Tracking — Feature Plan
 
-**Status:** Approved (2026-10-16). Open questions answered below; phase 1 next.
+**Status:** Phases 1-4 built (2026-10-16). Phase 5 (retiring the old trackers) needs separate approval. Progress and deviations are in `summary-issue-log.md`. The panels went on a new Admin → Activity page instead of the Dashboard (asked and answered in phase 4).
 
 ## Why
 
@@ -80,7 +80,7 @@ Kept without ever updating the `visit` row, so the tables stay insert-only:
 
 Indexes: `(created_at)`, `(type, created_at)`, `(visit_id)`, `(device_id)`.
 
-All the new tables (`visit`, `site_event`, and from "Error tracking" `server_error` and `error_group`) go in `createdb.sql`, `droptables.sql`, a new `data/sql/migrations/add_site_tracking_tables.sql`, and `pglogical.sql`.
+All the new tables (`visit`, `site_event`, and from "Error tracking" `server_error` and `error_group`) go in `createdb.sql`, `droptables.sql`, the numbered step files in `data/sql/migrations/0.15-site-tracking/` (see `DEPLOY.md`), and `pglogical.sql`.
 
 ## Event catalog
 
@@ -130,7 +130,7 @@ Adding a type later is client code plus an allow-list entry. No schema change.
 
 - **Client:** a small `client/src/utils/track.js` module plus a `<SiteTracker />` mounted in `App.jsx`:
   - `device_id` lives in `localStorage`. The session is a `visit_id` that rolls over after 30 minutes without activity (also in `localStorage`, so it's shared across tabs). If storage isn't available, it falls back to in-memory IDs.
-  - `track(type, { targetId, meta })` adds the event to a queue. The queue is flushed every few seconds and on `pagehide` with `fetch(..., { keepalive: true })`, so the auth header still goes along. `sendBeacon` can't send headers.
+  - `track(type, { targetId, meta })` adds the event to a queue. The queue is sent every few seconds with `fetch`. On leaving the page (`pagehide`, the tab hidden, an outbound click), it's sent with `navigator.sendBeacon` instead: browsers drop a `fetch` started while a page unloads, even with `keepalive` (found in phase 3). A beacon can't send headers, so the sign-in token goes in the body and the server reads it from there.
   - Page views come from one `useLocation` effect, so no per-page wiring is needed.
 - **Server:** `POST /api/activity` with `{ visit: {...}, events: [...] }` in `server/src/routes/activity.js`:
   - `optionalAuth` resolves `account_id` / `is_admin`.

@@ -201,6 +201,50 @@ const EMAIL_TEMPLATES = {
       ["{FOLDER}", "Folder"],
     ],
   },
+  "error-new-email": {
+    description:
+      "Sent to you the first time a new kind of error happens on the site (or one marked Fixed comes back). At most once a day per error.",
+    kind: "automatic",
+    adminRecipient: true,
+    fields: [
+      { key: "TITLE", label: "Error", placeholder: "Cannot read properties of undefined (reading 'map')" },
+      { key: "TYPE", label: "Type", placeholder: "client_error" },
+      { key: "PAGE", label: "Page", placeholder: "/all-rocks" },
+      { key: "PLATFORM", label: "Device", placeholder: "iPhone" },
+      { key: "VERSION", label: "Version", placeholder: "0.15.12" },
+    ],
+    tokens: [
+      ["{TITLE}", "Error"],
+      ["{TYPE}", "Type"],
+      ["{PAGE}", "Page"],
+      ["{PLATFORM}", "Device"],
+      ["{VERSION}", "Version"],
+      ["{DASHBOARD_LINK}", "Link to the dashboard"],
+    ],
+  },
+  "error-daily-summary-email": {
+    description:
+      "Sent to you each morning when there were errors on the site in the last 24 hours. Nothing is sent on a quiet day.",
+    kind: "automatic",
+    adminRecipient: true,
+    fields: [
+      { key: "ERROR_COUNT", label: "Errors", placeholder: "12" },
+      { key: "GROUP_COUNT", label: "Kinds of error", placeholder: "3" },
+      { key: "STILL_NEW", label: "Still marked New", placeholder: "2" },
+      {
+        key: "ERROR_SUMMARY",
+        label: "Errors (separate with ;)",
+        placeholder: "Broken image: /media/albums/Trip/webp/*; GET /api/rock-posts/:n failed (500)",
+      },
+    ],
+    tokens: [
+      ["{ERROR_COUNT}", "Number of errors"],
+      ["{GROUP_COUNT}", "Number of kinds of error"],
+      ["{STILL_NEW}", "Kinds still marked New"],
+      ["{ERROR_SUMMARY}", "Error table"],
+      ["{DASHBOARD_LINK}", "Link to the dashboard"],
+    ],
+  },
 };
 
 // {CONTACT_EMAIL} (the Admin → Settings contact email) works in every

@@ -29,10 +29,13 @@ import AllRocks from "./pages/all-rocks/AllRocks.jsx";
 import PAGE_PATHS from "./adminContent/pagePaths.js";
 import { PreviewProvider } from "./adminContent/PreviewContext.jsx";
 import { UnsavedChangesProvider } from "./context/UnsavedChangesContext.jsx";
+import { pageChanged } from "./utils/activity.js";
+import ErrorBoundary from "./components/error-boundary/ErrorBoundary.jsx";
 
 // The admin pages load on demand, so visitors to the public site never
 // download admin code (or Recharts, used only by the dashboard).
 const Admin = lazy(() => import("./admin/pages/admin/Admin.jsx"));
+const ActivityAdmin = lazy(() => import("./admin/pages/activity/ActivityAdmin.jsx"));
 const Albums = lazy(() => import("./admin/pages/albums/Albums.jsx"));
 const Jobs = lazy(() => import("./admin/pages/jobs/Jobs.jsx"));
 const AccountsAdmin = lazy(() => import("./admin/pages/accounts/AccountsAdmin.jsx"));
@@ -48,6 +51,7 @@ const EmailPreview = lazy(() => import("./admin/pages/pages/email-preview/EmailP
 
 const adminNavItems = [
   { path: "/admin", label: "Dashboard" },
+  { path: "/admin/activity", label: "Activity" },
   { path: "/admin/jobs", label: "Jobs" },
   { path: "/admin/users", label: "Artists" },
   { path: "/admin/accounts", label: "Accounts" },
@@ -67,6 +71,13 @@ function AppContent() {
   const isAdminRoute = location.pathname.startsWith("/admin");
   const [publicNavItems, setPublicNavItems] = useState([]);
   const { account, isAuthenticated, isUser, isAdmin } = useAuth();
+
+  // Site activity: one page view per route. Here in AppContent (the parent)
+  // so it runs after the route's own effects -- the /qr and not-found
+  // redirects mark their path as "not a page view" first.
+  useEffect(() => {
+    pageChanged(location.pathname);
+  }, [location.pathname]);
 
   useEffect(() => {
     axios
@@ -98,6 +109,9 @@ function AppContent() {
         navItems={isAdminRoute ? adminNavItems : visiblePublicNavItems}
         account={isAuthenticated ? account : null}
       />
+      {/* A crash shows a gentle "Something went wrong" instead of a blank
+          page; it clears when the visitor goes to another page. */}
+      <ErrorBoundary where="page" resetKey={location.pathname}>
       <Suspense fallback={<div className={styles.loading}>Loading...</div>}>
       <Routes>
         {/* Public Routes */}
@@ -132,6 +146,14 @@ function AppContent() {
           element={
             <PrivateRoute>
               <Admin />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/activity"
+          element={
+            <PrivateRoute>
+              <ActivityAdmin />
             </PrivateRoute>
           }
         />
@@ -236,6 +258,7 @@ function AppContent() {
         <Route path="*" element={<NotFoundRedirect />} />
       </Routes>
       </Suspense>
+      </ErrorBoundary>
       <Footer />
     </div>
   );

@@ -1,0 +1,288 @@
+/* src/admin/components/site-health/SiteHealth.module.css */
+.container {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  min-width: 0;
+}
+
+.headerRow {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.header {
+  text-align: center;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.newBadge {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #c62828;
+  color: #fff;
+  font-size: 0.8rem;
+  vertical-align: middle;
+}
+
+.refreshBtn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.3rem;
+  color: #555;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.segmented,
+.statusButtons {
+  display: inline-flex;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.segBtn,
+.segActive {
+  border: none;
+  border-right: 1px solid #ccc;
+  padding: 5px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.segmented > :last-child,
+.statusButtons > :last-child {
+  border-right: none;
+}
+
+.segBtn {
+  background: #fff;
+  color: #444;
+}
+
+.segBtn:hover {
+  background: #f3f3f3;
+}
+
+.segActive {
+  background: #333;
+  color: #fff;
+}
+
+.sectionTitle {
+  font-size: 1.05rem;
+  margin: 18px 0 8px;
+}
+
+.message {
+  text-align: center;
+  color: #666;
+  padding: 16px 0;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 2px solid #eee;
+  color: #666;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 8px;
+  border-bottom: 1px solid #f2f2f2;
+  vertical-align: top;
+}
+
+.errorRow {
+  cursor: pointer;
+}
+
+.errorRow:hover {
+  background: #fafafa;
+}
+
+.chevron {
+  width: 18px;
+  color: #888;
+}
+
+.status {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.status_new {
+  background: #fde8e8;
+  color: #b71c1c;
+}
+
+.status_known {
+  background: #fff4e0;
+  color: #8a5300;
+}
+
+.status_fixed {
+  background: #e6f4ea;
+  color: #1e6b34;
+}
+
+.typeLabel {
+  font-size: 0.75rem;
+  color: #777;
+}
+
+.errorTitle {
+  margin-top: 3px;
+  color: #222;
+  word-break: break-word;
+}
+
+.errorWhere {
+  margin-top: 2px;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.num {
+  text-align: right;
+  font-family: monospace;
+  white-space: nowrap;
+}
+
+.when {
+  white-space: nowrap;
+  color: #555;
+}
+
+.code {
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.detailCell {
+  background: #fafafa;
+}
+
+.detail {
+  padding: 4px 0;
+}
+
+.detailHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: #555;
+  font-size: 0.85rem;
+}
+
+.occurrence {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.occMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.occMessage {
+  margin-top: 6px;
+  color: #222;
+  word-break: break-word;
+}
+
+.stackLabel {
+  margin-top: 8px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+}
+
+.stack {
+  margin: 4px 0 0;
+  padding: 8px;
+  background: #f6f6f6;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.trail {
+  margin: 4px 0 0;
+  padding-left: 20px;
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.trailTime {
+  color: #999;
+  font-size: 0.75rem;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import RockMap from "../../components/rock-map/RockMap";
+import ErrorBoundary from "../../components/error-boundary/ErrorBoundary";
 import { useAuth } from "../../admin/context/AuthContext";
 import useFollowedRocks from "../../hooks/useFollowedRocks";
 import styles from "./Map.module.css";
@@ -45,7 +46,9 @@ const Map = () => {
       )}
 
       {!loading && (
-        <RockMap pins={pins} followedSet={followedSet} canFilterFollowed={isUser} />
+        <ErrorBoundary where="map" variant="inline">
+          <RockMap pins={pins} followedSet={followedSet} canFilterFollowed={isUser} />
+        </ErrorBoundary>
       )}
     </div>
   );

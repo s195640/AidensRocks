@@ -5,7 +5,7 @@ export default function UploadRockButton() {
   const { open } = useUploadRockModal();
 
   return (
-    <button onClick={open} className={styles.uploadBtn}>
+    <button onClick={() => open("page_button")} className={styles.uploadBtn}>
       Upload Your Rock
     </button>
   );

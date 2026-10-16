@@ -8,6 +8,7 @@ const sendEmail = require('../sendEmail');
 const notifyFollowers = require('./notifyFollowers');
 const { renderEmailTemplate } = require('../emailTemplates');
 const db = require('../../db/pool');
+const recordServerError = require('../errors/recordServerError');
 
 // Who these admin emails go to, and from whom, is set per template in Page
 // Details (Send To / Sender / Reply-To). ADMIN_ALERT_EMAIL (.env) is only a
@@ -146,6 +147,8 @@ async function processImagesInBackground(baseDir, name, safeRockNumber, commentS
         processedCount++;
       } catch (fileErr) {
         console.error(`❌ Processing failed for ${originalFile} (rps_key ${rpsKey}):`, fileErr);
+        // Already emailed to the family below (Upload Files Failed), so no alert.
+        recordServerError(fileErr, { kind: 'background', alert: false, meta: { rock_number: safeRockNumber, rps_key: rpsKey, file: row.original_name } });
         failures.push({ rpiKey: row.rpi_key, name: row.original_name, error: fileErr.message });
       }
     }
@@ -170,6 +173,7 @@ async function processImagesInBackground(baseDir, name, safeRockNumber, commentS
         await notifyFollowers(safeRockNumber, { location: locationSafe, date: dateSafe });
       } catch (err) {
         console.error(`⚠️ Follower notification failed for rock ${safeRockNumber}:`, err);
+        recordServerError(err, { kind: 'background', meta: { rock_number: safeRockNumber, step: 'notify_followers' } });
       }
     }
 
@@ -221,6 +225,8 @@ async function processImagesInBackground(baseDir, name, safeRockNumber, commentS
 
   } catch (err) {
     console.error(`❌ Background processing failed for ${baseDir}`, err);
+    // Already emailed to the family below (Upload Processing Failed), so no alert.
+    recordServerError(err, { kind: 'background', alert: false, meta: { rock_number: safeRockNumber, rps_key: rpsKey } });
 
     // Something outside the per-file loop failed (DB, disk, template): tell
     // the admin rather than leaving a hidden journey nobody knows about.

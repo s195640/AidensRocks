@@ -49,3 +49,10 @@ drop table rock_requests cascade;
 drop table account_follow cascade;
 drop table account_token cascade;
 drop table account cascade;
+
+/* Site Tracking */
+
+drop table site_event cascade;
+drop table visit cascade;
+drop table server_error cascade;
+drop table error_group cascade;

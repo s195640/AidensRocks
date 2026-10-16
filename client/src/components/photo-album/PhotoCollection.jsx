@@ -1,5 +1,7 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { createSlideTracker, openView } from "../../utils/activity";
 
 import { RowsPhotoAlbum } from "react-photo-album";
 import Lightbox from "yet-another-react-lightbox";
@@ -24,6 +26,33 @@ const PhotoCollection = ({ album, onBack }) => {
   const [thumbPhotos, setThumbPhotos] = useState([]);
   const [fullPhotos, setFullPhotos] = useState([]);
   const [index, setIndex] = useState(-1);
+
+  // Site Tracking: album_open / album_close (time viewing, photos opened)
+  // and photo_view per photo shown full-screen. Used on Photos and
+  // Birthdays, so `page` says which.
+  const { pathname } = useLocation();
+  const viewRef = useRef(null);
+  const photosViewed = useRef(new Set());
+  const slides = useRef(null);
+  if (!slides.current) {
+    slides.current = createSlideTracker("photo_view", () => ({
+      open_id: viewRef.current?.openId ?? null,
+      album_id: album.pa_key,
+    }));
+  }
+  useEffect(() => {
+    photosViewed.current = new Set();
+    const view = openView("album_open", "album_close", {
+      targetId: String(album.pa_key),
+      meta: { album_name: album.name, page: pathname.startsWith("/birthdays") ? "birthdays" : "photos" },
+      closeMeta: () => ({ photos_viewed: photosViewed.current.size }),
+    });
+    viewRef.current = view;
+    return () => {
+      slides.current.end();
+      view.close();
+    };
+  }, [album.pa_key]);
 
   useEffect(() => {
     const loadPhotos = async () => {
@@ -123,7 +152,18 @@ const PhotoCollection = ({ album, onBack }) => {
         slides={fullPhotos}
         open={index >= 0}
         index={index}
-        close={() => setIndex(-1)}
+        close={() => {
+          slides.current.end();
+          setIndex(-1);
+        }}
+        on={{
+          view: ({ index: shown }) => {
+            const photo = thumbPhotos[shown];
+            if (!photo) return;
+            photosViewed.current.add(photo.key);
+            slides.current.show(String(photo.key), { is_video: photo.isVideo });
+          },
+        }}
         plugins={[Thumbnails, Fullscreen, Zoom, Counter, Slideshow, Captions, Video]}
         thumbnails={{
           position: "bottom",

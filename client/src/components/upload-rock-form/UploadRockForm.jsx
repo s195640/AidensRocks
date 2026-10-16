@@ -1,4 +1,6 @@
 import axios from "axios";
+import useFormFunnel from "../../utils/useFormFunnel";
+import useShownError from "../../utils/useShownError";
 import { useState, useRef } from "react";
 import { useARContext } from "../../context/ARContext";
 import { useSiteSettings } from "../../context/SiteSettingsContext";
@@ -16,7 +18,9 @@ const CHUNK_SIZE = 80 * 1024 * 1024;
 // for the form fields and multipart overhead).
 const INLINE_MAX_BYTES = 80 * 1024 * 1024;
 
-export default function UploadRockForm({ onClose }) {
+export default function UploadRockForm({ onClose, source = null }) {
+  // Site Tracking: opened -> started -> submitted (or abandoned).
+  const funnel = useFormFunnel("share_your_rock", source);
   const { trackerData, rValue } = useARContext();
   const { contactEmail } = useSiteSettings();
 
@@ -37,6 +41,8 @@ export default function UploadRockForm({ onClose }) {
   const [email, setEmail] = useState("");
   const [imageError, setImageError] = useState("");
   const [dialog, setDialog] = useState(null);
+  useShownError("upload_files", imageError);
+  useShownError("upload_submit", dialog?.type === "error" && dialog.message);
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [stageLabel, setStageLabel] = useState("");
   const [stagingProgress, setStagingProgress] = useState(0);
@@ -226,6 +232,7 @@ export default function UploadRockForm({ onClose }) {
       await axios.post("/api/upload-rock", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      funnel.submitted({ rock_number: rockNumber || null, files: images.length });
 
       setDialog({
         type: "success",
@@ -275,6 +282,7 @@ export default function UploadRockForm({ onClose }) {
       if (fileInputRef.current) fileInputRef.current.value = null;
     } catch (err) {
       console.error("Upload failed:", err);
+      funnel.failed(err.response ? `server_${err.response.status}` : "network");
       setDialog({
         type: "error",
         message: `Sorry, something went wrong. The submit did not work.${
@@ -299,7 +307,7 @@ export default function UploadRockForm({ onClose }) {
   };
   return (
     <>
-      <div className="rock-form-overlay">
+      <div className="rock-form-overlay" onChangeCapture={funnel.onChangeCapture}>
         {heicLoading && (
           <div className="heic-spinner-overlay">
             <div className="heic-spinner"></div>
@@ -504,7 +512,7 @@ export default function UploadRockForm({ onClose }) {
         </div>
       )}
       {showRequestForm && (
-        <ContactReqestRocks onClose={() => setShowRequestForm(false)} />
+        <ContactReqestRocks onClose={() => setShowRequestForm(false)} source="upload_form" />
       )}
     </>
   );

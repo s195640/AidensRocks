@@ -32,6 +32,8 @@ const RockJourney = ({ rockNumber, collections }) => {
                 location={collection.location}
                 comment={collection.comment}
                 journeyNumber={collections.length - index}
+                rockNumber={rockNumber}
+                rpsKey={collection.rps_key}
               />
             </div>
           ))}

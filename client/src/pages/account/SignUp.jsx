@@ -1,4 +1,6 @@
 import { useState } from "react";
+import useShownError from "../../utils/useShownError";
+import { track } from "../../utils/activity";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { useAccountPage } from "../../adminContent/useAccountPage";
@@ -15,6 +17,7 @@ const SignUp = () => {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState(null);
+  useShownError("signup", error);
   const [done, setDone] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -42,6 +45,7 @@ const SignUp = () => {
         password,
       });
       setDone(data.message);
+      track("sign_up");
     } catch (err) {
       setError(err.response?.data?.error || "Sign up failed. Please try again.");
     } finally {

@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import useShownError from "../../utils/useShownError";
+import useTypedSearch from "../../utils/useTypedSearch";
+import { track } from "../../utils/activity";
 import axios from "axios";
 import { FaEye, FaPaintBrush, FaTrash } from "react-icons/fa";
 import Table from "../../components/simple-components/table/Table";
@@ -44,6 +47,7 @@ const FollowRocks = () => {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [error, setError] = useState(null);
+  useShownError("my_rocks", error);
   const [lightboxRock, setLightboxRock] = useState(null);
   const [journeyRock, setJourneyRock] = useState(null);
   const [savingNotify, setSavingNotify] = useState(false);
@@ -88,10 +92,16 @@ const FollowRocks = () => {
       .slice(0, MAX_RESULTS);
   }, [allRocks, query]);
 
+  // Site Tracking: what's typed into the search box, and how many matched.
+  const commitSearch = useTypedSearch(query, (q) =>
+    track("my_rocks_search", { targetId: q.slice(0, 100), meta: { results: results.length } })
+  );
+
   const handleFollow = async (rockNumber) => {
     setError(null);
     try {
       await axios.post("/api/follows", { rockNumber });
+      track("follow", { targetId: String(rockNumber), meta: { where: "my_rocks" } });
       await loadFollowed();
     } catch (err) {
       setError(err.response?.data?.error || "Couldn't follow that rock. Please try again.");
@@ -102,6 +112,7 @@ const FollowRocks = () => {
     setError(null);
     try {
       await axios.delete(`/api/follows/${rockNumber}`);
+      track("unfollow", { targetId: String(rockNumber), meta: { where: "my_rocks" } });
       setFollowed((prev) => prev.filter((r) => r.rock_number !== rockNumber));
     } catch (err) {
       setError(err.response?.data?.error || "Couldn't remove that rock. Please try again.");
@@ -114,6 +125,7 @@ const FollowRocks = () => {
     setError(null);
     try {
       await axios.put("/api/follows/settings", { notifyRockMoves: next });
+      track("follow_notify", { meta: { on: next } });
       setAccount((prev) => ({ ...prev, notifyRockMoves: next }));
     } catch (err) {
       setError(err.response?.data?.error || "Couldn't save your email setting.");
@@ -212,6 +224,7 @@ const FollowRocks = () => {
           placeholder="Search by rock number or artist"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onBlur={commitSearch}
         />
         {query.trim() && (
           <ul className={styles.results}>
@@ -265,7 +278,7 @@ const FollowRocks = () => {
         onClose={() => setLightboxRock(null)}
         imageSrc={lightboxRock}
       />
-      <RockJourneyDialog rockNumber={journeyRock} onClose={() => setJourneyRock(null)} />
+      <RockJourneyDialog rockNumber={journeyRock} onClose={() => setJourneyRock(null)} source="my_rocks" />
     </div>
   );
 };

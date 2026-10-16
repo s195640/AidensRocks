@@ -3,10 +3,13 @@ import axios from "axios";
 import styles from "./RockMapPopup.module.css";
 import RockJourney from "../../rock-journey/RockJourney";
 
-export default function RockMapPopup({ rockNumber }) {
+// onResult(found): called once the rock has loaded, with whether it has a
+// public journey (Site Tracking: rock_search / rock_link).
+export default function RockMapPopup({ rockNumber, onResult }) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [groupedRocks, setGroupedRocks] = useState([]);
+  const [found, setFound] = useState(null);
 
   // One fetch per rock. This effect used to depend on `loading` too, so
   // finishing the fetch (loading -> false) fired a second identical request;
@@ -36,6 +39,7 @@ export default function RockMapPopup({ rockNumber }) {
           });
         });
         setGroupedRocks(Array.from(grouped).map(([key, value]) => ({ key, value })));
+        setFound(grouped.size > 0);
       } catch (err) {
         console.error("Error fetching rock data:", err);
       } finally {
@@ -47,6 +51,7 @@ export default function RockMapPopup({ rockNumber }) {
       }
     };
 
+    setFound(null);
     fetchData();
 
     return () => {
@@ -54,6 +59,10 @@ export default function RockMapPopup({ rockNumber }) {
       clearInterval(timer);
     };
   }, [rockNumber]);
+
+  useEffect(() => {
+    if (found !== null) onResult?.(found);
+  }, [found]);
 
   return (
     <div className={styles.popup}>

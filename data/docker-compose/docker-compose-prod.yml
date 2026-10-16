@@ -33,6 +33,9 @@ services:
     volumes:
       - volume-media:/app/media
       - ../../VERSION:/app/VERSION:ro
+      # Private client source maps, for readable error stack traces (copied
+      # in by the client container on start; see docker-client-prod).
+      - volume-sourcemaps:/app/sourcemaps:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -55,6 +58,7 @@ services:
       - volume-webroot-private:/etc/immich/private/immich.aidensrocks.com:ro
       - volume-certs:/etc/ssl/certs:ro
       - volume-private:/etc/ssl/private:ro
+      - volume-sourcemaps:/shared-sourcemaps
     depends_on:
       - server
     networks:
@@ -100,6 +104,9 @@ services:
     restart: always
 
 volumes:
+  # Docker-managed; holds client source maps per version (never public).
+  volume-sourcemaps:
+
   volume-backup:
     driver: local
     driver_opts:

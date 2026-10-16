@@ -1,6 +1,7 @@
 /* eslint-env node */
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import appVersion from "./appVersion.js";
 
 // Production build served by `vite preview` for the Playwright suite, with
 // /api and /media proxied to the E2E API (server/tests/e2eServer.mjs).
@@ -10,6 +11,7 @@ const api = `http://127.0.0.1:${process.env.E2E_API_PORT || 8001}`;
 
 export default defineConfig({
   plugins: [react()],
+  define: { __APP_VERSION__: JSON.stringify(appVersion()) },
   build: { outDir: "dist-e2e" },
   preview: {
     host: "127.0.0.1",

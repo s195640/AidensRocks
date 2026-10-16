@@ -7,7 +7,11 @@ const ContactPopup = ({ onClose }) => {
   const { contactEmail } = useSiteSettings();
   return (
     <div className={styles.popupOverlay} onClick={onClose}>
-      <div className={styles.popupContent} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={styles.popupContent}
+        onClick={(e) => e.stopPropagation()}
+        data-activity-where="contact_popup"
+      >
         <h2>Contact Us</h2>
         <p>
           {contactEmail ? (

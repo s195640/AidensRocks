@@ -60,7 +60,9 @@ ${html}
 // (renderEmailTemplate returns them). Blank falls back to EMAIL_FROM /
 // EMAIL_REPLY_TO. Note: plain Gmail SMTP (no SMTP_HOST) rewrites From to
 // the Gmail account, so per-template senders only show via a domain sender.
-async function sendEmail({ to, subject, text, html, from, replyTo, attachments = [] }) {
+// A failed send is recorded for error tracking (and still thrown, as
+// before); trackFailure: false is for the error alert emails themselves.
+async function sendEmail({ to, subject, text, html, from, replyTo, attachments = [], trackFailure = true }) {
   let transporter = buildTransporter();
 
   let mailOptions = {
@@ -89,7 +91,16 @@ async function sendEmail({ to, subject, text, html, from, replyTo, attachments =
     mailOptions.replyTo = replyTo || process.env.EMAIL_REPLY_TO;
   }
 
-  return transporter.sendMail(mailOptions);
+  try {
+    return await transporter.sendMail(mailOptions);
+  } catch (err) {
+    if (trackFailure) {
+      // Required here, not at the top: recordServerError -> error alert
+      // emails -> sendEmail would otherwise be a require cycle.
+      require('./errors/recordServerError')(err, { kind: 'email', meta: { subject: String(subject ?? '').slice(0, 200) } });
+    }
+    throw err;
+  }
 }
 
 module.exports = sendEmail;

@@ -21,7 +21,32 @@ const ADMIN_RECIPIENT_SLUGS = new Set([
   'new-journey-email',
   'upload-files-failed-email',
   'upload-processing-failed-email',
+  'error-new-email',
+  'error-daily-summary-email',
 ]);
+
+// Error alert emails (Site Tracking): get {DASHBOARD_LINK}.
+const ERROR_EMAIL_SLUGS = new Set(['error-new-email', 'error-daily-summary-email']);
+
+// ERROR_SUMMARY for 'error-daily-summary-email': the real sender passes
+// [{ title, count, visitors, status }]; Page Details' Preview/test Send
+// passes a single-line string, entries separated by ";".
+function errorSummaryHtml(value) {
+  const rows = Array.isArray(value)
+    ? value
+    : String(value ?? '')
+        .split(/;|\r?\n/)
+        .map((title) => title.trim())
+        .filter(Boolean)
+        .map((title) => ({ title, count: 1, visitors: 1, status: 'new' }));
+  const cell = 'style="padding:4px 8px;border-bottom:1px solid #eee;text-align:left"';
+  return `<table style="border-collapse:collapse"><tr><th ${cell}>Error</th><th ${cell}>Times</th><th ${cell}>Visitors</th><th ${cell}>Status</th></tr>${rows
+    .map(
+      (r) =>
+        `<tr><td ${cell}>${escapeHtml(r.title)}</td><td ${cell}>${escapeHtml(r.count)}</td><td ${cell}>${escapeHtml(r.visitors)}</td><td ${cell}>${escapeHtml(r.status)}</td></tr>`
+    )
+    .join('')}</table>`;
+}
 
 // Always sent; their Active switch is locked on in Page Details. Sign-up
 // and password reset can't work without the first two, and a failed rock
@@ -71,6 +96,7 @@ function buildTemplateValues(slug, raw = {}, { forSubject = false, contactEmail 
     if (
       key === 'TOKEN' ||
       key === 'FAILED_FILES' ||
+      key === 'ERROR_SUMMARY' ||
       key === 'CONTACT_EMAIL' ||
       value === undefined ||
       value === null
@@ -110,6 +136,15 @@ function buildTemplateValues(slug, raw = {}, { forSubject = false, contactEmail 
     values.FAILED_FILES = forSubject
       ? lines.join(', ')
       : `<ul>${lines.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>`;
+  }
+
+  if (raw.ERROR_SUMMARY !== undefined) {
+    values.ERROR_SUMMARY = forSubject ? '' : errorSummaryHtml(raw.ERROR_SUMMARY);
+  }
+
+  if (ERROR_EMAIL_SLUGS.has(slug)) {
+    const href = siteUrl('/admin');
+    values.DASHBOARD_LINK = forSubject ? href : `<a href="${href}">Open Site Health on the dashboard</a>`;
   }
 
   const tokenLink = TOKEN_LINKS[slug];

@@ -10,14 +10,20 @@ const UploadRockModalContext = createContext(null);
 // around a page's body text.
 export function UploadRockModalProvider({ children }) {
   const [isOpen, setIsOpen] = useState(false);
+  // Where the form was opened from, for Site Tracking's form_open. Only a
+  // string counts: open is also passed straight to onClick (an event).
+  const [source, setSource] = useState(null);
 
-  const open = () => setIsOpen(true);
+  const open = (from) => {
+    setSource(typeof from === "string" ? from : null);
+    setIsOpen(true);
+  };
   const close = () => setIsOpen(false);
 
   return (
     <UploadRockModalContext.Provider value={{ isOpen, open, close }}>
       {children}
-      {isOpen && <UploadRockForm onClose={close} />}
+      {isOpen && <UploadRockForm onClose={close} source={source} />}
     </UploadRockModalContext.Provider>
   );
 }

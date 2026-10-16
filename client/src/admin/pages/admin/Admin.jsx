@@ -6,6 +6,8 @@ import MusicPanel from "../../components/music-panel/MusicPanel";
 import HonoringAidenPanel from "../../components/honoring-aiden-panel/HonoringAidenPanel";
 import PathHitsPanel from "../../components/path-hits-panel/PathHitsPanel";
 import VisitorsByDay from "../../components/visitors-by-day/VisitorsByDay";
+import SiteHealth from "../../components/site-health/SiteHealth";
+import TodayGlance from "../../components/activity/TodayGlance";
 import styles from "./Admin.module.css";
 
 const Admin = () => {
@@ -14,10 +16,12 @@ const Admin = () => {
       <div className={styles.header}>
         <h1>Admin Dashboard</h1>
       </div>
+      <TodayGlance />
       <div className={styles.content}>
-        {/* Left Column: Visitors by Day, Music, Honoring Aiden, Path Hits, Stats, and Health */}
+        {/* Left Column: Visitors by Day, Site Health, Music, Honoring Aiden, Path Hits, Stats, and Health */}
         <div className={styles.leftColumn}>
           <VisitorsByDay />
+          <SiteHealth />
           <MusicPanel />
           <HonoringAidenPanel />
           <PathHitsPanel />

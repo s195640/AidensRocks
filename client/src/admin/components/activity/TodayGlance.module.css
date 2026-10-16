@@ -1,0 +1,38 @@
+/* src/admin/components/activity/TodayGlance.module.css */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 18px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  color: #444;
+}
+
+.label {
+  font-weight: 600;
+  color: #222;
+}
+
+.stat strong {
+  font-size: 1.15rem;
+  color: #222;
+}
+
+.alert {
+  color: #b71c1c;
+}
+
+.alert strong {
+  color: #b71c1c;
+}
+
+.link {
+  margin-left: auto;
+  color: #2e7d32;
+  white-space: nowrap;
+}

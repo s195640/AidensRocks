@@ -9,6 +9,8 @@ module.exports = {
   ],
   ignorePatterns: ["dist", "dist-e2e", "playwright-report", "test-results", ".eslintrc.cjs"],
   parserOptions: { ecmaVersion: "latest", sourceType: "module" },
+  // Injected at build time by vite.config.js (the repo VERSION).
+  globals: { __APP_VERSION__: "readonly" },
   settings: { react: { version: "18.2" } },
   plugins: ["react-refresh"],
   rules: {

@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
+import JourneyActivityContext from "../JourneyActivityContext";
+import { createSlideTracker, track } from "../../../utils/activity";
 import { Play } from "lucide-react";
 
 import "./RockCollection.css";
@@ -18,11 +20,39 @@ import "yet-another-react-lightbox/plugins/counter.css";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
 import "yet-another-react-lightbox/styles.css";
 
-const RockCollection = ({ path, imagenames, date, location, comment, journeyNumber }) => {
+const RockCollection = ({ path, imagenames, date, location, comment, journeyNumber, rockNumber, rpsKey }) => {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const [isLocationOpen, setIsLocationOpen] = useState(false);
+
+  // Site Tracking: what's opened inside a rock's journey, linked to the
+  // dialog's rock_view (open_id) when there is one.
+  const journey = useContext(JourneyActivityContext);
+  const journeyRef = useRef(journey);
+  journeyRef.current = journey;
+  const trackStop = (type) =>
+    track(type, {
+      targetId: rockNumber != null ? String(rockNumber) : null,
+      meta: { open_id: journey.openId, source: journey.source, rps_key: rpsKey ?? null },
+    });
+  const slides = useRef(null);
+  if (!slides.current) {
+    slides.current = createSlideTracker("journey_photo_view", () => ({
+      open_id: journeyRef.current.openId,
+      rock_number: rockNumber != null ? String(rockNumber) : null,
+    }));
+  }
+  useEffect(() => () => slides.current.end(), []);
+
+  const openLocation = () => {
+    setIsLocationOpen(true);
+    trackStop("journey_location");
+  };
+  const openComment = () => {
+    setIsCommentOpen(true);
+    trackStop("journey_comment");
+  };
 
   // Prepare images for Lightbox
   // Lightbox expects array of objects with `src` property (full image URL)
@@ -56,12 +86,12 @@ const RockCollection = ({ path, imagenames, date, location, comment, journeyNumb
 
         <div
           className="location-text"
-          onClick={() => setIsLocationOpen(true)}
+          onClick={openLocation}
           title="Click to view full location"
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") setIsLocationOpen(true);
+            if (e.key === "Enter" || e.key === " ") openLocation();
           }}
         >
           {location}
@@ -93,12 +123,12 @@ const RockCollection = ({ path, imagenames, date, location, comment, journeyNumb
 
         <div
           className="comment-section"
-          onClick={() => setIsCommentOpen(true)}
+          onClick={openComment}
           title="Click to view full comment"
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") setIsCommentOpen(true);
+            if (e.key === "Enter" || e.key === " ") openComment();
           }}
           style={{ cursor: "pointer" }}
         >
@@ -112,7 +142,18 @@ const RockCollection = ({ path, imagenames, date, location, comment, journeyNumb
           slides={images}
           open={isLightboxOpen}
           index={currentIndex}
-          close={() => setIsLightboxOpen(false)}
+          close={() => {
+            slides.current.end();
+            setIsLightboxOpen(false);
+          }}
+          on={{
+            view: ({ index }) => {
+              const img = imagenames[index];
+              if (img) {
+                slides.current.show(String(img.rpi_key ?? img.name), { is_video: img.media_type === "video" });
+              }
+            },
+          }}
           plugins={[Thumbnails, Fullscreen, Zoom, Counter, Slideshow, Captions, Video]}
           thumbnails={{
             position: "bottom",
