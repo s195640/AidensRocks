@@ -218,6 +218,43 @@ describe('rock requests (admin)', () => {
     expect((await sql('SELECT rq_key FROM catalog WHERE rock_number = 101'))[0].rq_key).toBe(full.body.rq_key);
   });
 
+  it('admin US / non-US address parts, and a write-once original request', async () => {
+    const create = (body) => api().post('/api/rock-requests/admin-create').set(A).send(body);
+    const addrCols = 'address, us_address, street, city, state, postal_code, country';
+    // Parts are optional for admin, but a given ZIP / state must be valid.
+    expect((await create({ name: 'P', rocks_requested: 1, us_address: true, postal_code: '123' })).status).toBe(400);
+    expect((await create({ name: 'P', rocks_requested: 1, us_address: true, state: 'ZZ' })).status).toBe(400);
+    const partial = await create({ name: 'P', rocks_requested: 1, us_address: true, city: 'Boise', state: 'ID' });
+    expect((await sql(`SELECT ${addrCols} FROM rock_requests WHERE rq_key = $1`, [partial.body.rq_key]))[0]).toEqual({
+      address: 'Boise, ID\nUSA', us_address: true, street: null, city: 'Boise', state: 'ID', postal_code: null, country: 'USA',
+    });
+
+    const created = await create({
+      name: 'Phone', email: 'phone@example.com', rocks_requested: 3, no_rush: true, message: 'Hi',
+      us_address: true, street: '1 Elm St', city: 'Denver', state: 'CO', postal_code: '80202',
+    });
+    const key = created.body.rq_key;
+    const original = (await sql('SELECT original_request FROM rock_requests WHERE rq_key = $1', [key]))[0].original_request;
+    expect(original).toBe([
+      'Source: Created by admin', 'Name: Phone', 'Email: phone@example.com', 'Address (US):',
+      '  Street: 1 Elm St', '  City: Denver', '  State: CO', '  ZIP Code: 80202', '  Country: USA',
+      '# Rocks: 3', 'Need Rocks By: No rush', 'Message:\n  Hi',
+    ].join('\n'));
+
+    // Switching to a non-US address clears the US parts; the original stays put.
+    const put = await api().put(`/api/rock-requests/${key}`).set(A).send({
+      name: 'Changed', rocks_requested: 3, us_address: false, address: '9 Rue X\nParis', country: 'France', street: 'stale',
+    });
+    expect(put.status).toBe(200);
+    const row = (await sql(`SELECT ${addrCols}, original_request FROM rock_requests WHERE rq_key = $1`, [key]))[0];
+    expect(row).toEqual({
+      address: '9 Rue X\nParis\nFrance', us_address: false, street: null, city: null, state: null, postal_code: null,
+      country: 'France', original_request: original,
+    });
+    const listed = (await api().get('/api/rock-requests').set(A)).body.find((r) => r.rq_key === key);
+    expect(listed).toMatchObject({ country: 'France', original_request: original });
+  });
+
   it('edit saves the message and refuses Send Email with no address', async () => {
     const created = await api().post('/api/rock-requests/admin-create').set(A).send({ name: 'No Email', rocks_requested: 1 });
     const key = created.body.rq_key;

@@ -1,18 +1,39 @@
 import { useEffect, useState } from "react";
+import { FaInfoCircle } from "react-icons/fa";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import authFetch from "../../../utils/authFetch";
 import SendRockRequestEmailDialog from "./SendRockRequestEmailDialog";
 import RockPopupByNumber from "../../../../components/rock-popup/RockPopupByNumber";
 import { formatLocalDateTime } from "../../../../utils/localDate";
+import { US_STATES } from "../../../../utils/usStates";
 import styles from "./RockRequestsEditDialog.module.css";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ZIP_PATTERN = /^\d{5}(-\d{4})?$/;
 
-// `request` is null when creating -- every field starts blank.
+// The free-text part of a non-US address. The server stores `address` with
+// the country appended as its last line, so strip it back off for the
+// textarea (Country has its own field). A US address is rebuilt by the
+// server from its parts, so its textarea value doesn't matter.
+const freeTextAddress = (request) => {
+  const address = request?.address || "";
+  if (request?.us_address) return "";
+  const suffix = request?.country ? `\n${request.country}` : "";
+  return suffix && address.endsWith(suffix) ? address.slice(0, -suffix.length) : address;
+};
+
+// `request` is null when creating -- every field starts blank, with "US
+// address" on like the public form.
 const buildFormData = (request) => ({
   name: request?.name || "",
   email: request?.email || "",
-  address: request?.address || "",
+  us_address: request ? !!request.us_address : true,
+  street: request?.street || "",
+  city: request?.city || "",
+  state: request?.state || "",
+  postal_code: request?.postal_code || "",
+  address: freeTextAddress(request),
+  country: request?.us_address ? "" : request?.country || "",
   rocks_requested: request?.rocks_requested ?? "",
   needed_by: request?.needed_by || "",
   no_rush: request?.no_rush || false,
@@ -23,14 +44,19 @@ const buildFormData = (request) => ({
   rock_numbers: request?.rock_numbers || "",
 });
 
-// Admin only has to give a name and a number of rocks; email is checked
-// only if one was typed. The server re-validates the same rules.
+// Admin only has to give a name and a number of rocks; email and ZIP code
+// are checked only if one was typed. The server re-validates the same rules.
 const validateFields = (formData) => {
   const rocks = Number(formData.rocks_requested);
   const email = formData.email.trim();
+  const zip = formData.postal_code.trim();
   return {
     name: !formData.name.trim() ? "Name is required." : "",
     email: email && !EMAIL_PATTERN.test(email) ? "Please enter a valid email address." : "",
+    postal_code:
+      formData.us_address && zip && !ZIP_PATTERN.test(zip)
+        ? "Please enter a ZIP code like 12345 or 12345-6789."
+        : "",
     rocks_requested:
       String(formData.rocks_requested).trim() === ""
         ? "Number of rocks is required."
@@ -125,6 +151,7 @@ const RockRequestsEditDialog = ({
   const [emailDt, setEmailDt] = useState(request?.email_dt || null);
   const [showSendEmail, setShowSendEmail] = useState(false);
   const [viewingRockNumber, setViewingRockNumber] = useState(null);
+  const [showOriginal, setShowOriginal] = useState(false);
 
   const isDirty = !formsEqual(formData, savedFormData);
   const hasSavedEmail = !!savedFormData.email.trim();
@@ -260,7 +287,20 @@ const RockRequestsEditDialog = ({
         {error && <div className={styles.errorMessage}>{error}</div>}
 
         <form className={styles.dialogForm} onSubmit={(e) => e.preventDefault()} noValidate>
-          <h3 className={styles.sectionHeading}>Request</h3>
+          <h3 className={`${styles.sectionHeading} ${styles.headingWithAction}`}>
+            Request
+            {!isCreate && (
+              <button
+                type="button"
+                className={styles.infoButton}
+                onClick={() => setShowOriginal(true)}
+                title="View the original request"
+                aria-label="View the original request"
+              >
+                <FaInfoCircle size={18} />
+              </button>
+            )}
+          </h3>
           <div className={styles.sectionBody}>
             <label htmlFor="name">
               Name <span className={styles.requiredMark}>*</span>
@@ -288,15 +328,93 @@ const RockRequestsEditDialog = ({
             />
             {errorText("email")}
 
-            <label htmlFor="address">Address</label>
-            <textarea
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              rows={3}
-              placeholder="Street, City, State/Province, Postal Code, Country"
-            />
+            <div className={styles.addressHeader}>
+              <span className={styles.groupLabel}>Address</span>
+              <label htmlFor="us_address" className={styles.checkboxRow}>
+                <input
+                  type="checkbox"
+                  id="us_address"
+                  name="us_address"
+                  checked={formData.us_address}
+                  onChange={handleChange}
+                />
+                US address
+              </label>
+            </div>
+
+            {formData.us_address ? (
+              <>
+                <label htmlFor="street">Street</label>
+                <input
+                  type="text"
+                  id="street"
+                  name="street"
+                  value={formData.street}
+                  onChange={handleChange}
+                  placeholder="123 Main St, Apt 4"
+                />
+
+                <label htmlFor="city">City</label>
+                <input
+                  type="text"
+                  id="city"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                />
+
+                <div className={styles.stateZipRow}>
+                  <div className={styles.stateZipField}>
+                    <label htmlFor="state">State</label>
+                    <select id="state" name="state" value={formData.state} onChange={handleChange}>
+                      <option value="">Select...</option>
+                      {US_STATES.map(({ code, name: stateName }) => (
+                        <option key={code} value={code}>
+                          {stateName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={styles.stateZipField}>
+                    <label htmlFor="postal_code">ZIP Code</label>
+                    <input
+                      type="text"
+                      id="postal_code"
+                      name="postal_code"
+                      inputMode="numeric"
+                      maxLength={10}
+                      value={formData.postal_code}
+                      onChange={handleChange}
+                      className={fieldClass("postal_code")}
+                      aria-invalid={!!shownError("postal_code")}
+                    />
+                    {errorText("postal_code")}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <textarea
+                  id="address"
+                  name="address"
+                  aria-label="Address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  rows={3}
+                  placeholder="Street, City, State/Province, Postal Code"
+                />
+
+                <label htmlFor="country">Country</label>
+                <input
+                  type="text"
+                  id="country"
+                  name="country"
+                  maxLength={100}
+                  value={formData.country}
+                  onChange={handleChange}
+                />
+              </>
+            )}
 
             <label htmlFor="rocks_requested">
               # Rocks Requested <span className={styles.requiredMark}>*</span>
@@ -455,6 +573,30 @@ const RockRequestsEditDialog = ({
         rockNumber={viewingRockNumber}
         onClose={() => setViewingRockNumber(null)}
       />
+
+      {!isCreate && (
+        <Dialog
+          isOpen={showOriginal}
+          onClose={() => setShowOriginal(false)}
+          title="Original Request"
+          buttonPanel={<button onClick={() => setShowOriginal(false)}>Close</button>}
+        >
+          {request.original_request ? (
+            <>
+              <div className={styles.originalMeta}>
+                Received {request.create_dt ? formatLocalDateTime(request.create_dt) : "-"}.
+                This is what was first entered and never changes when the request is edited.
+              </div>
+              <div className={styles.readOnlyField}>{request.original_request}</div>
+            </>
+          ) : (
+            <div className={styles.originalMeta}>
+              No original copy was saved for this request. It was made before original
+              requests were recorded.
+            </div>
+          )}
+        </Dialog>
+      )}
     </>
   );
 };

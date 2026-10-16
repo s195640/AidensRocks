@@ -6,6 +6,7 @@ const sendEmail = require('../utils/sendEmail');
 const { renderEmailTemplate, getTemplateAddresses } = require('../utils/emailTemplates');
 const { normalizeEmail, isValidEmail } = require('../utils/auth/password');
 const { publicFormLimiter } = require('../middleware/publicFormLimiter');
+const { US_STATE_CODES } = require('../utils/usStates');
 
 const router = express.Router();
 
@@ -50,14 +51,109 @@ const NEEDED_BY_TEXT = "to_char(needed_by, 'YYYY-MM-DD') AS needed_by";
 
 const str = (v) => (v == null ? '' : String(v)).trim();
 
+const ZIP_PATTERN = /^\d{5}(-\d{4})?$/;
+
+const US_COUNTRY = 'USA';
+
+// The address, for the public form (`strict`) and the admin dialog. With "US
+// address" checked (usAddress true) it comes as street/city/state/postalCode,
+// state a USPS code, postalCode a ZIP or ZIP+4, and country is filled in as
+// USA. Unchecked (usAddress false) it's the free-text `address` plus a
+// `country`. Either way the parts are stored in their own columns and also
+// joined into `address` so the {ADDRESS} email token and the address column
+// in the admin table don't need to know about them. `strict` makes every part
+// required. Admin can leave any of them blank, but a state or ZIP that is
+// given must still be valid. An older public client that doesn't send
+// usAddress at all gets the original rule: just a free-text `address`
+// (country included in it), no country column.
+function parseAddress({ usAddress, address, street, city, state, postalCode, country }, { strict }) {
+  if (usAddress !== true && usAddress !== 'true') {
+    const freeText = str(address);
+    const legacy = usAddress === undefined;
+    const trimmedCountry = legacy ? '' : str(country);
+    if (strict && !freeText) throw badRequest('Address is required.');
+    if (strict && !legacy && !trimmedCountry) throw badRequest('Country is required.');
+    if (freeText.length > 2000) throw badRequest('Address is too long.');
+    if (trimmedCountry.length > 100) throw badRequest('Country is too long.');
+    return {
+      address: [freeText, trimmedCountry].filter(Boolean).join('\n') || null,
+      freeText, // not stored on its own; for buildOriginalRequest
+      usAddress: false,
+      street: null,
+      city: null,
+      state: null,
+      postalCode: null,
+      country: trimmedCountry || null,
+    };
+  }
+
+  const us = {
+    street: str(street),
+    city: str(city),
+    state: str(state).toUpperCase(),
+    postalCode: str(postalCode),
+  };
+  if (strict && (!us.street || !us.city || !us.state || !us.postalCode)) {
+    throw badRequest('Street, city, state, and ZIP code are required.');
+  }
+  if (us.street.length > 255) throw badRequest('Street is too long.');
+  if (us.city.length > 255) throw badRequest('City is too long.');
+  if (us.state && !US_STATE_CODES.has(us.state)) throw badRequest('Please choose a valid state.');
+  if (us.postalCode && !ZIP_PATTERN.test(us.postalCode)) throw badRequest('Please enter a ZIP code like 12345 or 12345-6789.');
+
+  // "City, ST 12345", skipping whatever admin left blank.
+  const cityLine = [[us.city, us.state].filter(Boolean).join(', '), us.postalCode]
+    .filter(Boolean)
+    .join(' ');
+  const hasAny = us.street || cityLine;
+  return {
+    address: hasAny ? [us.street, cityLine, US_COUNTRY].filter(Boolean).join('\n') : null,
+    usAddress: true,
+    street: us.street || null,
+    city: us.city || null,
+    state: us.state || null,
+    postalCode: us.postalCode || null,
+    country: US_COUNTRY,
+  };
+}
+
+// The `original_request` snapshot: everything the request was created with,
+// as readable text, written once on insert and never updated, so an admin
+// edit can always be checked against what was first entered.
+function buildOriginalRequest({ source, name, email, addr, rocksRequested, needed, message }) {
+  const indent = (text) => text.split('\n').map((line) => `  ${line}`).join('\n');
+  const lines = [`Source: ${source}`, `Name: ${name}`, `Email: ${email || '-'}`];
+  if (addr.usAddress) {
+    lines.push(
+      'Address (US):',
+      `  Street: ${addr.street || '-'}`,
+      `  City: ${addr.city || '-'}`,
+      `  State: ${addr.state || '-'}`,
+      `  ZIP Code: ${addr.postalCode || '-'}`,
+      `  Country: ${addr.country}`
+    );
+  } else {
+    lines.push(
+      addr.freeText ? `Address:\n${indent(addr.freeText)}` : 'Address: -',
+      `Country: ${addr.country || '-'}`
+    );
+  }
+  lines.push(
+    `# Rocks: ${rocksRequested}`,
+    `Need Rocks By: ${needed.noRush ? 'No rush' : needed.neededBy || '-'}`,
+    message ? `Message:\n${indent(message)}` : 'Message: (none)'
+  );
+  return lines.join('\n');
+}
+
 // The public "Request A Rock" insert. Everything but the message is
 // required here (the admin dialog is looser -- see parseAdminFields). Throws
 // an Error with a `.status` (400) for bad input; the caller translates that
 // into the response.
-async function insertRockRequest({ name, email, address, rocksRequested, neededBy, noRush, message }) {
+async function insertRockRequest(body) {
+  const { name, email, rocksRequested, neededBy, noRush, message } = body;
   const trimmedName = str(name);
   const trimmedEmail = normalizeEmail(str(email));
-  const trimmedAddress = str(address);
   const parsedRocksRequested = parseInt(rocksRequested, 10);
   const trimmedMessage = str(message);
 
@@ -66,7 +162,6 @@ async function insertRockRequest({ name, email, address, rocksRequested, neededB
   if (
     !trimmedName ||
     !trimmedEmail ||
-    !trimmedAddress ||
     !Number.isInteger(parsedRocksRequested) ||
     parsedRocksRequested < 1
   ) {
@@ -75,23 +170,41 @@ async function insertRockRequest({ name, email, address, rocksRequested, neededB
   // Column limits (name/email varchar 255) used to surface as a 500.
   if (trimmedName.length > 255) throw bad('Name is too long.');
   if (!isValidEmail(trimmedEmail)) throw bad('Please enter a valid email address.');
-  if (trimmedAddress.length > 2000) throw bad('Address is too long.');
+  const addr = parseAddress(body, { strict: true });
   if (trimmedMessage.length > 5000) throw bad('Message is too long.');
   if (parsedRocksRequested > 100) throw bad('Please request 100 rocks or fewer.');
   const needed = parseNeededBy(neededBy, noRush, { requireOne: true, requireFuture: true });
+  const originalRequest = buildOriginalRequest({
+    source: 'Request A Rock form',
+    name: trimmedName,
+    email: trimmedEmail,
+    addr,
+    rocksRequested: parsedRocksRequested,
+    needed,
+    message: trimmedMessage,
+  });
 
   const { rows } = await pool.query(
-    `INSERT INTO rock_requests (name, email, address, rocks_requested, needed_by, no_rush, message)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO rock_requests
+       (name, email, address, us_address, street, city, state, postal_code, country,
+        rocks_requested, needed_by, no_rush, message, original_request)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
      RETURNING rq_key`,
     [
       trimmedName,
       trimmedEmail,
-      trimmedAddress,
+      addr.address,
+      addr.usAddress,
+      addr.street,
+      addr.city,
+      addr.state,
+      addr.postalCode,
+      addr.country,
       parsedRocksRequested,
       needed.neededBy,
       needed.noRush,
       trimmedMessage || null,
+      originalRequest,
     ]
   );
 
@@ -99,7 +212,7 @@ async function insertRockRequest({ name, email, address, rocksRequested, neededB
     rq_key: rows[0].rq_key,
     name: trimmedName,
     email: trimmedEmail,
-    address: trimmedAddress,
+    address: addr.address,
     rocksRequested: parsedRocksRequested,
     neededBy: needed.neededBy,
     noRush: needed.noRush,
@@ -168,8 +281,9 @@ router.use(requireAdminAuth);
 router.get('/', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT rq_key, name, email, address, rocks_requested, ${NEEDED_BY_TEXT}, no_rush, shipped,
-              tracking_number, comments, rock_numbers, message,
+      `SELECT rq_key, name, email, address, us_address, street, city, state, postal_code, country,
+              rocks_requested, ${NEEDED_BY_TEXT}, no_rush, shipped,
+              tracking_number, comments, rock_numbers, message, original_request,
               create_dt, update_dt, sent_dt, email_dt, deleted, deleted_dt
        FROM rock_requests
        ORDER BY create_dt DESC`
@@ -209,13 +323,24 @@ function parseRockNumbers(raw) {
 
 // Validates/normalizes the admin dialog's fields. Create and Edit share the
 // one dialog, so they share this too. Only name and rocks_requested are
-// required. Email/address may be blank (stored NULL), and the need-by date
-// isn't required or limited to the future (admins log phone requests and
+// required. Email/address parts may be blank (stored NULL), and the need-by
+// date isn't required or limited to the future (admins log phone requests and
 // edit old ones). Throws a 400 Error on bad input.
 function parseAdminFields(body) {
   const name = str(body.name);
   const email = normalizeEmail(str(body.email));
-  const address = str(body.address);
+  const addr = parseAddress(
+    {
+      usAddress: body.us_address,
+      address: body.address,
+      street: body.street,
+      city: body.city,
+      state: body.state,
+      postalCode: body.postal_code,
+      country: body.country,
+    },
+    { strict: false }
+  );
   const rocksRequested = parseInt(body.rocks_requested, 10);
   const message = str(body.message);
   const comments = str(body.comments);
@@ -227,7 +352,6 @@ function parseAdminFields(body) {
   }
   if (name.length > 255) throw badRequest('Name is too long.');
   if (email && !isValidEmail(email)) throw badRequest('Please enter a valid email address.');
-  if (address.length > 2000) throw badRequest('Address is too long.');
   if (rocksRequested > 100) throw badRequest('Please request 100 rocks or fewer.');
   if (message.length > 5000) throw badRequest('Message is too long.');
   if (comments.length > 5000) throw badRequest('Notes are too long.');
@@ -238,7 +362,7 @@ function parseAdminFields(body) {
   return {
     name,
     email: email || null,
-    address: address || null,
+    addr,
     rocksRequested,
     neededBy: needed.neededBy,
     noRush: needed.noRush,
@@ -315,17 +439,28 @@ router.post('/admin-create', async (req, res) => {
       return res.status(400).json({ error: 'One or more rock numbers are invalid.', details });
     }
 
+    const originalRequest = buildOriginalRequest({
+      source: 'Created by admin',
+      name: fields.name,
+      email: fields.email,
+      addr: fields.addr,
+      rocksRequested: fields.rocksRequested,
+      needed: { neededBy: fields.neededBy, noRush: fields.noRush },
+      message: fields.message,
+    });
     const { rows } = await client.query(
       `INSERT INTO rock_requests
          (name, email, address, rocks_requested, needed_by, no_rush, message,
-          comments, shipped, tracking_number, rock_numbers, sent_dt)
+          comments, shipped, tracking_number, rock_numbers, sent_dt,
+          us_address, street, city, state, postal_code, country, original_request)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-               CASE WHEN $9 THEN CURRENT_TIMESTAMP END)
+               CASE WHEN $9 THEN CURRENT_TIMESTAMP END,
+               $12, $13, $14, $15, $16, $17, $18)
        RETURNING rq_key`,
       [
         fields.name,
         fields.email,
-        fields.address,
+        fields.addr.address,
         fields.rocksRequested,
         fields.neededBy,
         fields.noRush,
@@ -334,6 +469,13 @@ router.post('/admin-create', async (req, res) => {
         fields.shipped,
         fields.trackingNumber,
         fields.rockNumbersRaw,
+        fields.addr.usAddress,
+        fields.addr.street,
+        fields.addr.city,
+        fields.addr.state,
+        fields.addr.postalCode,
+        fields.addr.country,
+        originalRequest,
       ]
     );
     const rqKey = rows[0].rq_key;
@@ -399,6 +541,12 @@ router.put('/:rq_key', async (req, res) => {
            needed_by = $11,
            no_rush = $12,
            message = $13,
+           us_address = $14,
+           street = $15,
+           city = $16,
+           state = $17,
+           postal_code = $18,
+           country = $19,
            update_dt = CURRENT_TIMESTAMP,
            sent_dt = CASE WHEN $9 THEN CURRENT_TIMESTAMP ELSE sent_dt END
        WHERE rq_key = $10
@@ -406,7 +554,7 @@ router.put('/:rq_key', async (req, res) => {
       [
         fields.name,
         fields.email,
-        fields.address,
+        fields.addr.address,
         fields.rocksRequested,
         fields.shipped,
         fields.trackingNumber,
@@ -417,6 +565,12 @@ router.put('/:rq_key', async (req, res) => {
         fields.neededBy,
         fields.noRush,
         fields.message,
+        fields.addr.usAddress,
+        fields.addr.street,
+        fields.addr.city,
+        fields.addr.state,
+        fields.addr.postalCode,
+        fields.addr.country,
       ]
     );
 

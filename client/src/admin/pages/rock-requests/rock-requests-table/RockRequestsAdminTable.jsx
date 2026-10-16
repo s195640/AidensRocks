@@ -30,7 +30,7 @@ const RockRequestsAdminTable = ({
     const term = searchTerm.trim().toLowerCase();
     if (!term) return _data;
     return _data.filter((r) =>
-      [r.name, r.email, r.address, r.tracking_number, r.rock_numbers, r.comments, r.message].some(
+      [r.name, r.email, r.address, r.country, r.tracking_number, r.rock_numbers, r.comments, r.message].some(
         (field) => String(field ?? "").toLowerCase().includes(term)
       )
     );
@@ -48,6 +48,7 @@ const RockRequestsAdminTable = ({
       { key: "name", label: "Name", sortable: true },
       { key: "email", label: "Email", sortable: true },
       { key: "address", label: "Address", sortable: true },
+      { key: "country", label: "Country", defaultWidth: 90, sortable: true },
       { key: "rocks_requested", label: "# Rocks", defaultWidth: 70, sortable: true },
       {
         key: "needed_by",

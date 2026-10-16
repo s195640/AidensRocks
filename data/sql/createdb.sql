@@ -933,12 +933,23 @@ ALTER TABLE public.path_display_name OWNER TO postgres;
 -- rock_numbers fields -- see data/sql/migrations/add_rock_requests.sql for
 -- the full rationale. catalog.rq_key (added to the catalog table above)
 -- links a cataloged rock to the request it's currently assigned to.
+-- us_address/street/city/state/postal_code/country: the public form's split
+-- address (also joined into `address`); see
+-- data/sql/migrations/add_us_address_fields_to_rock_requests.sql.
+-- original_request: a write-once text snapshot of what the request was
+-- created with; see data/sql/migrations/add_original_request_to_rock_requests.sql.
 
 CREATE TABLE IF NOT EXISTS public.rock_requests (
     rq_key           serial PRIMARY KEY,
     name             character varying(255) NOT NULL,
     email            character varying(255),
     address          text,
+    us_address       boolean NOT NULL DEFAULT false,
+    street           character varying(255),
+    city             character varying(255),
+    state            character varying(2),
+    postal_code      character varying(10),
+    country          character varying(100),
     rocks_requested  integer NOT NULL,
     needed_by        date,
     no_rush          boolean NOT NULL DEFAULT false,
@@ -947,6 +958,7 @@ CREATE TABLE IF NOT EXISTS public.rock_requests (
     comments         text,
     rock_numbers     text,
     message          text,
+    original_request text,
     create_dt        timestamptz DEFAULT CURRENT_TIMESTAMP,
     update_dt        timestamptz DEFAULT CURRENT_TIMESTAMP,
     sent_dt          timestamptz,

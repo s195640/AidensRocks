@@ -312,3 +312,54 @@ Feature-scoped log, separate from other features' logs under `data/ai-build-docs
 **Deviations from plan:** None.
 **Issues/gotchas encountered:** None.
 **VERSION:** `0.10.17` → `0.10.18` (patch).
+
+## Phase 28 — Request A Rock: split US address fields + "US address" checkbox (2026-10-16)
+**Status:** Complete
+**Files changed:** `client/src/components/contact-request-rocks/ContactReqestRocks.jsx` (+ `.module.css`), `client/src/utils/usStates.js` (new), `server/src/utils/usStates.js` (new), `server/src/routes/rockRequests.js`, `data/sql/createdb.sql`, `data/sql/migrations/add_us_address_fields_to_rock_requests.sql` (new), `server/tests/api/upload-pipeline.test.mjs`, `VERSION`
+**Summary:**
+- The public dialog's Address now has a **US address** checkbox, on by default. Checked, it shows Street, City, State (dropdown: 50 states, DC, inhabited territories) and ZIP Code (5 digits or ZIP+4). All four are required, with the same check-on-press inline errors as the rest of the form. Unchecked, it shows the old free-text Address box, still required.
+- **Data model (approved).** New `rock_requests` columns `us_address` (boolean, default false), `street`, `city`, `state` (2-letter code) and `postal_code`. Per request, a US address is also saved to the existing `address` column as `Street\nCity, ST 12345\nUSA`, so the admin table/dialog, the Linked Rock Request popup and the `{ADDRESS}` email token are unchanged. Free-text, older and admin-created requests have `us_address = false` and NULL split fields.
+- **Server.** `parsePublicAddress` in `rockRequests.js` validates either mode and builds the joined address. A body without `usAddress` is treated as free text, so older clients keep working.
+**Deviations from plan:** Labels say "State" and "ZIP Code" (not State/Province, Postal Code) because the split fields are US-only.
+**Issues/gotchas encountered:** The admin Create/Edit dialog still edits only `address`. Editing it there doesn't update the split columns, so they reflect what the visitor submitted.
+**VERSION:** `0.12.4` → `0.12.5` (patch).
+
+## Phase 29 — Request A Rock: separate Country field (2026-10-16)
+**Status:** Complete
+**Files changed:** `client/src/components/contact-request-rocks/ContactReqestRocks.jsx`, `server/src/routes/rockRequests.js`, `data/sql/createdb.sql`, `data/sql/migrations/add_us_address_fields_to_rock_requests.sql`, `server/tests/api/upload-pipeline.test.mjs`, `VERSION`
+**Summary:**
+- **Data model (approved).** New `rock_requests.country` column (varchar 100), added to the Phase 28 migration since that hasn't been deployed yet.
+- **US address checked:** there's no Country field, and the server stores `country = 'USA'`.
+- **Unchecked:** a required Country input appears under the free-text Address box. "Country" was dropped from that box's placeholder. The joined `address` becomes `<free text>\n<Country>`.
+- **Older clients:** a body with no `usAddress` keeps the original free-text-only rule (no country required, `country` NULL), so a cached older bundle can still submit.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** None.
+**VERSION:** `0.12.5` → `0.12.6` (patch).
+
+## Phase 30 — Admin Rock Requests: Country column, split address in Create/Edit, original request snapshot (2026-10-16)
+**Status:** Complete
+**Files changed:** `client/src/admin/pages/rock-requests/rock-requests-table/RockRequestsAdminTable.jsx`, `client/src/admin/pages/rock-requests/rock-requests-edit-dlg/RockRequestsEditDialog.jsx` (+ `.module.css`), `server/src/routes/rockRequests.js`, `data/sql/createdb.sql`, `data/sql/migrations/add_original_request_to_rock_requests.sql` (new), `server/tests/api/admin-crud.test.mjs`, `server/tests/api/upload-pipeline.test.mjs`, `VERSION`
+**Summary:**
+- **Table.** New sortable **Country** column after Address. Search also matches country.
+- **Create/Edit dialog.** Same **US address** checkbox as the public form. Create starts with it checked; Edit uses the row's `us_address`. Checked shows Street, City, State (dropdown) and ZIP Code. Unchecked shows the free-text Address box plus Country. Per the existing admin rules none of these are required, but a typed ZIP must be a valid ZIP/ZIP+4 and the server rejects an unknown state. On save the server rebuilds the joined `address` from the parts. When loading a non-US row, the country line is stripped off the end of `address` for the textarea so it isn't appended twice.
+- **Original request (data model, approved).** New `rock_requests.original_request` text column. On insert (public form and admin Create) the server writes a readable snapshot: source, name, email, address parts, country, # rocks, need-by / no rush, message. It's never updated afterwards. The Edit dialog's Request heading has an (i) button (edit only; a new request has no original yet) that opens an "Original Request" dialog showing it with the received date.
+- **Server.** `parsePublicAddress` became `parseAddress(body, { strict })`, shared by the public insert (strict) and `parseAdminFields` (loose). Admin create/PUT now write the address parts and country. `GET /` returns the new columns.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** Requests made before this column existed have no original (NULL). The dialog says so instead of copying in values that may already have been edited.
+**VERSION:** `0.12.6` → `0.12.7` (patch).
+
+## Phase 31 — Request A Rock: ZIP Code format placeholder (2026-10-16)
+**Status:** Complete
+**Files changed:** `client/src/components/contact-request-rocks/ContactReqestRocks.jsx`, `VERSION`
+**Summary:** The public form's ZIP Code input now has the placeholder "12345 or 12345-6789", matching the accepted 5-digit / ZIP+4 formats.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** None.
+**VERSION:** `0.12.7` → `0.12.8` (patch).
+
+## Phase 32 — ZIP Code error message shows the format (2026-10-16)
+**Status:** Complete
+**Files changed:** `client/src/components/contact-request-rocks/ContactReqestRocks.jsx`, `client/src/admin/pages/rock-requests/rock-requests-edit-dlg/RockRequestsEditDialog.jsx`, `server/src/routes/rockRequests.js`, `VERSION`
+**Summary:** The invalid-ZIP message is now "Please enter a ZIP code like 12345 or 12345-6789." in the public form, the admin Create/Edit dialog, and the server's 400 response.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** None.
+**VERSION:** `0.12.8` → `0.12.9` (patch).

@@ -2,9 +2,11 @@
 import { useState } from "react";
 import axios from "axios";
 import { useSiteSettings } from "../../context/SiteSettingsContext";
+import { US_STATES } from "../../utils/usStates";
 import styles from "./ContactReqestRocks.module.css";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ZIP_PATTERN = /^\d{5}(-\d{4})?$/;
 
 // Today's date in the visitor's own time zone, as the YYYY-MM-DD a date input uses.
 const localToday = () => {
@@ -17,7 +19,13 @@ const ContactRequestRocks = ({ onClose }) => {
   const { contactEmail } = useSiteSettings();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [usAddress, setUsAddress] = useState(true);
+  const [street, setStreet] = useState("");
+  const [city, setCity] = useState("");
+  const [usState, setUsState] = useState("");
+  const [postalCode, setPostalCode] = useState("");
   const [address, setAddress] = useState("");
+  const [country, setCountry] = useState("");
   const [rocksRequested, setRocksRequested] = useState("");
   const [neededBy, setNeededBy] = useState("");
   const [noRush, setNoRush] = useState(false);
@@ -35,7 +43,19 @@ const ContactRequestRocks = ({ onClose }) => {
       : !EMAIL_PATTERN.test(email.trim())
         ? "Please enter a valid email address."
         : "",
-    address: !address.trim() ? "Address is required." : "",
+    // Only the fields for the current "US address" mode are checked.
+    street: usAddress && !street.trim() ? "Street is required." : "",
+    city: usAddress && !city.trim() ? "City is required." : "",
+    usState: usAddress && !usState ? "State is required." : "",
+    postalCode: !usAddress
+      ? ""
+      : !postalCode.trim()
+        ? "ZIP code is required."
+        : !ZIP_PATTERN.test(postalCode.trim())
+          ? "Please enter a ZIP code like 12345 or 12345-6789."
+          : "",
+    address: !usAddress && !address.trim() ? "Address is required." : "",
+    country: !usAddress && !country.trim() ? "Country is required." : "",
     rocks:
       rocksRequested === ""
         ? "Number of rocks is required."
@@ -65,7 +85,9 @@ const ContactRequestRocks = ({ onClose }) => {
       await axios.post("/api/rock-requests", {
         name,
         email,
-        address,
+        usAddress,
+        // Country is filled in as USA by the server for a US address.
+        ...(usAddress ? { street, city, state: usState, postalCode } : { address, country }),
         rocksRequested: Number(rocksRequested),
         neededBy: noRush ? null : neededBy,
         noRush,
@@ -146,23 +168,151 @@ const ContactRequestRocks = ({ onClose }) => {
                 </div>
               )}
 
-              <label htmlFor="request-address" className={styles.label}>
-                Address
-              </label>
-              <textarea
-                id="request-address"
-                className={`${styles.textarea} ${shownError("address") ? styles.invalid : ""}`}
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                rows={3}
-                placeholder="Street, City, State/Province, Postal Code, Country"
-                aria-invalid={!!shownError("address")}
-                aria-describedby={shownError("address") ? "request-address-error" : undefined}
-              />
-              {shownError("address") && (
-                <div id="request-address-error" className={styles.fieldError}>
-                  {shownError("address")}
-                </div>
+              <div className={styles.addressHeader}>
+                <span className={styles.label}>Address</span>
+                <label htmlFor="request-us-address" className={styles.checkboxLabel}>
+                  <input
+                    id="request-us-address"
+                    type="checkbox"
+                    checked={usAddress}
+                    onChange={(e) => setUsAddress(e.target.checked)}
+                  />
+                  US address
+                </label>
+              </div>
+
+              {usAddress ? (
+                <>
+                  <label htmlFor="request-street" className={styles.subLabel}>
+                    Street
+                  </label>
+                  <input
+                    id="request-street"
+                    type="text"
+                    autoComplete="street-address"
+                    className={`${styles.input} ${shownError("street") ? styles.invalid : ""}`}
+                    value={street}
+                    onChange={(e) => setStreet(e.target.value)}
+                    placeholder="123 Main St, Apt 4"
+                    aria-invalid={!!shownError("street")}
+                    aria-describedby={shownError("street") ? "request-street-error" : undefined}
+                  />
+                  {shownError("street") && (
+                    <div id="request-street-error" className={styles.fieldError}>
+                      {shownError("street")}
+                    </div>
+                  )}
+
+                  <label htmlFor="request-city" className={styles.subLabel}>
+                    City
+                  </label>
+                  <input
+                    id="request-city"
+                    type="text"
+                    autoComplete="address-level2"
+                    className={`${styles.input} ${shownError("city") ? styles.invalid : ""}`}
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    aria-invalid={!!shownError("city")}
+                    aria-describedby={shownError("city") ? "request-city-error" : undefined}
+                  />
+                  {shownError("city") && (
+                    <div id="request-city-error" className={styles.fieldError}>
+                      {shownError("city")}
+                    </div>
+                  )}
+
+                  <div className={styles.stateZipRow}>
+                    <div className={styles.stateZipField}>
+                      <label htmlFor="request-state" className={styles.subLabel}>
+                        State
+                      </label>
+                      <select
+                        id="request-state"
+                        autoComplete="address-level1"
+                        className={`${styles.input} ${shownError("usState") ? styles.invalid : ""}`}
+                        value={usState}
+                        onChange={(e) => setUsState(e.target.value)}
+                        aria-invalid={!!shownError("usState")}
+                        aria-describedby={shownError("usState") ? "request-state-error" : undefined}
+                      >
+                        <option value="">Select...</option>
+                        {US_STATES.map(({ code, name: stateName }) => (
+                          <option key={code} value={code}>
+                            {stateName}
+                          </option>
+                        ))}
+                      </select>
+                      {shownError("usState") && (
+                        <div id="request-state-error" className={styles.fieldError}>
+                          {shownError("usState")}
+                        </div>
+                      )}
+                    </div>
+                    <div className={styles.stateZipField}>
+                      <label htmlFor="request-postal-code" className={styles.subLabel}>
+                        ZIP Code
+                      </label>
+                      <input
+                        id="request-postal-code"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="postal-code"
+                        maxLength={10}
+                        placeholder="12345 or 12345-6789"
+                        className={`${styles.input} ${shownError("postalCode") ? styles.invalid : ""}`}
+                        value={postalCode}
+                        onChange={(e) => setPostalCode(e.target.value)}
+                        aria-invalid={!!shownError("postalCode")}
+                        aria-describedby={shownError("postalCode") ? "request-postal-code-error" : undefined}
+                      />
+                      {shownError("postalCode") && (
+                        <div id="request-postal-code-error" className={styles.fieldError}>
+                          {shownError("postalCode")}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <textarea
+                    id="request-address"
+                    aria-label="Address"
+                    className={`${styles.textarea} ${shownError("address") ? styles.invalid : ""}`}
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    rows={3}
+                    placeholder="Street, City, State/Province, Postal Code"
+                    aria-invalid={!!shownError("address")}
+                    aria-describedby={shownError("address") ? "request-address-error" : undefined}
+                  />
+                  {shownError("address") && (
+                    <div id="request-address-error" className={styles.fieldError}>
+                      {shownError("address")}
+                    </div>
+                  )}
+
+                  <label htmlFor="request-country" className={styles.subLabel}>
+                    Country
+                  </label>
+                  <input
+                    id="request-country"
+                    type="text"
+                    autoComplete="country-name"
+                    maxLength={100}
+                    className={`${styles.input} ${shownError("country") ? styles.invalid : ""}`}
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    aria-invalid={!!shownError("country")}
+                    aria-describedby={shownError("country") ? "request-country-error" : undefined}
+                  />
+                  {shownError("country") && (
+                    <div id="request-country-error" className={styles.fieldError}>
+                      {shownError("country")}
+                    </div>
+                  )}
+                </>
               )}
 
               <label htmlFor="request-rocks" className={styles.label}>

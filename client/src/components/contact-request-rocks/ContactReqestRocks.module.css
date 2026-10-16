@@ -155,3 +155,40 @@
   font-size: 0.95rem;
   cursor: pointer;
 }
+
+/* "Address" heading with the "US address" checkbox on the same line. */
+.addressHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.6rem;
+}
+
+.addressHeader .label {
+  margin-top: 0;
+}
+
+/* Labels for the individual US address fields under the "Address" heading. */
+.subLabel {
+  font-size: 0.85rem;
+  color: #555;
+  margin-top: 0.3rem;
+}
+
+.stateZipRow {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.stateZipField {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+select.input {
+  background: white;
+}

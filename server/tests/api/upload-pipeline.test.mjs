@@ -284,6 +284,46 @@ describe('rock requests (public form)', () => {
       { rq_key: rush.body.rq_key, needed_by: null, no_rush: true },
     ]);
   });
+  it('stores a US address split out and joined into address', async () => {
+    const us = { ...ok, address: '', usAddress: true, street: ' 12 Elm St ', city: 'Denver', state: 'co', postalCode: '80202-1234' };
+    const res = await api().post('/api/rock-requests').send(us);
+    expect(res.status).toBe(201);
+    expect((await sql(
+      'SELECT address, us_address, street, city, state, postal_code, country FROM rock_requests WHERE rq_key = $1',
+      [res.body.rq_key]
+    ))[0]).toEqual({
+      address: '12 Elm St\nDenver, CO 80202-1234\nUSA',
+      us_address: true, street: '12 Elm St', city: 'Denver', state: 'CO', postal_code: '80202-1234', country: 'USA',
+    });
+    const free = await api().post('/api/rock-requests').send({ ...ok, usAddress: false, country: ' Canada ', street: 'ignored' });
+    expect((await sql('SELECT address, us_address, street, country FROM rock_requests WHERE rq_key = $1', [free.body.rq_key]))[0])
+      .toEqual({ address: '1 Road\nCanada', us_address: false, street: null, country: 'Canada' });
+    expect((await sql('SELECT original_request FROM rock_requests WHERE rq_key = $1', [free.body.rq_key]))[0].original_request)
+      .toBe([
+        'Source: Request A Rock form', 'Name: Req', 'Email: req@example.com',
+        'Address:\n  1 Road', 'Country: Canada', '# Rocks: 2', 'Need Rocks By: No rush', 'Message: (none)',
+      ].join('\n'));
+    // An older client that doesn't send usAddress: free text only, no country needed.
+    const legacy = await api().post('/api/rock-requests').send(ok);
+    expect((await sql('SELECT address, country FROM rock_requests WHERE rq_key = $1', [legacy.body.rq_key]))[0])
+      .toEqual({ address: '1 Road', country: null });
+  });
+  it('400s an incomplete or invalid US address', async () => {
+    const us = { ...ok, usAddress: true, street: '12 Elm St', city: 'Denver', state: 'CO', postalCode: '80202' };
+    for (const bad of [
+      { ...us, street: '' },
+      { ...us, city: ' ' },
+      { ...us, state: '' },
+      { ...us, state: 'ZZ' },
+      { ...us, postalCode: '' },
+      { ...us, postalCode: '8020' },
+      { ...ok, usAddress: false, address: '', country: 'Canada' },
+      { ...ok, usAddress: false, country: ' ' },
+      { ...ok, usAddress: false, country: 'c'.repeat(101) },
+    ]) {
+      expect((await api().post('/api/rock-requests').send(bad)).status).toBe(400);
+    }
+  });
   it('ignores admin comments sent to the public form', async () => {
     const res = await api().post('/api/rock-requests').send({ ...ok, comments: 'sneaky' });
     expect(res.status).toBe(201);
