@@ -48,7 +48,15 @@ const RockTable = ({ followedOnly = false }) => {
         });
         const pageRocks = Array.from(grouped).map(([key, value]) => ({ key, value }));
 
-        setGroupedRocks((prev) => (page === 1 ? pageRocks : [...prev, ...pageRocks]));
+        // A stop posted while someone scrolls moves its rock to the top and
+        // shifts every later page down by one, so the next page can repeat
+        // a rock that's already showing. Skip those (they also made
+        // duplicate React keys).
+        setGroupedRocks((prev) => {
+          if (page === 1) return pageRocks;
+          const shown = new Set(prev.map((r) => r.key));
+          return [...prev, ...pageRocks.filter((r) => !shown.has(r.key))];
+        });
         setTotalRocks(total);
         if (pageRocks.length < PAGE_SIZE) setExhausted(true);
       } catch (error) {

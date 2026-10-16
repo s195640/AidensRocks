@@ -186,14 +186,24 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
     }
   };
 
+  // Editing never changes a rock's number (PUT /api/rocks ignores it), so a
+  // photo whose QR code is for a different rock is refused rather than
+  // shown under the wrong number -- it used to change the number on screen
+  // and then save the photo onto the rock being edited anyway.
   const handleEditImageChange = async (e) => {
     const file = e.target.files[0];
+    setError("");
     setImageFile(file);
     if (file) {
       const qrText = await decodeQrFromFile(file);
-      if (qrText) {
-        const rockNumberFromQr = rockNumberFromQrText(qrText);
-        if (rockNumberFromQr) setRockNumber(rockNumberFromQr);
+      const rockNumberFromQr = qrText ? rockNumberFromQrText(qrText) : null;
+      if (rockNumberFromQr && Number(rockNumberFromQr) !== Number(selectedRock.rock_number)) {
+        setImageFile(null);
+        e.target.value = null;
+        setError(
+          `This photo's QR code is for rock ${rockNumberFromQr}, but you're editing rock ${selectedRock.rock_number}. ` +
+            `Choose rock ${selectedRock.rock_number}'s photo, or add rock ${rockNumberFromQr} as a new rock.`
+        );
       }
     }
   };

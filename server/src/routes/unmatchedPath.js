@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require("../db/pool");
 const buildPathDisplayNameMatcher = require("../utils/pathDisplayNameMatcher");
 const requireAdminAuth = require("../middleware/requireAdminAuth");
+const { publicCounterLimiter } = require("../middleware/publicFormLimiter");
 
 // Paths that are routine browser/crawler noise, not a bad link a visitor
 // actually typed/followed -- never logged. Matched case-insensitively
@@ -36,7 +37,7 @@ function isIgnoredPath(path) {
 // fullUrl (optional) is the entire URL including the query string --
 // path stays pathname-only since that's still what grouping/counting below
 // keys on (see data/sql/migrations/add_full_url_to_unmatched_path_hit.sql).
-router.post("/", async (req, res) => {
+router.post("/", publicCounterLimiter, async (req, res) => {
   const { path, fullUrl } = req.body;
 
   if (!path || typeof path !== "string" || path.length > 2048) {

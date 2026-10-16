@@ -1,6 +1,7 @@
 // routes/accountsAdmin.js — admin Accounts page: list/edit site sign-in
 // accounts (not to be confused with routes/users.js, which manages artists).
 const express = require('express');
+const intParams = require('../utils/intParams');
 const db = require('../db/pool');
 const requireAdminAuth = require('../middleware/requireAdminAuth');
 const { LEVELS, ARTIST_LINK_LEVELS } = require('../middleware/requireAuth');
@@ -11,6 +12,7 @@ const { createAccountToken } = require('../utils/auth/tokens');
 const { sendPasswordResetEmail } = require('../utils/auth/accountEmails');
 
 const router = express.Router();
+intParams(router, 'id');
 
 router.use(requireAdminAuth);
 

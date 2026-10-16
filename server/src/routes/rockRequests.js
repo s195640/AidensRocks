@@ -1,4 +1,5 @@
 const express = require('express');
+const intParams = require('../utils/intParams');
 const pool = require('../db/pool');
 const safeRollback = require('../utils/db/safeRollback');
 const requireAdminAuth = require('../middleware/requireAdminAuth');
@@ -9,6 +10,7 @@ const { publicFormLimiter } = require('../middleware/publicFormLimiter');
 const { US_STATE_CODES } = require('../utils/usStates');
 
 const router = express.Router();
+intParams(router, 'rq_key');
 
 const badRequest = (msg) => {
   const err = new Error(msg);

@@ -1,5 +1,7 @@
 const express = require("express");
+const intParams = require('../utils/intParams');
 const router = express.Router();
+intParams(router, 'm_key');
 const db = require("../db/pool");
 const safeRollback = require("../utils/db/safeRollback");
 const path = require("path");
@@ -11,6 +13,7 @@ const convertToWebP = require('../utils/convert-to-webp/convertToWebP');
 const requireAdminAuth = require('../middleware/requireAdminAuth');
 const { optionalAuth } = require('../middleware/requireAuth');
 const includeHidden = require('../utils/includeHidden');
+const { publicCounterLimiter } = require('../middleware/publicFormLimiter');
 
 // -------------------- GET /api/music --------------------
 // Hidden songs are left out unless an admin asks for them (?includeHidden=1).
@@ -236,7 +239,7 @@ router.put("/:m_key/toggle-show", requireAdminAuth, async (req, res) => {
 // Public (no admin auth) - called by the public audio player each time a
 // visitor plays a song. Does not touch update_dt (that's reserved for
 // content edits, not listens).
-router.put("/:m_key/increment-play", async (req, res) => {
+router.put("/:m_key/increment-play", publicCounterLimiter, async (req, res) => {
   const { m_key } = req.params;
 
   try {

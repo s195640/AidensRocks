@@ -15,7 +15,9 @@
 // and a much larger validateItem/insertItems item-type/layout validation
 // layer, all removed along with those tables.
 const express = require('express');
+const intParams = require('../utils/intParams');
 const router = express.Router();
+intParams(router, 'id');
 const path = require('path');
 const fs = require('fs').promises;
 // fs-extra, under its own alias -- this file already uses `fs` for the

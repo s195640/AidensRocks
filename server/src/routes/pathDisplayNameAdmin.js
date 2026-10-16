@@ -1,5 +1,7 @@
 const express = require("express");
+const intParams = require("../utils/intParams");
 const router = express.Router();
+intParams(router, "id");
 const db = require("../db/pool");
 const requireAdminAuth = require("../middleware/requireAdminAuth");
 

@@ -1,7 +1,9 @@
 const express = require('express');
+const intParams = require('../utils/intParams');
 const pool = require('../db/pool');
 const requireAdminAuth = require('../middleware/requireAdminAuth');
 const router = express.Router();
+intParams(router, 'id');
 
 // artist.display_name has no unique constraint, so the 23505 handlers
 // below never fired: an edit could create a duplicate. Checked here

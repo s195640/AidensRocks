@@ -5,6 +5,7 @@ const express = require('express');
 const db = require('../db/pool');
 const { requireAuth, LEVELS } = require('../middleware/requireAuth');
 const { ownRockNumbersSql, followedRockNumbersSql } = require('../utils/followedRocks');
+const visibleJourneySql = require('../utils/visibleJourneySql');
 
 const router = express.Router();
 
@@ -45,12 +46,13 @@ router.get('/', async (req, res, next) => {
        JOIN catalog rc ON rc.rock_number = f.rock_number
        LEFT JOIN artist_link ral ON ral.rc_key = rc.rc_key
        LEFT JOIN artist ra ON ra.ra_key = ral.ra_key
-       -- Latest visible journey stop, same ordering as Track the Rocks
+       -- Latest public journey stop (utils/visibleJourneySql.js -- shown
+       -- AND has a visible photo), same ordering as Track the Rocks
        -- (routes/rockPosts.js): by journey date, then post time.
        LEFT JOIN LATERAL (
          SELECT j.location, j.date
          FROM journey j
-         WHERE j.rock_number = rc.rock_number AND j.show = TRUE
+         WHERE j.rock_number = rc.rock_number AND ${visibleJourneySql('j')}
          ORDER BY j.date DESC NULLS LAST, j.create_dt DESC
          LIMIT 1
        ) last_stop ON TRUE

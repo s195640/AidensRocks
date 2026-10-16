@@ -61,7 +61,12 @@ const orangeIcon = L.icon({
 export default function RockMap({ pins = [], followedSet = new Set(), canFilterFollowed = false }) {
   const [selectedRock, setSelectedRock] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [filters, setFilters] = useState({ show2025: true, show2026: true, onlyFollowed: false });
+  const [filters, setFilters] = useState({ onlyFollowed: false });
+  // Years switched off in Map Filters. One switch per year the pins
+  // actually have (oldest first, as before), so a new year shows up on its own instead
+  // of only ever offering 2025 and 2026.
+  const [hiddenYears, setHiddenYears] = useState(() => new Set());
+  const years = [...new Set(pins.map((pin) => pin.year).filter(Boolean))].sort((a, b) => a - b);
   const [rockNumberQuery, setRockNumberQuery] = useState("");
   const [highlightQuery, setHighlightQuery] = useState("");
   const mapURL = ["https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -76,9 +81,17 @@ export default function RockMap({ pins = [], followedSet = new Set(), canFilterF
     setFilters((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const toggleYear = (year) => {
+    setHiddenYears((prev) => {
+      const next = new Set(prev);
+      if (next.has(year)) next.delete(year);
+      else next.add(year);
+      return next;
+    });
+  };
+
   const visiblePins = pins.filter((pin) => {
-    if (pin.year === 2025 && !filters.show2025) return false;
-    if (pin.year === 2026 && !filters.show2026) return false;
+    if (hiddenYears.has(pin.year)) return false;
     if (canFilterFollowed && filters.onlyFollowed && !followedSet.has(Number(pin.label))) {
       return false;
     }
@@ -173,28 +186,19 @@ export default function RockMap({ pins = [], followedSet = new Set(), canFilterF
           />
         </label>
 
-        <label className={styles.switchRow}>
-          <span>Show 2025 Rocks</span>
-          <span className={styles.switch}>
-            <input
-              type="checkbox"
-              checked={filters.show2025}
-              onChange={() => toggleFilter("show2025")}
-            />
-            <span className={styles.switchTrack} />
-          </span>
-        </label>
-        <label className={styles.switchRow}>
-          <span>Show 2026 Rocks</span>
-          <span className={styles.switch}>
-            <input
-              type="checkbox"
-              checked={filters.show2026}
-              onChange={() => toggleFilter("show2026")}
-            />
-            <span className={styles.switchTrack} />
-          </span>
-        </label>
+        {years.map((year) => (
+          <label key={year} className={styles.switchRow}>
+            <span>Show {year} Rocks</span>
+            <span className={styles.switch}>
+              <input
+                type="checkbox"
+                checked={!hiddenYears.has(year)}
+                onChange={() => toggleYear(year)}
+              />
+              <span className={styles.switchTrack} />
+            </span>
+          </label>
+        ))}
         {canFilterFollowed && (
           <label className={styles.switchRow}>
             <span>Show Only Following Rocks</span>

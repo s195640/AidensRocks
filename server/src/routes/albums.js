@@ -1,5 +1,7 @@
 const express = require('express');
+const intParams = require('../utils/intParams');
 const router = express.Router();
+intParams(router, 'pa_key', 'p_key');
 const syncAlbums = require('../utils/albums/syncAlbums');
 const db = require('../db/pool');
 const safeRollback = require('../utils/db/safeRollback');
@@ -152,10 +154,13 @@ router.delete('/:pa_key', requireAdminAuth, async (req, res) => {
   }
 });
 
+// Closes the gaps after a delete (Albums.jsx calls it then). Renumbers
+// every album, hidden ones too -- it used to skip them, leaving a hidden
+// album's old order_num to collide with a visible one's new one.
 router.post('/reorder-all', requireAdminAuth, async (req, res) => {
   try {
     const { rows } = await db.query(
-      `SELECT pa_key FROM PhotoAlbums WHERE show = true ORDER BY order_num ASC, pa_key ASC`
+      `SELECT pa_key FROM PhotoAlbums ORDER BY order_num ASC, pa_key ASC`
     );
 
     const client = await db.connect();

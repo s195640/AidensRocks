@@ -155,3 +155,46 @@ On **Node A only**:
 | Need to remove the #6 constraint | On **both** nodes: `ALTER TABLE catalog DROP CONSTRAINT catalog_rock_number_key;` |
 
 Don't restore the step-0 backups on both nodes. If a restore is ever needed, do it on **one** node and let it replicate.
+
+---
+
+# Part 2: 0.13.8 → 0.13.10 (#7–#14)
+
+**Code only.** No database changes, no backfill, no nginx or Cloudflare changes, no `.env` changes. Nothing to run on the database nodes.
+
+| # | What |
+|---|---|
+| 7 | Rock edit: a photo whose QR code is for a different rock is refused (it used to show the wrong number, then save onto the rock being edited) |
+| 8 | Map: the year comes from the server (January 1 stops no longer land in the previous year), and there's one "Show YYYY Rocks" switch per year that has pins (2027 appears on its own) |
+| 9 | My Rocks "last location" only uses stops the public can see |
+| 10 | Track the Rocks no longer shows a rock twice when someone posts while you scroll |
+| 11 | Deleting an album renumbers hidden albums too (no duplicate positions) |
+| 12 | Deleting one photo from a journey (Admin → Journey) also deletes its files |
+| 13 | A bad date or non-numeric id gets a 400 "invalid" reply instead of a 500 |
+| 14 | The public counters (visits, path hits, song plays, Honoring Aiden views) are limited to 120 per visitor per 15 minutes |
+
+## 1. Deploy, one app server at a time
+
+From `data/docker-compose/`:
+```bash
+docker compose -f docker-compose-prod.yml up -d --build server client
+```
+Same checks as Part 1, step 3 (`ps`, `docker exec client nginx -t`, server and client logs), then the second server.
+
+## 2. Smoke test (about 5 minutes)
+
+1. **#8 — Map.** Open the map → ⚙ Map Filters. There's a "Show YYYY Rocks" switch for each year that has pins (today 2025 and 2026). Turning one off hides that year's pins.
+2. **#7 — Rock edit.** Admin → Rocks → edit a rock → choose a photo of a *different* rock's QR code. It says "This photo's QR code is for rock N, but you're editing rock M…", the number shown doesn't change, and Save doesn't replace the photo. Cancel.
+3. **#9 — My Rocks.** Signed in, My Rocks shows each followed rock's last location as before.
+4. **#12 — Journey photo delete** (only if you have a photo you want gone anyway). Admin → Journey → open a post → delete one photo. The others stay, and the deleted one no longer appears anywhere.
+5. **#14 — counter limits.** This hits a page that doesn't exist, so it counts nothing:
+   ```bash
+   curl -s -D - -o /dev/null -X POST https://aidensrocks.com/api/honoring-aiden/entries/no-such-entry/view | grep -i ratelimit
+   ```
+   It should print `RateLimit-Policy` / `RateLimit` lines.
+
+#10, #11 and #13 are covered by the automated tests and need no manual check.
+
+## Rollback
+
+Redeploy the `0.13.8` commit (`up -d --build server client`). Nothing in the database depends on 0.13.10.

@@ -117,7 +117,10 @@ router.post('/upload-rock', publicFormLimiter, upload.array('images'), async (re
       fileManifest,
     } = req.body;
     const files = req.files || [];
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    // A real calendar date: "2025-02-30" matched the pattern and then
+    // failed in Postgres as a 500.
+    const parsedDate = /^\d{4}-\d{2}-\d{2}$/.test(date || '') ? new Date(`${date}T00:00:00Z`) : null;
+    if (!parsedDate || Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date) {
       return res.status(400).json({ error: 'Invalid or missing date' });
     }
     const emailNormalized = email?.trim() ? normalizeEmail(email) : '';

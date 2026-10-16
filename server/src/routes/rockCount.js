@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool');
 const safeRollback = require('../utils/db/safeRollback');
+const { publicCounterLimiter } = require('../middleware/publicFormLimiter');
 
-router.post('/rock-count', async (req, res) => {
+router.post('/rock-count', publicCounterLimiter, async (req, res) => {
   const {
     rock_qr_number = 'unknown',
     ipAddress,

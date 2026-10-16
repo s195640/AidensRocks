@@ -235,6 +235,8 @@ describe('[S9] one file that fails to process', () => {
 describe('input validation', () => {
   it('rejects a bad date and a bad email with 400', async () => {
     expect((await upload({ ...baseFields, date: 'yesterday' })).status).toBe(400);
+    // [#13] matches the pattern but isn't a real day -- used to be a 500
+    expect((await upload({ ...baseFields, date: '2025-02-30' })).status).toBe(400);
     expect((await upload({ ...baseFields, email: 'not-an-email' })).status).toBe(400);
     expect((await upload({ ...baseFields, location: 'x'.repeat(300) })).status).toBe(400);
   });

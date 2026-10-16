@@ -152,4 +152,41 @@ describe('follows', () => {
     expect((await api().delete('/api/follows/101').set(h)).status).toBe(200);
     expect((await api().get('/api/follows/ids').set(h)).body).not.toContain(101);
   });
+
+  it('[#9] "last location" is the latest public stop, never one without a visible photo', async () => {
+    const h = await bearer('user');
+    for (const rockNumber of [101, 104]) {
+      await api().post('/api/follows').set(h).send({ rockNumber });
+    }
+    const list = (await api().get('/api/follows').set(h)).body;
+    const byRock = Object.fromEntries(list.map((r) => [r.rock_number, r]));
+    expect(byRock[101].last_location).toBe('Zion, UT');
+    expect(byRock[104].last_location).toBeNull(); // shown, but its only photo is hidden
+    for (const rockNumber of [101, 104]) {
+      await api().delete(`/api/follows/${rockNumber}`).set(h);
+    }
+  });
+});
+
+describe('[#8] map pins carry their year', () => {
+  it('year comes from the server, not the browser time zone', async () => {
+    const pins = (await api().get('/api/rock-posts/locations/all')).body;
+    expect(pins.length).toBeGreaterThan(0);
+    for (const pin of pins) expect(pin.year).toBe(2025); // every seeded public stop is in 2025
+  });
+});
+
+describe('[#14] the public counters are rate limited', () => {
+  it('each sends the per-visitor limit headers', async () => {
+    const calls = [
+      api().post('/api/rock-count').send({ rock_qr_number: '101' }),
+      api().post('/api/unmatched-path').send({ path: '/nope' }),
+      api().put('/api/music/1/increment-play'),
+      api().post('/api/honoring-aiden/entries/about-aiden/view'),
+    ];
+    for (const res of await Promise.all(calls)) {
+      expect(res.headers['ratelimit-policy'], res.req.path).toBeDefined();
+      expect(res.status).toBeLessThan(500);
+    }
+  });
 });

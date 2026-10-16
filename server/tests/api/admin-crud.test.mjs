@@ -122,6 +122,14 @@ describe('albums [S6 S21]', () => {
     const stuck = await sql(`SELECT count(*)::int AS n FROM pg_stat_activity WHERE state = 'idle in transaction'`);
     expect(stuck[0].n).toBe(0);
   });
+
+  it('[#11] reorder-all renumbers hidden albums too, with no collisions', async () => {
+    await sql('UPDATE photoalbums SET order_num = 5 WHERE pa_key = 2'); // the hidden album, out at the end
+    expect((await api().post('/api/albums/reorder-all').set(A)).status).toBe(200);
+    const rows = await sql('SELECT pa_key, order_num FROM photoalbums ORDER BY order_num');
+    expect(rows.map((r) => r.order_num)).toEqual(rows.map((_, i) => i));
+    expect(rows.some((r) => r.pa_key === 2)).toBe(true);
+  });
 });
 
 describe('journey admin', () => {
@@ -150,6 +158,26 @@ describe('journey admin', () => {
     expect(fs.existsSync(path.join(MEDIA_ROOT, 'rocks', '103', j.uuid, 'webp'))).toBe(true);
     // back to where it was for the other tests
     expect((await api().put('/api/journey-admin/3').set(A).send({ ...body, rock_number: '102' })).status).toBe(200);
+  });
+
+  it('[#12] deleting one image removes its files and leaves the others', async () => {
+    const [j] = await sql('SELECT rock_number, uuid FROM journey WHERE rps_key = 2');
+    const dir = path.join(MEDIA_ROOT, 'rocks', String(j.rock_number), j.uuid);
+    const extra = `2_${j.uuid}`;
+    const extraFiles = [path.join(dir, 'o', `${extra}.png`), path.join(dir, 'webp', `${extra}.webp`), path.join(dir, 'sm', `${extra}.webp`)];
+    for (const f of extraFiles) fs.writeFileSync(f, 'x');
+    const [{ rpi_key }] = await sql(
+      `INSERT INTO journey_image (rps_key, original_name, current_name, upload_order, show)
+       VALUES (2, 'extra.png', $1, 2, true) RETURNING rpi_key`,
+      [extra]
+    );
+
+    expect((await api().delete(`/api/journey-admin/images/${rpi_key}`).set(A)).status).toBe(200);
+    for (const f of extraFiles) expect(fs.existsSync(f)).toBe(false);
+    // the journey's other photo is untouched
+    expect(fs.readdirSync(path.join(dir, 'webp'))).toEqual([`${j.uuid}_1.webp`]);
+    expect(fs.readdirSync(path.join(dir, 'o'))).toEqual([`${j.uuid}_1.jpg`]);
+    expect((await api().delete(`/api/journey-admin/images/${rpi_key}`).set(A)).status).toBe(404);
   });
 
   it('delete removes the journey, its image and tracking rows, and its folder', async () => {
@@ -454,5 +482,29 @@ describe('jobs', () => {
     const res = await api().post('/api/admin/jobs/send-email').set(A).send({ to: 'someone@example.com', subject: 'Hello', message: '<p>Hi</p>' });
     expect(res.status).toBe(200);
     await waitForMail('someone@example.com', { subject: /Hello/ });
+  });
+});
+
+describe('[#13] a non-numeric id in the URL is a 400, not a 500', () => {
+  it('every admin router with a numeric id', async () => {
+    const calls = [
+      ['put', '/api/rocks/abc'],
+      ['put', '/api/rock-requests/abc'],
+      ['post', '/api/rock-requests/abc/undelete'],
+      ['get', '/api/journey-admin/abc/images'],
+      ['post', '/api/journey-admin/images/abc/toggle-show'],
+      ['get', '/api/albums/abc/photos'],
+      ['post', '/api/albums/photos/abc/toggle-show'],
+      ['put', '/api/music/abc/toggle-show'],
+      ['put', '/api/admin/honoring-aiden/entries/abc'],
+      ['put', '/api/users/abc'],
+      ['put', '/api/admin/accounts/abc'],
+      ['delete', '/api/admin/path-display-names/abc'],
+      ['delete', '/api/rock-requests/99999999999'], // too big for an integer
+    ];
+    for (const [method, url] of calls) {
+      const res = await api()[method](url).set(A).send({});
+      expect(res.status, `${method.toUpperCase()} ${url}`).toBe(400);
+    }
   });
 });

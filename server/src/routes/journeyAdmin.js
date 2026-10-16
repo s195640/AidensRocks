@@ -1,4 +1,5 @@
 const express = require('express');
+const intParams = require('../utils/intParams');
 const pool = require('../db/pool');
 const safeRollback = require('../utils/db/safeRollback');
 const NodeGeocoder = require("node-geocoder");
@@ -14,6 +15,7 @@ const isVideoFile = require('../utils/isVideoFile');
 const requireAdminAuth = require('../middleware/requireAdminAuth');
 
 const router = express.Router();
+intParams(router, 'rps_key', 'rpi_key');
 router.use(requireAdminAuth);
 
 // OPENCAGE_API_KEY comes from .env (it used to be hard-coded here, i.e. in
@@ -266,13 +268,50 @@ router.post("/images/:rpi_key/toggle-show", async (req, res) => {
   }
 });
 
-// DELETE /api/journey-admin/images/:rpi_key
+// DELETE /api/journey-admin/images/:rpi_key -- the row and its files
+// (original in o/, webp/, sm/ thumbnail, video/ mp4). It used to delete only
+// the row, leaving the files on disk forever.
 router.delete("/images/:rpi_key", async (req, res) => {
   const { rpi_key } = req.params;
 
   try {
-    const result = await pool.query("DELETE FROM journey_image WHERE rpi_key = $1", [rpi_key]);
+    const result = await pool.query(
+      `DELETE FROM journey_image ji
+       USING journey j
+       WHERE ji.rpi_key = $1 AND j.rps_key = ji.rps_key
+       RETURNING ji.rps_key, ji.current_name, j.rock_number, j.uuid`,
+      [rpi_key]
+    );
     if (result.rowCount === 0) return res.status(404).json({ error: "Image not found" });
+
+    // Files after the row is gone, best-effort (like the journey delete
+    // above): a file that can't be removed is logged, not a 500.
+    const { rps_key, current_name, rock_number, uuid } = result.rows[0];
+    const { rows: sameName } = await pool.query(
+      "SELECT 1 FROM journey_image WHERE rps_key = $1 AND current_name = $2",
+      [rps_key, current_name]
+    );
+    if (uuid && current_name && sameName.length === 0) {
+      const baseDir = path.join("media", "rocks", String(rock_number), uuid);
+      const oDir = path.join(baseDir, "o");
+      // The original keeps its upload extension, which isn't stored.
+      const originals = await fs.promises
+        .readdir(oDir)
+        .then((files) => files.filter((f) => path.parse(f).name === current_name))
+        .catch(() => []);
+      const files = [
+        ...originals.map((f) => path.join(oDir, f)),
+        path.join(baseDir, "webp", `${current_name}.webp`),
+        path.join(baseDir, "sm", `${current_name}.webp`),
+        path.join(baseDir, "video", `${current_name}.mp4`),
+      ];
+      for (const file of files) {
+        await fs.promises
+          .rm(file, { force: true })
+          .catch((fsErr) => console.error(`⚠️ Couldn't remove ${file}:`, fsErr.message));
+      }
+    }
+
     res.json({ success: true });
   } catch (err) {
     console.error("Failed to delete image:", err);

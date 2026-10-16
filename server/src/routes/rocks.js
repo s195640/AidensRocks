@@ -1,6 +1,8 @@
 //routes/rocks.js
 const express = require('express');
+const intParams = require('../utils/intParams');
 const router = express.Router();
+intParams(router, 'rc_key');
 
 // artist_keys arrives as a JSON string (multipart form). Returns the
 // distinct positive integer ids, or null when it isn't an array at all.

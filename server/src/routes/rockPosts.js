@@ -188,7 +188,11 @@ router.get('/locations/all', async (req, res) => {
   try {
     const result = await pool.query(
       `
-      SELECT rps_key, rock_number, latitude, longitude, date
+      SELECT rps_key, rock_number, latitude, longitude, date,
+             -- The map's year filter. Taken here rather than from the date
+             -- in the browser: that's a UTC-midnight timestamp, so a
+             -- January 1 stop showed as the previous year in US time zones.
+             EXTRACT(YEAR FROM date)::int AS year
       FROM journey
       WHERE rock_number > 0
         AND ${visibleJourneySql()}

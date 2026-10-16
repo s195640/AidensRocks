@@ -1,7 +1,7 @@
 const { rateLimit } = require('express-rate-limit');
 
 // Per-IP throttles for the unauthenticated forms that write to the DB and
-// send email (rock upload, rock request). Generous enough for a family
+// send email (rock upload, rock request), and for the public counters. Generous enough for a family
 // sharing one connection, low enough that a script can't flood the admin
 // inbox or the disk. PUBLIC_FORM_RATE_LIMIT_MAX exists only so the
 // regression suite can submit many times.
@@ -21,4 +21,9 @@ module.exports = {
   publicFormLimiter: make(20),
   // Chunks of large uploads -- many per submission.
   publicChunkLimiter: make(300),
+  // The anonymous counters (site visit, path hit, song play, Honoring
+  // Aiden view). A real visitor sends a handful; this only stops a script
+  // from inflating the numbers. Fire-and-forget on the client, so a 429
+  // is never seen by anyone.
+  publicCounterLimiter: make(120),
 };

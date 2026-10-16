@@ -9,6 +9,7 @@ const router = express.Router();
 const pool = require('../db/pool');
 const fetchEntryDetail = require('../utils/honoringAiden/fetchEntryDetail');
 const incrementEntryView = require('../utils/honoringAiden/incrementEntryView');
+const { publicCounterLimiter } = require('../middleware/publicFormLimiter');
 
 // -------------------- GET /api/honoring-aiden/entries --------------------
 // `id`/`parent_id` (NULL = top-level) are what let HonoringAidenPage.jsx
@@ -77,7 +78,7 @@ router.get('/entries/:slug', async (req, res) => {
 // this can't be used to inflate a draft or archived entry's count — never
 // called from /admin at all (see routes/honoringAidenAdmin.js), but this
 // guard holds regardless of caller.
-router.post('/entries/:slug/view', async (req, res) => {
+router.post('/entries/:slug/view', publicCounterLimiter, async (req, res) => {
   const { slug } = req.params;
 
   try {
