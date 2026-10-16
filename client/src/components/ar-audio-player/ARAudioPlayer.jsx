@@ -1,6 +1,6 @@
 import axios from "axios";
 import AudioPlayer from "react-modern-audio-player";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import CustomCloseComponent from "./CustomCloseComponent";
 import CustomLyricsComponent from "./CustomLyricsComponent";
 import PlayCountTracker from "./PlayCountTracker";
@@ -46,7 +46,23 @@ const cfullwidth = {
 };
 
 
+// react-modern-audio-player seeks on a progress-bar tap/drag with
+// `tapX / barWidth * audio.duration` and no guard, so a 0-width bar or a
+// non-finite duration (NaN/Infinity) throws "The provided double value is
+// non-finite" from the currentTime setter. Swallow those events before
+// React's root listener hands them to the library.
+const blockBadSeek = (e) => {
+  const bar = e.target.closest?.(".bar-progress-wrapper");
+  if (!bar) return;
+  const audio = e.currentTarget.querySelector("audio");
+  const duration = audio?.duration;
+  if (!Number.isFinite(duration) || duration <= 0 || bar.clientWidth <= 0) {
+    e.stopPropagation();
+  }
+};
+
 const ARAudioPlayer = () => {
+  const playerRef = useRef(null);
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -98,12 +114,25 @@ const ARAudioPlayer = () => {
     fetchSongs();
   }, []);
 
+  const playerMounted = !loading && showPlayer && songs.length > 0;
+  useEffect(() => {
+    const el = playerRef.current;
+    if (!el) return;
+    el.addEventListener("click", blockBadSeek, true);
+    el.addEventListener("mousemove", blockBadSeek, true);
+    return () => {
+      el.removeEventListener("click", blockBadSeek, true);
+      el.removeEventListener("mousemove", blockBadSeek, true);
+    };
+  }, [playerMounted]);
+
   if (loading) return null;
   if (!showPlayer) return null;
   if (songs.length <= 0) return null;
 
   return (
     <>
+      <div ref={playerRef} className={styles.playerGuard}>
       <AudioPlayer
         playList={songs}
         activeUI={{
@@ -134,6 +163,7 @@ const ARAudioPlayer = () => {
           <PlayCountTracker />
         </AudioPlayer.CustomComponent>
       </AudioPlayer>
+      </div>
 
       <Dialog
         isOpen={open}

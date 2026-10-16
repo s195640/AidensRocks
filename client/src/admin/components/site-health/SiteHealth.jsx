@@ -1,7 +1,7 @@
 // src/admin/components/site-health/SiteHealth.jsx
 import { Fragment, useCallback, useEffect, useState } from "react";
 import axios from "axios";
-import { FiRefreshCw, FiChevronDown, FiChevronRight } from "react-icons/fi";
+import { FiRefreshCw, FiChevronDown, FiChevronRight, FiCopy, FiCheck } from "react-icons/fi";
 import { formatLocalDateTime } from "../../../utils/localDate";
 import styles from "./SiteHealth.module.css";
 
@@ -50,6 +50,85 @@ function trailText(t) {
   const label = EVENT_LABELS[t.type] || TYPE_LABELS[t.type] || t.type;
   return `${label} ${t.target_id ? `${t.target_id} ` : ""}${t.path ? `(${t.path})` : ""}`.trim();
 }
+
+// Everything shown for one occurrence, as plain text for pasting into a bug
+// report or a chat.
+function occurrenceText(group, o) {
+  const lines = [
+    `${TYPE_LABELS[group.type] || group.type || "Error"}: ${group.title || o.message || ""}`.trim(),
+    `First seen ${formatLocalDateTime(group.first_seen)}${group.fixed_in_version ? ` · marked fixed in ${group.fixed_in_version}` : ""}`,
+    `Status: ${STATUS_LABELS[group.status] || group.status}`,
+    "",
+    [
+      formatLocalDateTime(o.created_at),
+      o.page || "—",
+      o.platform || "—",
+      `v${o.version || "?"}`,
+      o.account_email,
+      o.status && `${o.method} → ${o.status}`,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  ];
+  if (o.message) lines.push(o.message);
+  if (o.meta?.component_stack) lines.push("", "Component stack", o.meta.component_stack.trim());
+  if (o.stack) {
+    lines.push("", `Stack${o.source === "client" && !o.resolved ? " (minified: no source map for this version)" : ""}`, o.stack);
+  }
+  if (o.trail?.length > 0) {
+    lines.push("", "What they did just before");
+    o.trail.forEach((t) => lines.push(`${trailText(t)} ${formatLocalDateTime(t.created_at)}`));
+  }
+  return lines.join("\n");
+}
+
+// navigator.clipboard only exists on https/localhost, so fall back to a
+// hidden textarea for plain-http (LAN) admin sessions.
+async function copyText(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  const ok = document.execCommand("copy");
+  ta.remove();
+  if (!ok) throw new Error("copy failed");
+}
+
+const CopyButton = ({ getText }) => {
+  const [state, setState] = useState("idle");
+
+  useEffect(() => {
+    if (state === "idle") return;
+    const t = setTimeout(() => setState("idle"), 2000);
+    return () => clearTimeout(t);
+  }, [state]);
+
+  return (
+    <button
+      type="button"
+      className={styles.copyBtn}
+      title="Copy all details to the clipboard"
+      onClick={async () => {
+        try {
+          await copyText(getText());
+          setState("copied");
+        } catch {
+          setState("failed");
+        }
+      }}
+    >
+      {state === "copied" ? <FiCheck /> : <FiCopy />}
+      {state === "copied" ? "Copied" : state === "failed" ? "Copy failed" : "Copy"}
+    </button>
+  );
+};
 
 const Segmented = ({ options, value, onChange, label }) => (
   <div className={styles.segmented} role="group" aria-label={label}>
@@ -121,6 +200,7 @@ const ErrorDetail = ({ fingerprint, queryKey, onStatus }) => {
             <span>v{o.version || "?"}</span>
             {o.account_email && <span>{o.account_email}</span>}
             {o.status && <span>{o.method} → {o.status}</span>}
+            <CopyButton getText={() => occurrenceText(group, o)} />
           </div>
           {o.message && <div className={styles.occMessage}>{o.message}</div>}
           {o.meta?.component_stack && (

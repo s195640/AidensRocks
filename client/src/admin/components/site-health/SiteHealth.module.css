@@ -286,3 +286,21 @@
     transform: rotate(360deg);
   }
 }
+
+.copyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 2px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  color: #444;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.copyBtn:hover {
+  background: #f0f0f0;
+}
