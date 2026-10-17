@@ -8,6 +8,7 @@ import {
   JourneysPanel,
   MusicListeningPanel,
   OutboundPanel,
+  RocksCreatedPanel,
   ScrollPanel,
   SearchesPanel,
   TopListsPanel,
@@ -76,6 +77,7 @@ const ActivityAdmin = () => {
       <div className={styles.grid}>
         <VisitorsPanel {...panelProps} />
         <ActivityByDayPanel {...panelProps} />
+        <RocksCreatedPanel {...panelProps} />
         <FormsPanel {...panelProps} />
         <SearchesPanel {...panelProps} />
         <JourneysPanel {...panelProps} />

@@ -3,6 +3,7 @@
 // own /api/admin/activity/<panel>.
 import { useState } from "react";
 import {
+  COLORS,
   DayChart,
   PLATFORM_COLORS,
   Panel,
@@ -104,6 +105,88 @@ export function VisitorsPanel({ queryKey, refresh }) {
               { key: "platform", label: "Device" },
               { key: "visitors", label: "Visitors", num: true },
               { key: "share", label: "Share", num: true, render: (r) => ratio(r.visitors, d.totals.visitors) },
+            ]}
+          />
+        </>
+      )}
+    </Panel>
+  );
+}
+
+// --------------------------------------------------------------------- rocks
+const ROCK_VIEWS = [
+  { value: "rocks", label: "Rocks" },
+  { value: "artist", label: "By Artist" },
+];
+// The range's top artists get their own color; the rest share "Other
+// artists". Colors go by rank in the range, since artists aren't a fixed list.
+const TOP_ARTISTS = COLORS.length;
+const OTHER_ARTISTS_COLOR = "#9a9893";
+const NO_ARTIST_COLOR = "#cfccc6";
+
+export function RocksCreatedPanel({ queryKey, refresh }) {
+  const state = useActivityPanel("rocks", queryKey, refresh);
+  const [view, setView] = useState("rocks");
+  const d = state.data;
+
+  // "By Artist": each day's rocks stacked by artist. Recharts keys are
+  // a0, a1... (an artist's name could contain a "." it would read as a path).
+  const named = d ? d.artists.filter((a) => a.artist != null) : [];
+  const top = named.slice(0, TOP_ARTISTS);
+  const hasOthers = named.length > TOP_ARTISTS;
+  const hasNone = d ? d.artists.some((a) => a.artist == null) : false;
+  const artistSeries = [
+    ...top.map((a, i) => ({ key: `a${i}`, name: a.artist, color: COLORS[i] })),
+    ...(hasOthers ? [{ key: "others", name: "Other artists", color: OTHER_ARTISTS_COLOR }] : []),
+    ...(hasNone ? [{ key: "none", name: "No artist", color: NO_ARTIST_COLOR }] : []),
+  ];
+  const artistDays = d
+    ? d.days.map((day) => {
+        const row = { date: day.date, rocks: day.rocks, others: 0, none: day.artists[""] ?? 0 };
+        top.forEach((a, i) => (row[`a${i}`] = day.artists[a.artist] ?? 0));
+        for (const [name, n] of Object.entries(day.artists)) {
+          if (name && !top.some((a) => a.artist === name)) row.others += n;
+        }
+        return row;
+      })
+    : [];
+
+  return (
+    <Panel
+      title="Rocks Created"
+      note="Rocks added to the Rock Catalog. A rock by two artists counts for each in By Artist. Include admins / internal don't apply here."
+      state={state}
+      wide
+    >
+      {d && (
+        <>
+          <Tiles
+            items={[
+              { label: "Rocks created", value: count(d.totals.rocks) },
+              { label: "Artists", value: count(d.totals.artists) },
+            ]}
+          />
+          <div className={styles.chartControls}>
+            <Segmented options={ROCK_VIEWS} value={view} onChange={setView} label="Chart" />
+          </div>
+          {view === "rocks" ? (
+            <DayChart days={d.days} kind="stacked" series={[{ key: "rocks", name: "Rocks created" }]} />
+          ) : (
+            <DayChart
+              days={artistDays}
+              kind="stacked"
+              series={artistSeries}
+              total={{ key: "rocks", name: "Rocks created" }}
+            />
+          )}
+          <h3 className={styles.subTitle}>Rocks by artist</h3>
+          <Table
+            rows={d.artists}
+            rowKey={(r) => r.artist ?? ""}
+            columns={[
+              { key: "artist", label: "Artist", render: (r) => r.artist ?? "No artist" },
+              { key: "rocks", label: "Rocks", num: true },
+              { key: "share", label: "Share", num: true, render: (r) => ratio(r.rocks, d.totals.rocks) },
             ]}
           />
         </>

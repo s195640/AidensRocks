@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { FaInfoCircle } from "react-icons/fa";
+import { FaHandHoldingHeart, FaInfoCircle } from "react-icons/fa";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import authFetch from "../../../utils/authFetch";
 import SendRockRequestEmailDialog from "./SendRockRequestEmailDialog";
 import RockPopupByNumber from "../../../../components/rock-popup/RockPopupByNumber";
 import { formatLocalDateTime } from "../../../../utils/localDate";
 import { US_STATES } from "../../../../utils/usStates";
+import { PRIORITY_OPTIONS } from "../rock-requests-table/RockRequestsAdminTable";
 import styles from "./RockRequestsEditDialog.module.css";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -39,6 +40,9 @@ const buildFormData = (request) => ({
   no_rush: request?.no_rush || false,
   message: request?.message || "",
   shipped: request?.shipped || false,
+  ready_to_ship: request?.ready_to_ship || false,
+  priority: request?.priority || "normal",
+  bereaved_parent: request?.bereaved_parent || false,
   tracking_number: request?.tracking_number || "",
   comments: request?.comments || "",
   rock_numbers: request?.rock_numbers || "",
@@ -454,7 +458,20 @@ const RockRequestsEditDialog = ({
               </label>
             </div>
 
-            <label htmlFor="message">Message (from requester)</label>
+            <div className={styles.addressHeader}>
+              <label htmlFor="message">Message (from requester)</label>
+              <label htmlFor="bereaved_parent" className={styles.checkboxRow}>
+                <input
+                  type="checkbox"
+                  id="bereaved_parent"
+                  name="bereaved_parent"
+                  checked={formData.bereaved_parent}
+                  onChange={handleChange}
+                />
+                <FaHandHoldingHeart className={formData.bereaved_parent ? styles.bereavedOn : styles.bereavedOff} />
+                Bereaved parent
+              </label>
+            </div>
             <textarea
               id="message"
               name="message"
@@ -466,6 +483,27 @@ const RockRequestsEditDialog = ({
 
           <h3 className={styles.sectionHeading}>Admin</h3>
           <div className={styles.sectionBody}>
+            <label htmlFor="priority">Priority</label>
+            <div className={styles.inlineRow}>
+              <select id="priority" name="priority" value={formData.priority} onChange={handleChange}>
+                {PRIORITY_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <label htmlFor="ready_to_ship" className={styles.checkboxRow}>
+                <input
+                  type="checkbox"
+                  id="ready_to_ship"
+                  name="ready_to_ship"
+                  checked={formData.ready_to_ship}
+                  onChange={handleChange}
+                />
+                Ready to ship
+              </label>
+            </div>
+
             <label htmlFor="tracking_number">Tracking Number</label>
             <div className={styles.inlineRow}>
               <input

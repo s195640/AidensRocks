@@ -39,6 +39,10 @@
   .content {
     display: flex;
     flex-direction: column;
+    /* Panels match the screen width (not their content), so a wide table
+       scrolls inside its panel instead of widening the page and pushing
+       the navbar's ☰ off-screen. */
+    align-items: stretch;
   }
 
   /* Order: 1. Visitors by Day, 2. Site Health, 3. Music, 4. Honoring Aiden,

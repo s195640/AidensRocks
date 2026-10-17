@@ -2,9 +2,17 @@ import { useMemo, useState } from "react";
 import Table from "../../../../components/simple-components/table/Table";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import RockPopupByNumber from "../../../../components/rock-popup/RockPopupByNumber";
-import { FaEdit, FaTrash, FaTrashRestore } from "react-icons/fa";
+import { FaArrowDown, FaArrowUp, FaEdit, FaHandHoldingHeart, FaMinus, FaTrash, FaTrashRestore } from "react-icons/fa";
 import { formatLocalDateTime } from "../../../../utils/localDate";
 import styles from "./RockRequestsAdminTable.module.css";
+
+export const PRIORITY_OPTIONS = [
+  { value: "high", label: "High" },
+  { value: "normal", label: "Normal" },
+  { value: "low", label: "Low" },
+];
+const PRIORITY_RANK = { high: 0, normal: 1, low: 2 };
+const PRIORITY_ICONS = { high: FaArrowUp, normal: FaMinus, low: FaArrowDown };
 
 const RockRequestsAdminTable = ({
   requests,
@@ -12,6 +20,7 @@ const RockRequestsAdminTable = ({
   handleEdit,
   handleDelete,
   handleUndelete,
+  handleQuickUpdate,
   showDeleted,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -48,8 +57,21 @@ const RockRequestsAdminTable = ({
 
   const defaultSort = { key: "create_dt", direction: "desc" };
 
+  // The whole row is tinted by priority: blue High, red Low, Normal plain.
+  const priorityRowClass = (row) => styles[`row_${row.priority}`];
+  // Pending only: a request marked Ready is also bold.
+  const pendingRowClass = (row) =>
+    `${priorityRowClass(row) || ""} ${row.ready_to_ship ? styles.row_ready : ""}`;
+
   const columns = useMemo(
     () => [
+      {
+        key: "priority",
+        label: "Priority",
+        defaultWidth: 75,
+        sortable: true,
+        sortValue: (row) => PRIORITY_RANK[row.priority] ?? 1,
+      },
       { key: "name", label: "Name", sortable: true },
       { key: "email", label: "Email", sortable: true },
       { key: "address", label: "Address", sortable: true },
@@ -63,10 +85,18 @@ const RockRequestsAdminTable = ({
         // Soonest date first; "No rush" after every date, blanks last.
         sortValue: (row) => (row.no_rush ? "9999-12-31" : row.needed_by || "9999-12-32"),
       },
-      { key: "shipped", label: "Shipped", defaultWidth: 70, sortable: true },
+      { key: "ready_to_ship", label: "Ready", defaultWidth: 55, sortable: true },
       { key: "tracking_number", label: "Tracking #", sortable: true },
       { key: "rock_numbers", label: "Rock Numbers", sortable: true },
       { key: "comments", label: "Notes", sortable: true },
+      {
+        key: "bereaved_parent",
+        label: <FaHandHoldingHeart title="Bereaved parent" aria-label="Bereaved parent" />,
+        defaultWidth: 45,
+        sortable: true,
+        // Flagged first when sorted ascending.
+        sortValue: (row) => (row.bereaved_parent ? 0 : 1),
+      },
       {
         key: "message",
         label: "Message",
@@ -90,17 +120,60 @@ const RockRequestsAdminTable = ({
           "-"
         );
 
-      case "shipped":
+      // Priority and Ready save as soon as they change (no dialog).
+      // One icon per priority: the current one is lit in its color, the
+      // others are faded; one click sets it.
+      case "priority": {
+        const priority = request.priority || "normal";
         return (
-          <div style={{ display: "flex", justifyContent: "center" }}>
+          <div className={styles.priorityIcons} role="group" aria-label="Priority">
+            {PRIORITY_OPTIONS.map(({ value, label }) => {
+              const Icon = PRIORITY_ICONS[value];
+              const active = value === priority;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  className={`${styles.priorityButton} ${active ? styles[`priority_${value}`] : ""}`}
+                  disabled={request.deleted}
+                  aria-pressed={active}
+                  title={`${label} priority`}
+                  onClick={() => !active && handleQuickUpdate(request.rq_key, { priority: value })}
+                >
+                  <Icon size={12} />
+                </button>
+              );
+            })}
+          </div>
+        );
+      }
+
+      case "ready_to_ship":
+        return (
+          <div className={styles.checkboxCell}>
             <input
               type="checkbox"
-              checked={!!request.shipped}
-              disabled
-              readOnly
-              className={styles.checkboxCell}
+              checked={!!request.ready_to_ship}
+              disabled={request.deleted}
+              onChange={(e) => handleQuickUpdate(request.rq_key, { ready_to_ship: e.target.checked })}
+              aria-label="Ready to ship"
             />
           </div>
+        );
+
+      // A checkbox drawn as the hand-holding-heart icon: lit when set.
+      case "bereaved_parent":
+        return (
+          <button
+            type="button"
+            className={`${styles.bereavedButton} ${request.bereaved_parent ? styles.bereavedOn : ""}`}
+            disabled={request.deleted}
+            aria-pressed={!!request.bereaved_parent}
+            title={request.bereaved_parent ? "Bereaved parent" : "Mark as bereaved parent"}
+            onClick={() => handleQuickUpdate(request.rq_key, { bereaved_parent: !request.bereaved_parent })}
+          >
+            <FaHandHoldingHeart size={16} />
+          </button>
         );
 
       case "needed_by":
@@ -204,6 +277,7 @@ const RockRequestsAdminTable = ({
           fontSize={"0.75rem"}
           defaultSort={defaultSort}
           loading={loading}
+          rowClassName={pendingRowClass}
         />
       )}
 
@@ -218,6 +292,7 @@ const RockRequestsAdminTable = ({
           fontSize={"0.75rem"}
           defaultSort={defaultSort}
           loading={loading}
+          rowClassName={priorityRowClass}
         />
       )}
 
@@ -234,6 +309,7 @@ const RockRequestsAdminTable = ({
               fontSize={"0.75rem"}
               defaultSort={defaultSort}
               loading={loading}
+              rowClassName={priorityRowClass}
             />
           )}
         </>

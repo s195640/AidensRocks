@@ -222,6 +222,60 @@ describe('rock requests (admin)', () => {
     expect((await api().post('/api/rock-requests/1/undelete').set(A)).status).toBe(200);
   });
 
+  it('ready to ship / priority: default, in-place PATCH, and edit dialog PUT', async () => {
+    const listed = async () => (await api().get('/api/rock-requests').set(A)).body.find((r) => r.rq_key === 1);
+    expect(await listed()).toMatchObject({ ready_to_ship: false, priority: 'normal', bereaved_parent: false });
+
+    // PATCH changes only the fields sent
+    expect((await api().patch('/api/rock-requests/1').set(A).send({ priority: 'high' })).body)
+      .toEqual({ rq_key: 1, ready_to_ship: false, priority: 'high', bereaved_parent: false });
+    expect((await api().patch('/api/rock-requests/1').set(A).send({ ready_to_ship: true })).status).toBe(200);
+    expect(await listed()).toMatchObject({ ready_to_ship: true, priority: 'high' });
+    expect((await api().patch('/api/rock-requests/1').set(A).send({ priority: 'urgent' })).status).toBe(400);
+    expect((await api().patch('/api/rock-requests/1').set(A).send({ ready_to_ship: 'yes' })).status).toBe(400);
+    expect((await api().patch('/api/rock-requests/1').set(A).send({ bereaved_parent: true })).status).toBe(200);
+    expect(await listed()).toMatchObject({ ready_to_ship: true, priority: 'high', bereaved_parent: true });
+    expect((await api().patch('/api/rock-requests/1').set(A).send({ bereaved_parent: 1 })).status).toBe(400);
+    expect((await api().patch('/api/rock-requests/1').set(A).send({})).status).toBe(400);
+    expect((await api().patch('/api/rock-requests/999999').set(A).send({ priority: 'low' })).status).toBe(404);
+
+    const base = { name: 'Requester', email: 'requester@example.com', address: '1 Main St', rocks_requested: 2 };
+    expect((await api().put('/api/rock-requests/1').set(A).send({ ...base, ready_to_ship: false, priority: 'low' })).status).toBe(200);
+    expect(await listed()).toMatchObject({ ready_to_ship: false, priority: 'low', bereaved_parent: false });
+    expect((await api().put('/api/rock-requests/1').set(A).send({ ...base, bereaved_parent: true })).status).toBe(200);
+    expect(await listed()).toMatchObject({ bereaved_parent: true });
+    expect((await api().put('/api/rock-requests/1').set(A).send({ ...base, priority: 'nope' })).status).toBe(400);
+
+    const created = await api().post('/api/rock-requests/admin-create').set(A)
+      .send({ name: 'Prio', rocks_requested: 1, priority: 'high', bereaved_parent: true });
+    expect((await sql('SELECT ready_to_ship, priority, bereaved_parent FROM rock_requests WHERE rq_key = $1', [created.body.rq_key]))[0])
+      .toEqual({ ready_to_ship: false, priority: 'high', bereaved_parent: true });
+
+    await api().patch('/api/rock-requests/1').set(A).send({ priority: 'normal', bereaved_parent: false });
+  });
+
+  it('public requests start with a priority from their message and need-by date', async () => {
+    const inDays = (days) => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() + days);
+      return d.toISOString().slice(0, 10);
+    };
+    const submit = async (extra) => {
+      const res = await api().post('/api/rock-requests')
+        .send({ name: 'Prio', email: 'prio@example.com', address: '1 Road', rocksRequested: 1, ...extra });
+      expect(res.status).toBe(201);
+      return (await sql('SELECT priority FROM rock_requests WHERE rq_key = $1', [res.body.rq_key]))[0].priority;
+    };
+    const message = 'For his birthday trip';
+    expect(await submit({ message, neededBy: inDays(30) })).toBe('high');
+    expect(await submit({ message, neededBy: inDays(200) })).toBe('normal'); // more than 3 months out
+    expect(await submit({ message, noRush: true })).toBe('normal');
+    expect(await submit({ neededBy: inDays(30) })).toBe('normal');
+    expect(await submit({ message: 'thanks', neededBy: inDays(30) })).toBe('normal'); // under 10 characters
+    expect(await submit({ noRush: true })).toBe('low');
+    expect(await submit({ message: 'hi', noRush: true })).toBe('low');
+  });
+
   it('edits need-by / no rush, and lists the date as plain YYYY-MM-DD', async () => {
     const base = { name: 'Requester', email: 'requester@example.com', address: '1 Main St', rocks_requested: 2 };
     expect((await api().put('/api/rock-requests/1').set(A).send({ ...base, needed_by: '2027-03-15' })).status).toBe(200);

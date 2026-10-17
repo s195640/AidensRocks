@@ -162,6 +162,28 @@ describe('Activity page panels', () => {
     expect(body.referrers.map((r) => r.source)).toContain('facebook.com');
   });
 
+  it('rocks created: per day and per artist, a two-artist rock counting for each', async () => {
+    // A rock dated 3 days ago (UTC), by Ashley and Grandpa Joe, and one with no artist.
+    const [{ day }] = await sql(`SELECT to_char((NOW() - INTERVAL '3 days') AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS day`);
+    const [{ rc_key: both }] = await sql(
+      `INSERT INTO catalog (rock_number, create_dt) VALUES (8191, NOW() - INTERVAL '3 days') RETURNING rc_key`);
+    await sql('INSERT INTO artist_link (ra_key, rc_key) VALUES (1, $1), (2, $1)', [both]);
+    await sql(`INSERT INTO catalog (rock_number, create_dt) VALUES (8192, NOW() - INTERVAL '3 days')`);
+    // Outside the 7-day range: not counted.
+    await sql(`INSERT INTO catalog (rock_number, create_dt) VALUES (8193, NOW() - INTERVAL '30 days')`);
+
+    const { body, status } = await get('rocks');
+    expect(status).toBe(200);
+    expect(body.days).toHaveLength(7); // the last 7 days, today included
+    const d = body.days.find((x) => x.date === day);
+    expect(d).toEqual({ date: day, rocks: 2, artists: { Ashley: 1, 'Grandpa Joe': 1, '': 1 } });
+    expect(body.totals.rocks).toBe(body.days.reduce((s, x) => s + x.rocks, 0));
+    expect(body.artists.map((a) => a.artist)).toEqual(expect.arrayContaining(['Ashley', 'Grandpa Joe', null]));
+
+    const all = (await get('rocks', { range: 'all', tz: 'UTC' })).body;
+    expect(all.totals.rocks).toBeGreaterThan(body.totals.rocks);
+  });
+
   it("today at a glance, and filters that leave this visit out", async () => {
     const glance = (await api().get('/api/admin/activity/glance').set(A).query({ tz: 'UTC' })).body;
     expect(glance.visitors).toBeGreaterThanOrEqual(1);

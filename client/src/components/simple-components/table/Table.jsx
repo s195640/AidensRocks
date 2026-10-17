@@ -11,6 +11,8 @@ const Table = ({
   fontSize = "0.85rem",
   defaultSort = { key: null, direction: "asc" },
   loading = false,
+  // Optional (row) => extra class for that row's <tr>, e.g. to tint it.
+  rowClassName,
 }) => {
   const [sortConfig, setSortConfig] = useState(defaultSort);
   const [tableData, setTableData] = useState(data);
@@ -58,7 +60,7 @@ const Table = ({
         <tr
           key={row.id || idx}
           ref={provided.innerRef}
-          className={`${idx % 2 === 0 ? styles.rowEven : styles.rowOdd}`}
+          className={`${idx % 2 === 0 ? styles.rowEven : styles.rowOdd} ${rowClassName?.(row) || ""}`}
         >
           {columns.map((col) => {
             const isFlexible = col.defaultWidth == null;
@@ -160,7 +162,7 @@ const Table = ({
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
                       className={`${idx % 2 === 0 ? styles.rowEven : styles.rowOdd} ${snapshot.isDragging ? styles.dragging : ""
-                        }`}
+                        } ${rowClassName?.(row) || ""}`}
                     >
                       {columns.map((col) => {
                         const widthStyle = col.defaultWidth

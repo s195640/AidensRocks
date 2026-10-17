@@ -54,6 +54,14 @@ const NEEDED_BY_TEXT = "to_char(needed_by, 'YYYY-MM-DD') AS needed_by";
 
 const str = (v) => (v == null ? '' : String(v)).trim();
 
+// Admin-only fulfillment priority. Blank means the default, 'normal'.
+const PRIORITIES = ['high', 'normal', 'low'];
+function parsePriority(value) {
+  const priority = str(value).toLowerCase() || 'normal';
+  if (!PRIORITIES.includes(priority)) throw badRequest('Priority must be high, normal or low.');
+  return priority;
+}
+
 const ZIP_PATTERN = /^\d{5}(-\d{4})?$/;
 
 const US_COUNTRY = 'USA';
@@ -149,6 +157,22 @@ function buildOriginalRequest({ source, name, email, addr, rocksRequested, neede
   return lines.join('\n');
 }
 
+// Starting priority for a request from the public form (admin-created ones
+// start Normal unless the admin picks otherwise; existing rows are never
+// re-scored). A "real" message is 10+ characters.
+//   message + need-by date within 3 months -> high
+//   no message + a date                    -> normal
+//   no message + no rush                   -> low
+//   message + no rush / a date further out -> normal
+function initialPriority({ message, neededBy }) {
+  const hasMessage = message.length >= 10;
+  if (!hasMessage) return neededBy ? 'normal' : 'low';
+  if (!neededBy) return 'normal';
+  const soon = new Date();
+  soon.setUTCMonth(soon.getUTCMonth() + 3);
+  return neededBy <= soon.toISOString().slice(0, 10) ? 'high' : 'normal';
+}
+
 // The public "Request A Rock" insert. Everything but the message is
 // required here (the admin dialog is looser -- see parseAdminFields). Throws
 // an Error with a `.status` (400) for bad input; the caller translates that
@@ -194,8 +218,8 @@ async function insertRockRequest(body) {
   const { rows } = await pool.query(
     `INSERT INTO rock_requests
        (name, email, address, us_address, street, city, state, postal_code, country,
-        rocks_requested, needed_by, no_rush, message, original_request)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        rocks_requested, needed_by, no_rush, message, original_request, priority)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
      RETURNING rq_key`,
     [
       trimmedName,
@@ -212,6 +236,7 @@ async function insertRockRequest(body) {
       needed.noRush,
       trimmedMessage || null,
       originalRequest,
+      initialPriority({ message: trimmedMessage, neededBy: needed.neededBy }),
     ]
   );
 
@@ -289,7 +314,7 @@ router.get('/', async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT rq_key, name, email, address, us_address, street, city, state, postal_code, country,
-              rocks_requested, ${NEEDED_BY_TEXT}, no_rush, shipped,
+              rocks_requested, ${NEEDED_BY_TEXT}, no_rush, shipped, ready_to_ship, priority, bereaved_parent,
               tracking_number, comments, rock_numbers, message, original_request,
               create_dt, update_dt, sent_dt, email_dt, deleted, deleted_dt
        FROM rock_requests
@@ -376,6 +401,9 @@ function parseAdminFields(body) {
     message: message || null,
     comments: comments || null,
     shipped: !!body.shipped,
+    readyToShip: !!body.ready_to_ship,
+    priority: parsePriority(body.priority),
+    bereavedParent: !!body.bereaved_parent,
     trackingNumber: trackingNumber || null,
     rockNumbersRaw: str(body.rock_numbers) || null,
     rockNumbers: parseRockNumbers(body.rock_numbers),
@@ -459,10 +487,11 @@ router.post('/admin-create', async (req, res) => {
       `INSERT INTO rock_requests
          (name, email, address, rocks_requested, needed_by, no_rush, message,
           comments, shipped, tracking_number, rock_numbers, sent_dt,
-          us_address, street, city, state, postal_code, country, original_request)
+          us_address, street, city, state, postal_code, country, original_request,
+          ready_to_ship, priority, bereaved_parent)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
                CASE WHEN $9 THEN CURRENT_TIMESTAMP END,
-               $12, $13, $14, $15, $16, $17, $18)
+               $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
        RETURNING rq_key`,
       [
         fields.name,
@@ -483,6 +512,9 @@ router.post('/admin-create', async (req, res) => {
         fields.addr.postalCode,
         fields.addr.country,
         originalRequest,
+        fields.readyToShip,
+        fields.priority,
+        fields.bereavedParent,
       ]
     );
     const rqKey = rows[0].rq_key;
@@ -554,6 +586,9 @@ router.put('/:rq_key', async (req, res) => {
            state = $17,
            postal_code = $18,
            country = $19,
+           ready_to_ship = $20,
+           priority = $21,
+           bereaved_parent = $22,
            update_dt = CURRENT_TIMESTAMP,
            sent_dt = CASE WHEN $9 THEN CURRENT_TIMESTAMP ELSE sent_dt END
        WHERE rq_key = $10
@@ -578,6 +613,9 @@ router.put('/:rq_key', async (req, res) => {
         fields.addr.state,
         fields.addr.postalCode,
         fields.addr.country,
+        fields.readyToShip,
+        fields.priority,
+        fields.bereavedParent,
       ]
     );
 
@@ -591,6 +629,46 @@ router.put('/:rq_key', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   } finally {
     if (client) client.release();
+  }
+});
+
+// PATCH /api/rock-requests/:rq_key - the table's in-place edits: sets only
+// the fields sent (ready_to_ship, priority, bereaved_parent), leaving the
+// rest alone.
+router.patch('/:rq_key', async (req, res) => {
+  const { rq_key } = req.params;
+  const sets = [];
+  const values = [];
+  try {
+    for (const flag of ['ready_to_ship', 'bereaved_parent']) {
+      if (req.body[flag] === undefined) continue;
+      if (typeof req.body[flag] !== 'boolean') throw badRequest(`${flag} must be true or false.`);
+      values.push(req.body[flag]);
+      sets.push(`${flag} = $${values.length}`);
+    }
+    if (req.body.priority !== undefined) {
+      values.push(parsePriority(req.body.priority));
+      sets.push(`priority = $${values.length}`);
+    }
+    if (sets.length === 0) throw badRequest('Nothing to update.');
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+
+  try {
+    values.push(rq_key);
+    const { rows } = await pool.query(
+      `UPDATE rock_requests
+       SET ${sets.join(', ')}, update_dt = CURRENT_TIMESTAMP
+       WHERE rq_key = $${values.length}
+       RETURNING rq_key, ready_to_ship, priority, bereaved_parent`,
+      values
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Request not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(`PATCH /api/rock-requests/${rq_key} error:`, err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

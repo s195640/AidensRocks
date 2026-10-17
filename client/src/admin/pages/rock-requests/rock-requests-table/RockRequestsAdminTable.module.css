@@ -51,6 +51,111 @@
   align-items: center;
 }
 
+/* Priority: three icon buttons (up High, dash Normal, down Low). The
+   current one is filled in its color (blue / gray / red); the rest are faded. */
+.priorityIcons {
+  display: flex;
+  gap: 3px;
+}
+
+.priorityButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: none;
+  color: #aaa;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.priorityButton:hover:not(:disabled) {
+  color: #555;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.priorityButton:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.priorityButton.priority_high,
+.priorityButton.priority_high:hover:not(:disabled) {
+  background: #1c6dc2;
+  border-color: #1c6dc2;
+  color: #fff;
+}
+
+.priorityButton.priority_normal,
+.priorityButton.priority_normal:hover:not(:disabled) {
+  background: #eee;
+  border-color: #d5d5d5;
+  color: #555;
+}
+
+.priorityButton.priority_low,
+.priorityButton.priority_low:hover:not(:disabled) {
+  background: #c62828;
+  border-color: #c62828;
+  color: #fff;
+}
+
+/* Bereaved parent: the hand-holding-heart icon as a checkbox, faded when
+   off and filled rose when on. */
+.bereavedButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  padding: 2px;
+  border: none;
+  background: none;
+  color: #c8c8c8;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.bereavedButton:hover:not(:disabled) {
+  color: #999;
+}
+
+.bereavedButton.bereavedOn,
+.bereavedButton.bereavedOn:hover:not(:disabled) {
+  color: #b5476f;
+}
+
+.bereavedButton:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* Whole-row tint by priority (Table's rowClassName). `tr.x td` outranks the
+   Table's even/odd striping; the :hover rule outranks its hover color. */
+tr.row_high td {
+  background-color: #e3effb;
+}
+
+tr.row_high:hover td {
+  background-color: #d2e5f8;
+}
+
+tr.row_low td {
+  background-color: #fde9e9;
+}
+
+tr.row_low:hover td {
+  background-color: #fad6d6;
+}
+
+/* Pending table: a request marked Ready to ship is bold. */
+tr.row_ready td {
+  font-weight: 700;
+}
+
 .actionsWrapper {
   display: flex;
   gap: 6px;

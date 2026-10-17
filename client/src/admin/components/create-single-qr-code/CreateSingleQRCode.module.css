@@ -156,10 +156,14 @@
 }
 
 /* Preview column: not gated behind a button -- always rendered, so it's
-   visible at a glance while adjusting the sliders. */
+   visible at a glance while adjusting the sliders. The preview is drawn
+   at print size (inches), so on a phone it scrolls sideways inside this
+   column instead of widening the page (which pushes the navbar off-screen). */
 .previewColumn {
   flex: 0 0 auto;
   min-width: 260px;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .previewTitle {

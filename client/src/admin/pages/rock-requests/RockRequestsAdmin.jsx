@@ -64,6 +64,28 @@ const RockRequestsAdmin = () => {
     }
   };
 
+  // The table's in-place Priority / Ready / Bereaved edits: show the change at once,
+  // then put the row back if the save fails.
+  const handleQuickUpdate = async (rq_key, changes) => {
+    const before = requests.find((r) => r.rq_key === rq_key);
+    const applyToRow = (patch) =>
+      setRequests((rows) => rows.map((r) => (r.rq_key === rq_key ? { ...r, ...patch } : r)));
+    applyToRow(changes);
+    try {
+      const res = await authFetch(`/api/rock-requests/${rq_key}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(changes),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to update request.");
+    } catch (error) {
+      console.error(error);
+      applyToRow(Object.fromEntries(Object.keys(changes).map((key) => [key, before[key]])));
+      alert(error.message || "Failed to update request.");
+    }
+  };
+
   const handleUndelete = async (rq_key) => {
     try {
       const res = await authFetch(`/api/rock-requests/${rq_key}/undelete`, { method: "POST" });
@@ -99,6 +121,7 @@ const RockRequestsAdmin = () => {
         handleEdit={handleEdit}
         handleDelete={handleDelete}
         handleUndelete={handleUndelete}
+        handleQuickUpdate={handleQuickUpdate}
         showDeleted={showDeleted}
       />
 

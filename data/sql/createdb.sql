@@ -975,6 +975,10 @@ CREATE TABLE IF NOT EXISTS public.rock_requests (
     needed_by        date,
     no_rush          boolean NOT NULL DEFAULT false,
     shipped          boolean NOT NULL DEFAULT false,
+    ready_to_ship    boolean NOT NULL DEFAULT false,
+    priority         character varying(10) NOT NULL DEFAULT 'normal'
+                     CHECK (priority IN ('high', 'normal', 'low')),
+    bereaved_parent  boolean NOT NULL DEFAULT false,
     tracking_number  character varying(255),
     comments         text,
     rock_numbers     text,

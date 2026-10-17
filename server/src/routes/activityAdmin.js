@@ -429,6 +429,47 @@ router.get(
   })
 );
 
+// --------------------------------------------------------------------- rocks
+// Rocks added to the catalog per day (catalog.create_dt), and per artist
+// (through artist_link; a rock by two artists counts once for each, so the
+// artists can add up to more than the day's rocks). Not site activity, so
+// includeAdmins / includeInternal don't apply -- only range and tz.
+router.get(
+  '/rocks',
+  panel('rocks created', async (f) => {
+    const { rows } = await db.query(
+      `WITH r AS (
+         SELECT rc_key, to_char((create_dt AT TIME ZONE $2)::date, 'YYYY-MM-DD') AS day
+           FROM catalog
+          WHERE $1::timestamptz IS NULL OR create_dt >= $1),
+       ra AS (
+         SELECT r.day, r.rc_key, a.display_name AS artist
+           FROM r LEFT JOIN artist_link l ON l.rc_key = r.rc_key
+                  LEFT JOIN artist a ON a.ra_key = l.ra_key)
+       SELECT
+         (SELECT COALESCE(json_agg(d), '[]') FROM (
+            SELECT day, COUNT(*)::int AS rocks FROM r GROUP BY day) d) AS days,
+         (SELECT COALESCE(json_agg(x), '[]') FROM (
+            SELECT day, artist, COUNT(DISTINCT rc_key)::int AS rocks FROM ra GROUP BY 1, 2) x) AS day_artists,
+         (SELECT COALESCE(json_agg(t ORDER BY t.rocks DESC, t.artist NULLS LAST), '[]') FROM (
+            SELECT artist, COUNT(DISTINCT rc_key)::int AS rocks FROM ra GROUP BY 1) t) AS artists,
+         (SELECT COUNT(*)::int FROM r) AS rocks`,
+      [f.params[0], f.tz]
+    );
+    const { days, day_artists: dayArtists, artists, rocks } = rows[0];
+    // Per day { date, rocks, artists: { "<name>": n } }; null artist = none.
+    const byDay = new Map(days.map((d) => [d.day, { ...d, artists: {} }]));
+    for (const { day, artist, rocks: n } of dayArtists) {
+      byDay.get(day).artists[artist ?? ''] = n;
+    }
+    return {
+      days: fillDays([...byDay.values()], f, { rocks: 0, artists: {} }),
+      artists: artists.map((a) => ({ artist: a.artist, rocks: a.rocks })),
+      totals: { rocks, artists: artists.filter((a) => a.artist != null).length },
+    };
+  })
+);
+
 // -------------------------------------------------------------------- glance
 // The Dashboard's "Today" row: today (in the viewer's timezone) so far,
 // admins and internal traffic left out, plus error kinds still marked New.

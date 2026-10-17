@@ -66,7 +66,7 @@ const ROUTES = [
   ['PUT', `/api/admin/site-health/errors/${X}`, 'admin'],
   ['GET', '/api/admin/site-health/slow', 'admin'],
   ['GET', '/api/admin/site-health/speed', 'admin'],
-  ...['visitors', 'activity', 'forms', 'albums', 'searches', 'journeys', 'music', 'outbound', 'scroll', 'top', 'glance'].map(
+  ...['visitors', 'activity', 'forms', 'albums', 'searches', 'journeys', 'music', 'outbound', 'scroll', 'top', 'rocks', 'glance'].map(
     (panel) => ['GET', `/api/admin/activity/${panel}`, 'admin']
   ),
   ['GET', '/api/unmatched-path', 'admin'],
@@ -83,6 +83,7 @@ const ROUTES = [
   ['GET', '/api/rock-requests', 'admin'],
   ['POST', '/api/rock-requests/admin-create', 'admin'],
   ['PUT', `/api/rock-requests/${X}`, 'admin'],
+  ['PATCH', `/api/rock-requests/${X}`, 'admin'],
   ['DELETE', `/api/rock-requests/${X}`, 'admin'],
   ['POST', `/api/rock-requests/${X}/undelete`, 'admin'],
   ['POST', `/api/rock-requests/${X}/send-email`, 'admin'],

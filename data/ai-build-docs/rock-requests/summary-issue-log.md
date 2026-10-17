@@ -363,3 +363,70 @@ Feature-scoped log, separate from other features' logs under `data/ai-build-docs
 **Deviations from plan:** None.
 **Issues/gotchas encountered:** None.
 **VERSION:** `0.12.8` → `0.12.9` (patch).
+
+## Phase 33 — Ready to ship + priority, editable from the table (2026-10-17)
+**Status:** Complete (migration not yet applied to any live database)
+**Files changed:** `data/sql/migrations/add_ready_to_ship_and_priority_to_rock_requests.sql` (new), `data/sql/createdb.sql`, `server/src/routes/rockRequests.js`, `server/tests/api/admin-crud.test.mjs`, `server/tests/api/auth-matrix.test.mjs`, `client/src/admin/pages/rock-requests/RockRequestsAdmin.jsx`, `client/src/admin/pages/rock-requests/rock-requests-table/RockRequestsAdminTable.jsx` (+ `.module.css`), `client/src/admin/pages/rock-requests/rock-requests-edit-dlg/RockRequestsEditDialog.jsx`, `VERSION`
+**Summary:**
+- **Data model (requested by the user).** New `rock_requests.ready_to_ship` (boolean, default false) and `rock_requests.priority` (`high` / `normal` / `low`, default `normal`, CHECK constraint). Every request, existing or new, starts at Normal.
+- **Table.** The Shipped column is gone (the Pending / Shipped split already shows it). New first column **Priority**: a dropdown drawn as a colored pill (red High, gray Normal, blue Low), sortable High → Low. New **Ready** checkbox column after Needed By. Both save immediately via the new `PATCH /api/rock-requests/:rq_key` (only the fields sent; 400 on a bad value or empty body, 404 unknown). The row updates at once and reverts with an alert if the save fails. Disabled on deleted rows.
+- **Edit dialog.** Admin section starts with a Priority dropdown and a "Ready to ship" checkbox; saved by the normal Save (PUT) and accepted by admin Create.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** PUT treats a missing `priority` as Normal and a missing `ready_to_ship` as false (it replaces every field, like the rest of the dialog's fields). The dialog always sends both.
+**Open questions for human review:**
+1. Marking a request Shipped leaves Ready to ship as it was. Should shipping clear it?
+2. The table's default sort is still newest first. Sort by Priority (click the header) to bring High to the top.
+**Deploy:** run the migration on the provider node, then the subscriber node (pglogical doesn't replicate DDL). No sequenceOffset run needed.
+**VERSION:** `0.16.5` → `0.16.6` (patch).
+
+## Phase 34 — Priority as one-click icons in the table (2026-10-17)
+**Status:** Complete
+**Files changed:** `client/src/admin/pages/rock-requests/rock-requests-table/RockRequestsAdminTable.jsx` (+ `.module.css`), `VERSION`
+**Summary:** The table's Priority dropdown (two clicks) became three small round icon buttons: up arrow High, dash Normal, down arrow Low. The current one is filled in its color (red / gray / blue), the others are faded gray; one click saves the new priority (same `PATCH`). The edit dialog keeps its dropdown.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** None.
+**VERSION:** `0.16.6` → `0.16.7` (patch).
+
+## Phase 35 — Whole row tinted by priority; High blue, Low red (2026-10-17)
+**Status:** Complete
+**Files changed:** `client/src/components/simple-components/table/Table.jsx`, `client/src/admin/pages/rock-requests/rock-requests-table/RockRequestsAdminTable.jsx` (+ `.module.css`), `VERSION`
+**Summary:**
+- Rows are tinted by priority: light blue for High, light red for Low, Normal keeps the usual striping. A slightly darker shade shows on hover.
+- Colors swapped per the user: High is now blue, Low red. The selected priority icon is now a solid circle (white icon on blue / gray / red) so it stands out against the tinted row.
+- The shared `Table` gained an optional `rowClassName(row)` prop (both the plain and drag-to-reorder paths). Other tables don't pass it and are unchanged.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** The tint uses `tr.row_x td` / `tr.row_x:hover td` so it outranks the Table's own `.rowEven td` striping and `tr:hover td` hover color regardless of stylesheet order.
+**VERSION:** `0.16.7` → `0.16.8` (patch).
+
+## Phase 36 — Starting priority for new public requests (2026-10-17)
+**Status:** Complete
+**Files changed:** `server/src/routes/rockRequests.js`, `server/tests/api/admin-crud.test.mjs`, `VERSION`
+**Summary:** A request from the public Request A Rock form gets its starting priority from `initialPriority()`. A message counts only at 10+ characters (trimmed).
+- Message + need-by date within the next 3 months → **High**
+- No message + a date → **Normal**
+- No message + No rush → **Low**
+- Message + No rush, or a date more than 3 months out → **Normal** (not specified; defaulted)
+Existing requests are not re-scored (per the user). Admin-created requests still start Normal unless the admin picks a priority.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** "Within 3 months" compares against UTC today + 3 calendar months. The public form already rejects past dates.
+**VERSION:** `0.16.8` → `0.16.9` (patch).
+
+## Phase 37 — Pending table: Ready rows are bold (2026-10-17)
+**Status:** Complete
+**Files changed:** `client/src/admin/pages/rock-requests/rock-requests-table/RockRequestsAdminTable.jsx` (+ `.module.css`), `VERSION`
+**Summary:** In the Pending table only, a request with Ready checked shows its whole row in bold (on top of its priority tint). Shipped and Deleted tables are unchanged.
+**Deviations from plan:** None.
+**Issues/gotchas encountered:** None.
+**VERSION:** `0.16.9` → `0.16.10` (patch).
+
+## Phase 38 — Bereaved parent flag (2026-10-17)
+**Status:** Complete (migration not yet applied to any live database)
+**Files changed:** `data/sql/migrations/add_bereaved_parent_to_rock_requests.sql` (new), `data/sql/createdb.sql`, `server/src/routes/rockRequests.js`, `server/tests/api/admin-crud.test.mjs`, `client/src/admin/pages/rock-requests/RockRequestsAdmin.jsx`, `client/src/admin/pages/rock-requests/rock-requests-table/RockRequestsAdminTable.jsx` (+ `.module.css`), `client/src/admin/pages/rock-requests/rock-requests-edit-dlg/RockRequestsEditDialog.jsx` (+ `.module.css`), `VERSION`
+**Summary:**
+- **Data model (requested by the user).** New `rock_requests.bereaved_parent` boolean, default false. Admin-set only; the public form never sets it.
+- **Table.** New column just before Message, headed by a hand-holding-heart icon (`FaHandHoldingHeart`). Each cell is that icon working as a checkbox: faded gray when off, rose when on; one click toggles and saves through `PATCH` (which now also takes `bereaved_parent`). Sortable, flagged first. Disabled on deleted rows. A failed save now restores exactly the fields that were changed.
+- **Edit dialog.** A "Bereaved parent" checkbox with the same icon on the right of the Message label. Saved by Save (PUT) and admin Create.
+**Deviations from plan:** The user offered a hug or a broken-heart icon; went with the hand holding a heart as the gentler of the two. A one-word swap to `FaHeartBroken` if preferred.
+**Issues/gotchas encountered:** None.
+**Deploy:** run the migration on the provider node, then the subscriber node.
+**VERSION:** `0.16.11` → `0.16.12` (patch).

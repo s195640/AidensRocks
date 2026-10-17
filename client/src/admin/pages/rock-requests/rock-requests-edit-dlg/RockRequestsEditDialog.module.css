@@ -177,6 +177,14 @@
   gap: 1rem;
 }
 
+.bereavedOn {
+  color: #b5476f;
+}
+
+.bereavedOff {
+  color: #bbb;
+}
+
 .groupLabel {
   font-weight: 500;
   font-size: 0.9rem;
