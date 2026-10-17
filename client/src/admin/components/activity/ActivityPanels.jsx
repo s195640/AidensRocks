@@ -114,10 +114,6 @@ export function VisitorsPanel({ queryKey, refresh }) {
 }
 
 // --------------------------------------------------------------------- rocks
-const ROCK_VIEWS = [
-  { value: "rocks", label: "Rocks" },
-  { value: "artist", label: "By Artist" },
-];
 // The range's top artists get their own color; the rest share "Other
 // artists". Colors go by rank in the range, since artists aren't a fixed list.
 const TOP_ARTISTS = COLORS.length;
@@ -126,10 +122,9 @@ const NO_ARTIST_COLOR = "#cfccc6";
 
 export function RocksCreatedPanel({ queryKey, refresh }) {
   const state = useActivityPanel("rocks", queryKey, refresh);
-  const [view, setView] = useState("rocks");
   const d = state.data;
 
-  // "By Artist": each day's rocks stacked by artist. Recharts keys are
+  // Each day's rocks stacked by artist. Recharts keys are
   // a0, a1... (an artist's name could contain a "." it would read as a path).
   const named = d ? d.artists.filter((a) => a.artist != null) : [];
   const top = named.slice(0, TOP_ARTISTS);
@@ -154,7 +149,7 @@ export function RocksCreatedPanel({ queryKey, refresh }) {
   return (
     <Panel
       title="Rocks Created"
-      note="Rocks added to the Rock Catalog. A rock by two artists counts for each in By Artist. Include admins / internal don't apply here."
+      note="Rocks added to the Rock Catalog, by artist. A rock by two artists counts for each. Include admins / internal don't apply here."
       state={state}
       wide
     >
@@ -166,19 +161,12 @@ export function RocksCreatedPanel({ queryKey, refresh }) {
               { label: "Artists", value: count(d.totals.artists) },
             ]}
           />
-          <div className={styles.chartControls}>
-            <Segmented options={ROCK_VIEWS} value={view} onChange={setView} label="Chart" />
-          </div>
-          {view === "rocks" ? (
-            <DayChart days={d.days} kind="stacked" series={[{ key: "rocks", name: "Rocks created" }]} />
-          ) : (
-            <DayChart
-              days={artistDays}
-              kind="stacked"
-              series={artistSeries}
-              total={{ key: "rocks", name: "Rocks created" }}
-            />
-          )}
+          <DayChart
+            days={artistDays}
+            kind="stacked"
+            series={artistSeries}
+            total={{ key: "rocks", name: "Rocks created" }}
+          />
           <h3 className={styles.subTitle}>Rocks by artist</h3>
           <Table
             rows={d.artists}
