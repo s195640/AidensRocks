@@ -442,3 +442,23 @@ Asked for: the Dashboard's Visitors by Day "By Platform" stacked chart on the Ac
 ## Top Lists: clickable QR code rock numbers (0.16.17)
 
 - In the Top Lists panel, the Rock # values under QR codes scanned now open that rock's journey dialog, the same as Rock Journeys. The link button was moved into a shared `rockLink()` helper in `ActivityPanels.jsx`, used by both panels. "(no number)" stays plain text.
+
+## Activity by Day: page views of Map, Track the Rocks, Albums, Birthdays (0.16.18)
+
+- `/api/admin/activity/activity` also returns `map_view`, `track_view`, `albums_view` and `birthdays_view`: daily `page_view` counts for `/map`, `/track-the-rocks`, `/photos` and `/birthdays` (per the user: page views, not in-page interactions like pin clicks or album opens).
+- The panel adds four lines and four tiles. `COLORS` has 7 entries, so Birthdays (the 8th series) has its own color.
+- Test: `activity-admin.test.mjs` seeds page views of the new pages and checks the four keys.
+
+## Rocks Created: Bars | Lines toggle (0.16.19)
+
+- The Rocks Created panel has a **Bars | Lines** toggle (`Segmented`, like Visitors). Bars is the existing by-artist stacked chart (the default). Lines draws the same series (top artists, Other artists, No artist) as one line each. Both tooltips end with the day's rocks.
+
+## Rocks Created: Lines is all rocks (0.16.20)
+
+- Per the user, the **Lines** view is now one line of all rocks created per day (`days[].rocks`), not a line per artist. Bars is still the by-artist stacked chart.
+
+## Activity tables: paged, sortable, searchable (0.16.21)
+
+- The shared activity `Table` (`activityUi.jsx`) now shows 10 rows a page with Prev / Next and "1–10 of N". Every column header sorts (numbers most-first on the first click, text A-Z, a second click flips it, blanks always last) unless the column sets `sort: false`. Columns whose cell is formatted or derived give a `sortValue(row)` (e.g. Submit rate sorts by submitted / opened, Share by the count). A table that passes `search(row) -> text` gets a search box once it has more than one page of rows. A new search, sort or data load goes back to page 1.
+- Every table on the Activity page uses it. Not sortable: the multi-part text columns (Rock Searches "How" and "From", Rock Journeys "Opened from", Links Out "Where"). Search is on each table's name / rock / page / link column; the two Forms tables search form + source / reason.
+- **Server:** the panel queries' `LIMIT 20/30/50` (top-N lists) are now one `TABLE_LIMIT = 500` in `activityAdmin.js`, so sort and search see the whole range, not just the old top 20. Rows still come back in the same order.

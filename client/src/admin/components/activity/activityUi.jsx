@@ -1,5 +1,5 @@
 // Shared pieces for the Admin → Activity page panels (Site Tracking): data
-// loading, number/time formatting, a panel card, a simple table and a
+// loading, number/time formatting, a panel card, a paged table and a
 // per-day chart. Data comes from /api/admin/activity/*
 // (server/src/routes/activityAdmin.js).
 import { useEffect, useState } from "react";
@@ -106,33 +106,133 @@ export function Tiles({ items }) {
   );
 }
 
-// columns: [{ key, label, num?, render?(row) }]
-export function Table({ columns, rows, empty = "Nothing in this range.", rowKey }) {
+// columns: [{ key, label, num?, render?(row), sortValue?(row), sort? }].
+// Paged (pageSize rows); a column header sorts unless sort is false, by
+// sortValue(row) or else row[key]. search(row) -> text adds a search box
+// once there's more than a page of rows.
+const PAGE_SIZE = 10;
+
+// Blanks sort last either way; numbers (and numeric strings) by value.
+function compare(a, b, desc) {
+  const blankA = a == null || a === "";
+  const blankB = b == null || b === "";
+  if (blankA || blankB) return blankA - blankB;
+  const na = Number(a);
+  const nb = Number(b);
+  const c =
+    !Number.isNaN(na) && !Number.isNaN(nb)
+      ? na - nb
+      : String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+  return desc ? -c : c;
+}
+
+export function Table({ columns, rows, empty = "Nothing in this range.", rowKey, search, pageSize = PAGE_SIZE }) {
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState(null); // { key, desc }
+  const [page, setPage] = useState(0);
+
+  // New data, a new search or a new sort starts over at page 1.
+  useEffect(() => setPage(0), [rows, query, sort]);
+
   if (!rows?.length) return <div className={styles.message}>{empty}</div>;
+
+  const q = query.trim().toLowerCase();
+  const found = search && q ? rows.filter((r) => String(search(r) ?? "").toLowerCase().includes(q)) : rows;
+  const sortCol = sort && columns.find((c) => c.key === sort.key);
+  const value = (c, r) => (c.sortValue ? c.sortValue(r) : r[c.key]);
+  const sorted = sortCol
+    ? found
+        .map((r, i) => ({ r, i }))
+        .sort((x, y) => compare(value(sortCol, x.r), value(sortCol, y.r), sort.desc) || x.i - y.i)
+        .map((x) => x.r)
+    : found;
+  const pages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const current = Math.min(page, pages - 1);
+  const shown = sorted.slice(current * pageSize, (current + 1) * pageSize);
+
+  // Numbers sort most-first on the first click, text A-Z; a second click flips it.
+  const sortBy = (c) =>
+    setSort((s) => (s?.key === c.key ? { key: c.key, desc: !s.desc } : { key: c.key, desc: !!c.num }));
+
   return (
-    <div className={styles.tableWrapper}>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            {columns.map((c) => (
-              <th key={c.key} className={c.num ? styles.num : ""} title={c.title}>
-                {c.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={rowKey ? rowKey(r) : i}>
-              {columns.map((c) => (
-                <td key={c.key} className={c.num ? styles.num : ""}>
-                  {c.render ? c.render(r) : c.num ? count(r[c.key]) : r[c.key] ?? "—"}
-                </td>
-              ))}
+    <div>
+      {search && rows.length > pageSize && (
+        <input
+          type="search"
+          className={styles.tableSearch}
+          placeholder="Search..."
+          aria-label="Search this table"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      )}
+      <div className={styles.tableWrapper}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              {columns.map((c) => {
+                const active = sort?.key === c.key;
+                return (
+                  <th
+                    key={c.key}
+                    className={c.num ? styles.num : ""}
+                    title={c.title}
+                    aria-sort={active ? (sort.desc ? "descending" : "ascending") : undefined}
+                  >
+                    {c.sort === false ? (
+                      c.label
+                    ) : (
+                      <button type="button" className={styles.sortButton} onClick={() => sortBy(c)}>
+                        {c.label}
+                        <span className={styles.sortArrow} aria-hidden="true">
+                          {active ? (sort.desc ? "▼" : "▲") : ""}
+                        </span>
+                      </button>
+                    )}
+                  </th>
+                );
+              })}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {shown.length ? (
+              shown.map((r, i) => (
+                <tr key={rowKey ? rowKey(r) : i}>
+                  {columns.map((c) => (
+                    <td key={c.key} className={c.num ? styles.num : ""}>
+                      {c.render ? c.render(r) : c.num ? count(r[c.key]) : r[c.key] ?? "—"}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={columns.length} className={styles.noMatch}>
+                  Nothing matches &ldquo;{query.trim()}&rdquo;.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      {pages > 1 && (
+        <div className={styles.pager}>
+          <button type="button" className={styles.pageButton} onClick={() => setPage(current - 1)} disabled={current === 0}>
+            ‹ Prev
+          </button>
+          <span className={styles.pageInfo}>
+            {current * pageSize + 1}–{current * pageSize + shown.length} of {count(sorted.length)}
+          </span>
+          <button
+            type="button"
+            className={styles.pageButton}
+            onClick={() => setPage(current + 1)}
+            disabled={current >= pages - 1}
+          >
+            Next ›
+          </button>
+        </div>
+      )}
     </div>
   );
 }

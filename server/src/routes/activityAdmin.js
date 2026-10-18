@@ -114,10 +114,17 @@ router.get(
   })
 );
 
+// Most rows a panel's table returns. The Activity page pages, sorts and
+// searches them in the browser, so this is a safety cap, not a "top N".
+const TABLE_LIMIT = 500;
+
 // ------------------------------------------------------------------ activity
 // The chart that started this: song plays, Honoring Aiden entry views, QR
-// scans and bad links per day.
+// scans and bad links per day, plus page views of the Map, Track the Rocks,
+// Photos (albums) and Birthdays pages.
 const ACTIVITY_TYPES = ['song_play', 'entry_view', 'qr_scan', 'not_found'];
+const PAGE_COUNTS = { map_view: '/map', track_view: '/track-the-rocks', albums_view: '/photos', birthdays_view: '/birthdays' };
+const ACTIVITY_KEYS = [...ACTIVITY_TYPES, ...Object.keys(PAGE_COUNTS)];
 
 router.get(
   '/activity',
@@ -125,13 +132,18 @@ router.get(
     const { rows } = await run(
       `WITH ${EVENTS}
        SELECT ${dayOf('created_at')} AS day,
-              ${ACTIVITY_TYPES.map((t) => `(COUNT(*) FILTER (WHERE type = '${t}'))::int AS ${t}`).join(',\n              ')}
-         FROM ev WHERE type IN (${ACTIVITY_TYPES.map((t) => `'${t}'`).join(', ')})
+              ${[
+                ...ACTIVITY_TYPES.map((t) => `(COUNT(*) FILTER (WHERE type = '${t}'))::int AS ${t}`),
+                ...Object.entries(PAGE_COUNTS).map(
+                  ([key, path]) => `(COUNT(*) FILTER (WHERE type = 'page_view' AND path = '${path}'))::int AS ${key}`
+                ),
+              ].join(',\n              ')}
+         FROM ev WHERE type IN (${[...ACTIVITY_TYPES, 'page_view'].map((t) => `'${t}'`).join(', ')})
         GROUP BY 1`,
       f.params
     );
-    const days = fillDays(rows, f, Object.fromEntries(ACTIVITY_TYPES.map((t) => [t, 0])));
-    const totals = Object.fromEntries(ACTIVITY_TYPES.map((t) => [t, days.reduce((s, d) => s + d[t], 0)]));
+    const days = fillDays(rows, f, Object.fromEntries(ACTIVITY_KEYS.map((t) => [t, 0])));
+    const totals = Object.fromEntries(ACTIVITY_KEYS.map((t) => [t, days.reduce((s, d) => s + d[t], 0)]));
     return { days, totals };
   })
 );
@@ -187,7 +199,7 @@ router.get(
           `WITH ${EVENTS}
            SELECT target_id AS form, meta->>'reason' AS reason, COUNT(*)::int AS count
              FROM ev WHERE type = 'form_error'
-            GROUP BY 1, 2 ORDER BY 3 DESC LIMIT 20`,
+            GROUP BY 1, 2 ORDER BY 3 DESC LIMIT ${TABLE_LIMIT}`,
           f.params
         ),
       ])
@@ -215,7 +227,7 @@ router.get(
             GROUP BY 1)
          SELECT a.*, COALESCE(pa.display_name, a.name) AS display_name
            FROM a LEFT JOIN photoalbums pa ON pa.pa_key::text = a.album_id
-          ORDER BY a.opens DESC LIMIT 50`,
+          ORDER BY a.opens DESC LIMIT ${TABLE_LIMIT}`,
         f.params
       )
     ).rows.map((r) => ({ ...r, total_ms: num(r.total_ms), avg_ms: num(r.avg_ms) }));
@@ -231,7 +243,7 @@ router.get(
            FROM p
            LEFT JOIN photos ph ON ph.p_key::text = p.photo_id
            LEFT JOIN photoalbums pa ON pa.pa_key = ph.pa_key
-          ORDER BY p.views DESC LIMIT 20`,
+          ORDER BY p.views DESC LIMIT ${TABLE_LIMIT}`,
         f.params
       )
     ).rows.map((r) => ({ ...r, avg_ms: num(r.avg_ms) }));
@@ -259,7 +271,7 @@ router.get(
                 BOOL_OR(${metaBool('found')}) AS found
            FROM ev WHERE type IN ('rock_search', 'rock_link')
           GROUP BY 1
-          ORDER BY COUNT(*) DESC LIMIT 50`,
+          ORDER BY COUNT(*) DESC LIMIT ${TABLE_LIMIT}`,
         f.params
       )
     ).rows;
@@ -273,7 +285,7 @@ router.get(
            FROM ev
           WHERE type IN ('rock_search', 'rock_link') AND ${metaBool('found')} IS FALSE
           GROUP BY 1
-          ORDER BY MAX(created_at) DESC LIMIT 30`,
+          ORDER BY MAX(created_at) DESC LIMIT ${TABLE_LIMIT}`,
         f.params
       )
     ).rows;
@@ -304,7 +316,7 @@ router.get(
           AND CASE WHEN type = 'journey_photo_view' THEN meta->>'rock_number' ELSE target_id END IS NOT NULL
         GROUP BY 1
         ORDER BY COUNT(*) FILTER (WHERE type = 'rock_view') DESC, COUNT(*) DESC
-        LIMIT 50`,
+        LIMIT ${TABLE_LIMIT}`,
       f.params
     );
     return rows.map((r) => ({ ...r, avg_ms: num(r.avg_ms) }));
@@ -354,7 +366,7 @@ router.get(
          SELECT target_id AS target, COUNT(*)::int AS clicks, COUNT(DISTINCT device_id)::int AS visitors,
                 (ARRAY_AGG(DISTINCT meta->>'where'))[1:5] AS places
            FROM ev WHERE type = 'outbound_click'
-          GROUP BY 1 ORDER BY 2 DESC LIMIT 30`,
+          GROUP BY 1 ORDER BY 2 DESC LIMIT ${TABLE_LIMIT}`,
         f.params
       )
     ).rows;
@@ -390,7 +402,7 @@ router.get(
               ROUND(AVG(scroll)) AS avg_scroll_pct,
               ROUND(100 * AVG((scroll >= 90)::int)) AS reached_bottom_pct,
               ROUND(AVG(engaged)) AS avg_engaged_ms
-         FROM views GROUP BY path ORDER BY COUNT(*) DESC LIMIT 50`,
+         FROM views GROUP BY path ORDER BY COUNT(*) DESC LIMIT ${TABLE_LIMIT}`,
       f.params
     );
     return rows.map((r) => ({
@@ -409,23 +421,23 @@ router.get(
     const q = (sql) => run(`WITH ${EVENTS} ${sql}`, f.params).then((r) => r.rows);
     const [pages, entries, qr, follows, referrers] = await Promise.all([
       q(`SELECT path, COUNT(*)::int AS views, COUNT(DISTINCT device_id)::int AS visitors
-           FROM ev WHERE type = 'page_view' GROUP BY 1 ORDER BY 2 DESC LIMIT 20`),
+           FROM ev WHERE type = 'page_view' GROUP BY 1 ORDER BY 2 DESC LIMIT ${TABLE_LIMIT}`),
       q(`SELECT ev.target_id AS slug, MAX(en.title) AS title, COUNT(*)::int AS views,
                 COUNT(DISTINCT ev.device_id)::int AS visitors
            FROM ev LEFT JOIN entry en ON en.slug = ev.target_id
-          WHERE ev.type = 'entry_view' GROUP BY 1 ORDER BY 3 DESC LIMIT 20`),
+          WHERE ev.type = 'entry_view' GROUP BY 1 ORDER BY 3 DESC LIMIT ${TABLE_LIMIT}`),
       q(`SELECT target_id AS rock, COUNT(*)::int AS scans, COUNT(DISTINCT device_id)::int AS visitors
-           FROM ev WHERE type = 'qr_scan' GROUP BY 1 ORDER BY 2 DESC LIMIT 20`),
+           FROM ev WHERE type = 'qr_scan' GROUP BY 1 ORDER BY 2 DESC LIMIT ${TABLE_LIMIT}`),
       q(`SELECT target_id AS rock,
                 (COUNT(*) FILTER (WHERE type = 'follow'))::int AS follows,
                 (COUNT(*) FILTER (WHERE type = 'unfollow'))::int AS unfollows
-           FROM ev WHERE type IN ('follow', 'unfollow') GROUP BY 1 ORDER BY 2 DESC, 3 DESC LIMIT 20`),
+           FROM ev WHERE type IN ('follow', 'unfollow') GROUP BY 1 ORDER BY 2 DESC, 3 DESC LIMIT ${TABLE_LIMIT}`),
       // Where visits came from: the referrer's site, "Direct" when none.
       q(`SELECT COALESCE(SUBSTRING(v.referrer FROM '^https?://(?:www\\.)?([^/:]+)'), 'Direct') AS source,
                 COUNT(*)::int AS visits
            FROM visit v
           WHERE v.id IN (SELECT DISTINCT visit_id FROM ev)
-          GROUP BY 1 ORDER BY 2 DESC LIMIT 20`),
+          GROUP BY 1 ORDER BY 2 DESC LIMIT ${TABLE_LIMIT}`),
     ]);
     return { pages, entries, qr, follows, referrers };
   })

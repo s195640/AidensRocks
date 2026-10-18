@@ -106,7 +106,7 @@ export function VisitorsPanel({ queryKey, refresh }) {
             columns={[
               { key: "platform", label: "Device" },
               { key: "visitors", label: "Visitors", num: true },
-              { key: "share", label: "Share", num: true, render: (r) => ratio(r.visitors, d.totals.visitors) },
+              { key: "share", label: "Share", num: true, sortValue: (r) => r.visitors, render: (r) => ratio(r.visitors, d.totals.visitors) },
             ]}
           />
         </>
@@ -121,9 +121,14 @@ export function VisitorsPanel({ queryKey, refresh }) {
 const TOP_ARTISTS = COLORS.length;
 const OTHER_ARTISTS_COLOR = "#9a9893";
 const NO_ARTIST_COLOR = "#cfccc6";
+const ROCK_VIEWS = [
+  { value: "stacked", label: "Bars" },
+  { value: "line", label: "Lines" },
+];
 
 export function RocksCreatedPanel({ queryKey, refresh }) {
   const state = useActivityPanel("rocks", queryKey, refresh);
+  const [view, setView] = useState("stacked");
   const d = state.data;
 
   // Each day's rocks stacked by artist. Recharts keys are
@@ -163,20 +168,28 @@ export function RocksCreatedPanel({ queryKey, refresh }) {
               { label: "Artists", value: count(d.totals.artists) },
             ]}
           />
-          <DayChart
-            days={artistDays}
-            kind="stacked"
-            series={artistSeries}
-            total={{ key: "rocks", name: "Rocks created" }}
-          />
+          <div className={styles.chartControls}>
+            <Segmented options={ROCK_VIEWS} value={view} onChange={setView} label="Chart" />
+          </div>
+          {view === "stacked" ? (
+            <DayChart
+              days={artistDays}
+              kind="stacked"
+              series={artistSeries}
+              total={{ key: "rocks", name: "Rocks created" }}
+            />
+          ) : (
+            <DayChart days={d.days} series={[{ key: "rocks", name: "Rocks created" }]} />
+          )}
           <h3 className={styles.subTitle}>Rocks by artist</h3>
           <Table
             rows={d.artists}
             rowKey={(r) => r.artist ?? ""}
+            search={(r) => r.artist ?? "No artist"}
             columns={[
               { key: "artist", label: "Artist", render: (r) => r.artist ?? "No artist" },
               { key: "rocks", label: "Rocks", num: true },
-              { key: "share", label: "Share", num: true, render: (r) => ratio(r.rocks, d.totals.rocks) },
+              { key: "share", label: "Share", num: true, sortValue: (r) => r.rocks, render: (r) => ratio(r.rocks, d.totals.rocks) },
             ]}
           />
         </>
@@ -190,7 +203,7 @@ export function ActivityByDayPanel({ queryKey, refresh }) {
   const state = useActivityPanel("activity", queryKey, refresh);
   const d = state.data;
   return (
-    <Panel title="Activity by Day" note="Song plays, Honoring Aiden entries read, QR codes scanned and bad links followed." state={state} wide>
+    <Panel title="Activity by Day" note="Song plays, Honoring Aiden entries read, QR codes scanned, bad links followed, and page views of the Map, Track the Rocks, Photos and Birthdays pages." state={state} wide>
       {d && (
         <>
           <Tiles
@@ -199,6 +212,10 @@ export function ActivityByDayPanel({ queryKey, refresh }) {
               { label: "Honoring Aiden reads", value: count(d.totals.entry_view) },
               { label: "QR scans", value: count(d.totals.qr_scan) },
               { label: "Bad links", value: count(d.totals.not_found) },
+              { label: "Map views", value: count(d.totals.map_view) },
+              { label: "Track the Rocks views", value: count(d.totals.track_view) },
+              { label: "Albums views", value: count(d.totals.albums_view) },
+              { label: "Birthdays views", value: count(d.totals.birthdays_view) },
             ]}
           />
           <DayChart
@@ -208,6 +225,11 @@ export function ActivityByDayPanel({ queryKey, refresh }) {
               { key: "entry_view", name: "Honoring Aiden reads" },
               { key: "qr_scan", name: "QR scans" },
               { key: "not_found", name: "Bad links" },
+              { key: "map_view", name: "Map" },
+              { key: "track_view", name: "Track the Rocks" },
+              { key: "albums_view", name: "Albums" },
+              // COLORS has 7; the 8th series needs its own.
+              { key: "birthdays_view", name: "Birthdays", color: "#8a6d3b" },
             ]}
           />
         </>
@@ -217,6 +239,11 @@ export function ActivityByDayPanel({ queryKey, refresh }) {
 }
 
 // --------------------------------------------------------------------- forms
+const formName = (r) => FORM_NAMES[r.form] || r.form;
+const sourceName = (r) => SOURCE_NAMES[r.source] || r.source;
+const reasonText = (r) => r.reason?.replace(/^validation:/, "Missing / invalid: ").replace(/,/g, ", ");
+const rate = (r) => (r.opened ? r.submitted / r.opened : null);
+
 export function FormsPanel({ queryKey, refresh }) {
   const state = useActivityPanel("forms", queryKey, refresh);
   const d = state.data;
@@ -233,13 +260,13 @@ export function FormsPanel({ queryKey, refresh }) {
             rows={d.forms}
             rowKey={(r) => r.form}
             columns={[
-              { key: "form", label: "Form", render: (r) => FORM_NAMES[r.form] || r.form },
+              { key: "form", label: "Form", sortValue: formName, render: formName },
               { key: "opened", label: "Opened", num: true },
               { key: "started", label: "Started typing", num: true },
               { key: "submitted", label: "Submitted", num: true },
               { key: "abandoned", label: "Abandoned", num: true },
               { key: "abandoned_after_start", label: "Gave up after typing", num: true },
-              { key: "rate", label: "Submit rate", num: true, render: (r) => ratio(r.submitted, r.opened) },
+              { key: "rate", label: "Submit rate", num: true, sortValue: rate, render: (r) => ratio(r.submitted, r.opened) },
             ]}
           />
           <h3 className={styles.subTitle}>Submitted vs abandoned by day</h3>
@@ -257,11 +284,12 @@ export function FormsPanel({ queryKey, refresh }) {
               <h3 className={styles.subTitle}>Where they were opened from</h3>
               <Table
                 rows={d.sources}
+                search={(r) => `${formName(r)} ${sourceName(r)}`}
                 columns={[
-                  { key: "form", label: "Form", render: (r) => FORM_NAMES[r.form] || r.form },
-                  { key: "source", label: "From", render: (r) => SOURCE_NAMES[r.source] || r.source },
+                  { key: "form", label: "Form", sortValue: formName, render: formName },
+                  { key: "source", label: "From", sortValue: sourceName, render: sourceName },
                   { key: "opened", label: "Opened", num: true },
-                  { key: "rate", label: "Submitted", num: true, render: (r) => ratio(r.submitted, r.opened) },
+                  { key: "rate", label: "Submitted", num: true, sortValue: rate, render: (r) => ratio(r.submitted, r.opened) },
                 ]}
               />
             </div>
@@ -270,9 +298,10 @@ export function FormsPanel({ queryKey, refresh }) {
               <Table
                 rows={d.errors}
                 empty="No rejected submits."
+                search={(r) => `${formName(r)} ${reasonText(r)}`}
                 columns={[
-                  { key: "form", label: "Form", render: (r) => FORM_NAMES[r.form] || r.form },
-                  { key: "reason", label: "Reason", render: (r) => r.reason?.replace(/^validation:/, "Missing / invalid: ").replace(/,/g, ", ") },
+                  { key: "form", label: "Form", sortValue: formName, render: formName },
+                  { key: "reason", label: "Reason", sortValue: reasonText, render: reasonText },
                   { key: "count", label: "Times", num: true },
                 ]}
               />
@@ -311,6 +340,7 @@ export function AlbumsPanel({ queryKey, refresh }) {
           <Table
             rows={d.albums}
             rowKey={(r) => r.album_id}
+            search={(r) => r.display_name}
             columns={[
               { key: "display_name", label: "Album" },
               { key: "opens", label: "Opens", num: true },
@@ -324,10 +354,12 @@ export function AlbumsPanel({ queryKey, refresh }) {
           <Table
             rows={d.photos}
             rowKey={(r) => r.photo_id}
+            search={(r) => `${r.display_name || r.file || ""} ${r.album || ""}`}
             columns={[
               {
                 key: "display_name",
                 label: "Photo",
+                sortValue: (r) => r.display_name || r.file,
                 render: (r) => (
                   <>
                     {viewable.includes(r) ? (
@@ -369,6 +401,7 @@ export function SearchesPanel({ queryKey, refresh }) {
           <Table
             rows={d.rocks}
             rowKey={(r) => r.rock}
+            search={(r) => r.rock}
             columns={[
               { key: "rock", label: "Rock #" },
               { key: "searches", label: "Searches", num: true },
@@ -376,6 +409,7 @@ export function SearchesPanel({ queryKey, refresh }) {
               {
                 key: "how",
                 label: "How",
+                sort: false,
                 render: (r) =>
                   [
                     r.from_search && `${r.from_search} Track the Rocks`,
@@ -389,6 +423,7 @@ export function SearchesPanel({ queryKey, refresh }) {
                 key: "links",
                 label: "Link opens",
                 num: true,
+                sortValue: (r) => r.links || null,
                 render: (r) => (r.links ? `${r.links}${r.email_links ? ` (${r.email_links} email)` : ""}` : "—"),
               },
               { key: "found", label: "Found", render: (r) => (r.found ? "Yes" : "No") },
@@ -399,11 +434,12 @@ export function SearchesPanel({ queryKey, refresh }) {
             rows={d.notFound}
             rowKey={(r) => r.rock}
             empty="Every search found its rock."
+            search={(r) => r.rock}
             columns={[
               { key: "rock", label: "Rock #" },
               { key: "count", label: "Times", num: true },
-              { key: "ways", label: "From", render: (r) => (r.ways || []).map((w) => WAY_NAMES[w] || w).join(", ") },
-              { key: "last_seen", label: "Last", render: (r) => new Date(r.last_seen).toLocaleDateString() },
+              { key: "ways", label: "From", sort: false, render: (r) => (r.ways || []).map((w) => WAY_NAMES[w] || w).join(", ") },
+              { key: "last_seen", label: "Last", sortValue: (r) => new Date(r.last_seen).getTime(), render: (r) => new Date(r.last_seen).toLocaleDateString() },
             ]}
           />
         </>
@@ -433,6 +469,7 @@ export function JourneysPanel({ queryKey, refresh }) {
         <Table
           rows={state.data}
           rowKey={(r) => r.rock}
+          search={(r) => r.rock}
           columns={[
             { key: "rock", label: "Rock #", render: (r) => rockLink(r.rock, setOpenRock) },
             { key: "opens", label: "Opens", num: true },
@@ -444,6 +481,7 @@ export function JourneysPanel({ queryKey, refresh }) {
             {
               key: "from",
               label: "Opened from",
+              sort: false,
               render: (r) =>
                 [
                   r.from_search && `${r.from_search} search`,
@@ -471,8 +509,9 @@ export function MusicListeningPanel({ queryKey, refresh }) {
         <Table
           rows={state.data}
           rowKey={(r) => r.m_key}
+          search={(r) => r.name || `Song #${r.m_key}`}
           columns={[
-            { key: "name", label: "Song", render: (r) => r.name || `Song #${r.m_key}` },
+            { key: "name", label: "Song", sortValue: (r) => r.name || `Song #${r.m_key}`, render: (r) => r.name || `Song #${r.m_key}` },
             { key: "plays", label: "Plays", num: true },
             { key: "listeners", label: "Listeners", num: true },
             { key: "avg_listened_ms", label: "Avg listened", num: true, render: (r) => duration(r.avg_listened_ms) },
@@ -498,11 +537,12 @@ export function OutboundPanel({ queryKey, refresh }) {
           <Table
             rows={d.links}
             rowKey={(r) => r.target}
+            search={(r) => `${r.target === "mailto" ? "Contact email" : r.target} ${(r.places || []).join(" ")}`}
             columns={[
-              { key: "target", label: "Link", render: (r) => (r.target === "mailto" ? "Contact email" : r.target) },
+              { key: "target", label: "Link", sortValue: (r) => (r.target === "mailto" ? "Contact email" : r.target), render: (r) => (r.target === "mailto" ? "Contact email" : r.target) },
               { key: "clicks", label: "Clicks", num: true },
               { key: "visitors", label: "Visitors", num: true },
-              { key: "places", label: "Where", render: (r) => (r.places || []).filter(Boolean).join(", ") },
+              { key: "places", label: "Where", sort: false, render: (r) => (r.places || []).filter(Boolean).join(", ") },
             ]}
           />
         </>
@@ -520,6 +560,7 @@ export function ScrollPanel({ queryKey, refresh }) {
         <Table
           rows={state.data}
           rowKey={(r) => r.path}
+          search={(r) => r.path}
           columns={[
             { key: "path", label: "Page" },
             { key: "views", label: "Views", num: true },
@@ -547,6 +588,7 @@ export function TopListsPanel({ queryKey, refresh }) {
             <Table
               rows={d.pages}
               rowKey={(r) => r.path}
+              search={(r) => r.path}
               columns={[
                 { key: "path", label: "Page" },
                 { key: "views", label: "Views", num: true },
@@ -559,6 +601,7 @@ export function TopListsPanel({ queryKey, refresh }) {
             <Table
               rows={d.referrers}
               rowKey={(r) => r.source}
+              search={(r) => r.source}
               columns={[
                 { key: "source", label: "Source" },
                 { key: "visits", label: "Visits", num: true },
@@ -570,8 +613,9 @@ export function TopListsPanel({ queryKey, refresh }) {
             <Table
               rows={d.entries}
               rowKey={(r) => r.slug}
+              search={(r) => r.title || r.slug}
               columns={[
-                { key: "title", label: "Entry", render: (r) => r.title || r.slug },
+                { key: "title", label: "Entry", sortValue: (r) => r.title || r.slug, render: (r) => r.title || r.slug },
                 { key: "views", label: "Reads", num: true },
                 { key: "visitors", label: "Visitors", num: true },
               ]}
@@ -582,6 +626,7 @@ export function TopListsPanel({ queryKey, refresh }) {
             <Table
               rows={d.qr}
               rowKey={(r) => r.rock}
+              search={(r) => r.rock || "(no number)"}
               columns={[
                 { key: "rock", label: "Rock #", render: (r) => (r.rock ? rockLink(r.rock, setOpenRock) : "(no number)") },
                 { key: "scans", label: "Scans", num: true },
@@ -594,6 +639,7 @@ export function TopListsPanel({ queryKey, refresh }) {
             <Table
               rows={d.follows}
               rowKey={(r) => r.rock}
+              search={(r) => r.rock}
               columns={[
                 { key: "rock", label: "Rock #" },
                 { key: "follows", label: "Follows", num: true },

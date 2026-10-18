@@ -35,6 +35,9 @@ beforeAll(async () => {
     ev('page_view', { meta: { view_id: viewId } }),
     ev('page_leave', { meta: { view_id: viewId, engaged_ms: 4000, max_scroll_pct: 60 } }),
     ev('page_leave', { meta: { view_id: viewId, engaged_ms: 2000, max_scroll_pct: 95 } }),
+    ev('page_view', { path: '/map', meta: { view_id: randomUUID() } }),
+    ev('page_view', { path: '/track-the-rocks', meta: { view_id: randomUUID() } }),
+    ev('page_view', { path: '/birthdays', meta: { view_id: randomUUID() } }),
     ev('song_play', { targetId: '1', meta: { play_id: playId } }),
     ev('song_stop', { targetId: '1', meta: { play_id: playId, listened_ms: 30000, duration_ms: 60000, completed: false, reason: 'skip' } }),
     ev('entry_view', { targetId: 'activity-test-entry' }),
@@ -84,10 +87,10 @@ describe('Activity page panels', () => {
     expect(body.days[0].platforms).toEqual({});
   });
 
-  it('activity by day: song plays, entry views, QR scans and bad links', async () => {
+  it('activity by day: song plays, entry views, QR scans, bad links and page views', async () => {
     const { body } = await get('activity');
     const today = body.days.at(-1);
-    for (const t of ['song_play', 'entry_view', 'qr_scan', 'not_found']) {
+    for (const t of ['song_play', 'entry_view', 'qr_scan', 'not_found', 'map_view', 'track_view', 'albums_view', 'birthdays_view']) {
       expect(today[t]).toBeGreaterThanOrEqual(1);
       expect(body.totals[t]).toBeGreaterThanOrEqual(1);
     }

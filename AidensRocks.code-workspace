@@ -74,6 +74,17 @@
         "problemMatcher": []
       },
       {
+        "label": "Copy Prod to Dev",
+        "type": "process",
+        "command": "C:\\Program Files\\Git\\bin\\bash.exe",
+        "args": [
+          "${workspaceFolder}/data/scripts/copy-prod-to-dev.sh",
+          "${input:prodCopyScope}"
+        ],
+        "presentation": { "focus": true, "panel": "dedicated" },
+        "problemMatcher": []
+      },
+      {
         "label": "Push Git",
         "type": "shell",
         "command": "powershell.exe",
@@ -91,6 +102,15 @@
         "command": "git",
         "args": ["status"],
         "problemMatcher": []
+      }
+    ],
+    "inputs": [
+      {
+        "id": "prodCopyScope",
+        "type": "pickString",
+        "description": "What to copy from prod onto dev",
+        "options": ["--db-only", "--media-only", "--all"],
+        "default": "--db-only"
       }
     ]
   }

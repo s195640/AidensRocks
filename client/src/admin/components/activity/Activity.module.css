@@ -65,6 +65,80 @@
   overflow-x: auto;
 }
 
+/* Table search, sortable headers and pager. */
+.tableSearch {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  margin: 0 0 8px auto;
+  padding: 5px 9px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+
+.sortButton {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sortButton:hover {
+  color: #222;
+}
+
+.sortArrow {
+  display: inline-block;
+  min-width: 1em;
+  font-size: 0.65rem;
+  margin-left: 2px;
+}
+
+.noMatch {
+  text-align: center;
+  color: #666;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.pageButton {
+  background: #fff;
+  color: #444;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.pageButton:hover:not(:disabled) {
+  background: #f3f3f3;
+}
+
+.pageButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pageInfo {
+  font-family: monospace;
+  white-space: nowrap;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;

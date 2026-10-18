@@ -47,6 +47,8 @@ Tests (needs Docker; see the runbook above):
 - `client`: `npm run test:e2e`.
 - Adding an API route? Add it to `server/tests/api/auth-matrix.test.mjs` with its auth gate.
 
+Prod → dev copy: `bash data/scripts/copy-prod-to-dev.sh` (DB + media, read-only on prod; see `data/ai-build-docs/prod-to-dev-copy/RUNBOOK.md`).
+
 Server (`cd server`):
 - `npm run dev` — nodemon with `--legacy-watch` (polling-based watch, for WSL2/Docker).
 - `npm start` — plain `node src/app.js`.
