@@ -423,3 +423,22 @@ Asked for: the Dashboard's Visitors by Day "By Platform" stacked chart on the Ac
 
 ## Rocks Created: artist chart only (2026-10-17), 0.16.13
 - Removed the panel's **Rocks | By Artist** toggle (per the user, the plain Rocks view added nothing). The chart is always the by-artist stacked one; its tooltip still ends with the day's rocks.
+
+## Rock Journeys: photo views counted under their rock (0.16.14)
+
+- Bug: Rock Journeys showed rows like `1_88ab6a71-...` with 0 opens and only Photos filled in. `journey_photo_view` events have the photo (rpi_key, or the image name when missing) as `target_id`; the rock is in `meta.rock_number`. The panel grouped every event type by `target_id`, so each viewed photo became its own "rock".
+- Fix: `/api/admin/activity/journeys` groups photo views by `meta.rock_number` (other types still by `target_id`) and skips events with no rock. Applies to existing data too, since the rock number was always recorded. Test added in `activity-admin.test.mjs`.
+
+## Rock Journeys: clickable rock numbers (0.16.15)
+
+- Rock # in the Rock Journeys panel is now a link that opens the public `RockJourneyDialog` for that rock, right on the Activity page. Nothing is tracked, because `track()` skips `/admin` paths, so opening a journey here doesn't add to the stats.
+- Only numeric rock numbers are links. New `.linkButton` style in `Activity.module.css`.
+
+## Albums: clickable Most viewed photos (0.16.16)
+
+- In the Albums panel, each Most viewed photo's name is now a link that opens it in the admin `AlbumsMultiLightbox`, with arrows paging through the rest of the list. Videos play.
+- Built from `file` / `album_name`, which `/albums` already returned. Photos whose row is gone (no file) stay plain text. Nothing is tracked, since this is an `/admin` page.
+
+## Top Lists: clickable QR code rock numbers (0.16.17)
+
+- In the Top Lists panel, the Rock # values under QR codes scanned now open that rock's journey dialog, the same as Rock Journeys. The link button was moved into a shared `rockLink()` helper in `ActivityPanels.jsx`, used by both panels. "(no number)" stays plain text.

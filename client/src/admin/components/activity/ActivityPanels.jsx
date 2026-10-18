@@ -17,6 +17,8 @@ import {
   useActivityPanel,
 } from "./activityUi";
 import styles from "./Activity.module.css";
+import RockJourneyDialog from "../../../components/rock-map/rock-journey-dialog/RockJourneyDialog";
+import AlbumsMultiLightbox from "../../pages/albums/albums-multi-lightbox/AlbumsMultiLightbox";
 
 const FORM_NAMES = { share_your_rock: "Share Your Rock", request_a_rock: "Request a Rock" };
 const SOURCE_NAMES = {
@@ -283,9 +285,25 @@ export function FormsPanel({ queryKey, refresh }) {
 }
 
 // -------------------------------------------------------------------- albums
+// A Most viewed photo opens in a lightbox; arrows page through the rest of
+// the list (photos whose file is gone are skipped).
+const photoSlide = (p) => {
+  const base = `/media/albums/${p.album_name}`;
+  const description = p.display_name || "";
+  if (!p.is_video) return { src: `${base}/webp/${p.file}`, description };
+  return {
+    type: "video",
+    poster: `${base}/webp/${p.file}`,
+    description,
+    sources: [{ src: `${base}/video/${p.file.replace(/\.webp$/i, "")}.mp4`, type: "video/mp4" }],
+  };
+};
+
 export function AlbumsPanel({ queryKey, refresh }) {
   const state = useActivityPanel("albums", queryKey, refresh);
   const d = state.data;
+  const [photoIndex, setPhotoIndex] = useState(-1);
+  const viewable = (d?.photos || []).filter((p) => p.file && p.album_name);
   return (
     <Panel title="Albums" note="Photos and Birthdays. Time counts only while the album is on screen." state={state}>
       {d && (
@@ -312,7 +330,13 @@ export function AlbumsPanel({ queryKey, refresh }) {
                 label: "Photo",
                 render: (r) => (
                   <>
-                    {r.display_name || r.file || `#${r.photo_id}`}
+                    {viewable.includes(r) ? (
+                      <button type="button" className={styles.linkButton} onClick={() => setPhotoIndex(viewable.indexOf(r))}>
+                        {r.display_name || r.file}
+                      </button>
+                    ) : (
+                      r.display_name || r.file || `#${r.photo_id}`
+                    )}
                     {r.is_video && " (video)"}
                     <div className={styles.muted}>{r.album}</div>
                   </>
@@ -321,6 +345,12 @@ export function AlbumsPanel({ queryKey, refresh }) {
               { key: "views", label: "Views", num: true },
               { key: "avg_ms", label: "Avg time", num: true, render: (r) => duration(r.avg_ms) },
             ]}
+          />
+          <AlbumsMultiLightbox
+            open={photoIndex >= 0}
+            onClose={() => setPhotoIndex(-1)}
+            imageSrc={viewable.map(photoSlide)}
+            index={Math.max(photoIndex, 0)}
           />
         </>
       )}
@@ -383,16 +413,28 @@ export function SearchesPanel({ queryKey, refresh }) {
 }
 
 // ------------------------------------------------------------------ journeys
+// Clicking a rock number opens the same journey dialog visitors see (no
+// tracking: /admin is never tracked).
+const rockLink = (rock, open) =>
+  Number(rock) > 0 ? (
+    <button type="button" className={styles.linkButton} onClick={() => open(Number(rock))}>
+      {rock}
+    </button>
+  ) : (
+    rock
+  );
+
 export function JourneysPanel({ queryKey, refresh }) {
   const state = useActivityPanel("journeys", queryKey, refresh);
+  const [openRock, setOpenRock] = useState(null);
   return (
-    <Panel title="Rock Journeys" note="Journeys opened from a search, a shared link, a map pin or My Rocks." state={state}>
+    <Panel title="Rock Journeys" note="Journeys opened from a search, a shared link, a map pin or My Rocks. Click a rock number to see its journey." state={state}>
       {state.data && (
         <Table
           rows={state.data}
           rowKey={(r) => r.rock}
           columns={[
-            { key: "rock", label: "Rock #" },
+            { key: "rock", label: "Rock #", render: (r) => rockLink(r.rock, setOpenRock) },
             { key: "opens", label: "Opens", num: true },
             { key: "visitors", label: "Visitors", num: true },
             { key: "avg_ms", label: "Avg time", num: true, render: (r) => duration(r.avg_ms) },
@@ -415,6 +457,7 @@ export function JourneysPanel({ queryKey, refresh }) {
           ]}
         />
       )}
+      <RockJourneyDialog rockNumber={openRock} onClose={() => setOpenRock(null)} />
     </Panel>
   );
 }
@@ -494,6 +537,7 @@ export function ScrollPanel({ queryKey, refresh }) {
 export function TopListsPanel({ queryKey, refresh }) {
   const state = useActivityPanel("top", queryKey, refresh);
   const d = state.data;
+  const [openRock, setOpenRock] = useState(null);
   return (
     <Panel title="Top Lists" state={state} wide>
       {d && (
@@ -539,7 +583,7 @@ export function TopListsPanel({ queryKey, refresh }) {
               rows={d.qr}
               rowKey={(r) => r.rock}
               columns={[
-                { key: "rock", label: "Rock #", render: (r) => r.rock || "(no number)" },
+                { key: "rock", label: "Rock #", render: (r) => (r.rock ? rockLink(r.rock, setOpenRock) : "(no number)") },
                 { key: "scans", label: "Scans", num: true },
                 { key: "visitors", label: "Visitors", num: true },
               ]}
@@ -559,6 +603,7 @@ export function TopListsPanel({ queryKey, refresh }) {
           </div>
         </div>
       )}
+      <RockJourneyDialog rockNumber={openRock} onClose={() => setOpenRock(null)} />
     </Panel>
   );
 }

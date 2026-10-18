@@ -47,6 +47,7 @@ beforeAll(async () => {
     ev('rock_link', { targetId: '8181', meta: { found: false, from: 'email-follow' } }),
     ev('rock_view', { targetId: '8181', meta: { open_id: rockOpen, source: 'link' } }),
     ev('journey_location', { targetId: '8181', meta: { open_id: rockOpen, rps_key: 1 } }),
+    ev('journey_photo_view', { targetId: '1_activity-test-photo', meta: { open_id: rockOpen, rock_number: '8181', engaged_ms: 2000 } }),
     ev('rock_close', { targetId: '8181', meta: { open_id: rockOpen, engaged_ms: 7000 } }),
     ev('form_open', { targetId: 'request_a_rock', meta: { open_id: formOpen, source: 'floating_button' } }),
     ev('form_start', { targetId: 'request_a_rock', meta: { open_id: formOpen } }),
@@ -127,8 +128,10 @@ describe('Activity page panels', () => {
   it('journeys: opens, time and what was opened inside, by source', async () => {
     const { body } = await get('journeys');
     expect(body.find((r) => r.rock === '8181')).toMatchObject({
-      opens: 1, visitors: 1, avg_ms: 7000, locations: 1, from_link: 1,
+      opens: 1, visitors: 1, avg_ms: 7000, locations: 1, photos: 1, from_link: 1,
     });
+    // Photo views count under their rock, not as a row of their own.
+    expect(body.find((r) => r.rock === '1_activity-test-photo')).toBeUndefined();
   });
 
   it('music: plays, listen-through, finished and skips, with the song name', async () => {

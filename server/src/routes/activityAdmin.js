@@ -282,12 +282,13 @@ router.get(
 );
 
 // ------------------------------------------------------------------ journeys
+// A journey_photo_view's target is the photo; its rock is meta.rock_number.
 router.get(
   '/journeys',
   panel('journeys', async (f) => {
     const { rows } = await run(
       `WITH ${EVENTS}
-       SELECT target_id AS rock,
+       SELECT CASE WHEN type = 'journey_photo_view' THEN meta->>'rock_number' ELSE target_id END AS rock,
               (COUNT(*) FILTER (WHERE type = 'rock_view'))::int AS opens,
               (COUNT(DISTINCT device_id) FILTER (WHERE type = 'rock_view'))::int AS visitors,
               ROUND(AVG(${metaNum('engaged_ms')}) FILTER (WHERE type = 'rock_close')) AS avg_ms,
@@ -300,6 +301,7 @@ router.get(
               (COUNT(*) FILTER (WHERE type = 'rock_view' AND meta->>'source' = 'my_rocks'))::int AS from_my_rocks
          FROM ev
         WHERE type IN ('rock_view', 'rock_close', 'journey_location', 'journey_comment', 'journey_photo_view')
+          AND CASE WHEN type = 'journey_photo_view' THEN meta->>'rock_number' ELSE target_id END IS NOT NULL
         GROUP BY 1
         ORDER BY COUNT(*) FILTER (WHERE type = 'rock_view') DESC, COUNT(*) DESC
         LIMIT 50`,

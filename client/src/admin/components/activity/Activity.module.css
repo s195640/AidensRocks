@@ -206,3 +206,18 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* A table value that opens something (e.g. a rock's journey). */
+.linkButton {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: #1c6dc2;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.linkButton:hover {
+  color: #124a85;
+}
