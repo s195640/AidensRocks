@@ -436,24 +436,39 @@ async function findRockNumberProblems(client, rockNumbers, rqKey) {
 }
 
 // Unlinks any catalog rows assigned to this request that are no longer
-// listed (back to available, date cleared), then links the newly listed
-// ones (assigned, dated today). Rocks already linked are left alone, so a
-// status set by hand in the Rock Catalog survives re-saving the request.
+// listed (back to available, date cleared, bereaved flag off), then links
+// the newly listed ones (assigned, dated today, the request's bereaved
+// flag). Rocks already linked are left alone, so a status or flag set by
+// hand in the Rock Catalog survives re-saving the request. Run it after
+// the request row is saved, so the flag copied is the current one.
 async function syncRockNumbers(client, rqKey, rockNumbers) {
   await client.query(
     `UPDATE catalog
-     SET rq_key = NULL, assign_status = 'available', assigned_dt = NULL, update_dt = CURRENT_TIMESTAMP
+     SET rq_key = NULL, assign_status = 'available', assigned_dt = NULL, bereaved_parent = false,
+         update_dt = CURRENT_TIMESTAMP
      WHERE rq_key = $1 AND NOT (rock_number = ANY($2::int[]))`,
     [rqKey, rockNumbers]
   );
   if (rockNumbers.length > 0) {
     await client.query(
       `UPDATE catalog
-       SET rq_key = $1, assign_status = 'assigned', assigned_dt = CURRENT_DATE, update_dt = CURRENT_TIMESTAMP
+       SET rq_key = $1, assign_status = 'assigned', assigned_dt = CURRENT_DATE,
+           bereaved_parent = (SELECT bereaved_parent FROM rock_requests WHERE rq_key = $1),
+           update_dt = CURRENT_TIMESTAMP
        WHERE rock_number = ANY($2::int[]) AND rq_key IS DISTINCT FROM $1`,
       [rqKey, rockNumbers]
     );
   }
+}
+
+// The request's bereaved flag changed: copy it onto every rock linked to
+// it. One-way -- a rock's own flag never changes the request.
+async function copyBereavedToRocks(client, rqKey, bereaved) {
+  await client.query(
+    `UPDATE catalog SET bereaved_parent = $2, update_dt = CURRENT_TIMESTAMP
+     WHERE rq_key = $1 AND bereaved_parent <> $2`,
+    [rqKey, bereaved]
+  );
 }
 
 // POST /api/rock-requests/admin-create - lets an admin log a request that
@@ -555,7 +570,7 @@ router.put('/:rq_key', async (req, res) => {
     await client.query('BEGIN');
 
     const existingRes = await client.query(
-      'SELECT shipped FROM rock_requests WHERE rq_key = $1 FOR UPDATE',
+      'SELECT shipped, bereaved_parent FROM rock_requests WHERE rq_key = $1 FOR UPDATE',
       [rq_key]
     );
     if (existingRes.rowCount === 0) {
@@ -563,6 +578,7 @@ router.put('/:rq_key', async (req, res) => {
       return res.status(404).json({ error: 'Request not found' });
     }
     const wasShipped = existingRes.rows[0].shipped;
+    const wasBereaved = existingRes.rows[0].bereaved_parent;
 
     const details = await findRockNumberProblems(client, fields.rockNumbers, rq_key);
     if (details.length > 0) {
@@ -625,6 +641,9 @@ router.put('/:rq_key', async (req, res) => {
       ]
     );
 
+    // Only on a change, so re-saving a request doesn't undo a flag set
+    // by hand on one of its rocks.
+    if (wasBereaved !== fields.bereavedParent) await copyBereavedToRocks(client, rq_key, fields.bereavedParent);
     await syncRockNumbers(client, rq_key, fields.rockNumbers);
 
     await client.query('COMMIT');
@@ -663,11 +682,25 @@ router.patch('/:rq_key', async (req, res) => {
 
   try {
     values.push(rq_key);
+    // One statement: `old` sees the row before the update, so linked rocks
+    // get the bereaved flag only when it actually changed (as in PUT).
     const { rows } = await pool.query(
-      `UPDATE rock_requests
-       SET ${sets.join(', ')}, update_dt = CURRENT_TIMESTAMP
-       WHERE rq_key = $${values.length}
-       RETURNING rq_key, ready_to_ship, priority, bereaved_parent`,
+      `WITH old AS (
+         SELECT bereaved_parent FROM rock_requests WHERE rq_key = $${values.length}
+       ), req AS (
+         UPDATE rock_requests
+         SET ${sets.join(', ')}, update_dt = CURRENT_TIMESTAMP
+         WHERE rq_key = $${values.length}
+         RETURNING rq_key, ready_to_ship, priority, bereaved_parent
+       ), rocks AS (
+         UPDATE catalog c
+         SET bereaved_parent = req.bereaved_parent, update_dt = CURRENT_TIMESTAMP
+         FROM req, old
+         WHERE c.rq_key = req.rq_key
+           AND old.bereaved_parent <> req.bereaved_parent
+           AND c.bereaved_parent <> req.bereaved_parent
+       )
+       SELECT * FROM req`,
       values
     );
     if (rows.length === 0) return res.status(404).json({ error: 'Request not found' });

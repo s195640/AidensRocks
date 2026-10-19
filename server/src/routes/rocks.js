@@ -22,6 +22,15 @@ function parseArtistKeys(raw) {
 
 const ASSIGN_STATUSES = ['available', 'assigned', 'keep', 'unknown'];
 
+// bereaved_parent from the Edit Rock dialog (multipart, so a string).
+// Returns null when it wasn't sent (leave it alone).
+function parseBereaved(raw) {
+  if (raw === undefined) return null;
+  if (raw === true || raw === 'true') return true;
+  if (raw === false || raw === 'false') return false;
+  throw new Error('bereaved_parent must be true or false.');
+}
+
 // assign_status / assigned_dt from the Edit Rock dialog. Returns null when
 // no status was sent (leave both alone), or throws a message for a 400.
 function parseAssignment(body) {
@@ -69,7 +78,7 @@ router.get('/', async (req, res, next) => {
   try {
     const result = await pool.query(`
       SELECT rc.rc_key, rc.rock_number, rc.create_dt, rc.update_dt,
-             rc.comment, rc.rq_key, rc.assign_status,
+             rc.comment, rc.rq_key, rc.assign_status, rc.bereaved_parent,
              -- a DATE, as text so node-pg doesn't shift it to a UTC timestamp
              to_char(rc.assigned_dt, 'YYYY-MM-DD') AS assigned_dt,
              -- the rock number opens its journey only when there's a public one
@@ -143,8 +152,10 @@ router.put('/:rc_key', upload.single('image'), async (req, res, next) => {
     const artists = parseArtistKeys(artist_keys);
     if (!artists) return res.status(400).json({ error: 'artist_keys must be a JSON array of artist ids.' });
     let assignment;
+    let bereaved;
     try {
       assignment = parseAssignment(req.body);
+      bereaved = parseBereaved(req.body.bereaved_parent);
     } catch (e) {
       return res.status(400).json({ error: e.message });
     }
@@ -164,6 +175,10 @@ router.put('/:rc_key', upload.single('image'), async (req, res, next) => {
         `UPDATE catalog SET assign_status = $2, assigned_dt = $3 WHERE rc_key = $1`,
         [rc_key, assignment.status, assignment.date]
       );
+    }
+
+    if (bereaved !== null) {
+      await client.query(`UPDATE catalog SET bereaved_parent = $2 WHERE rc_key = $1`, [rc_key, bereaved]);
     }
 
     await client.query(`DELETE FROM artist_link WHERE rc_key = $1`, [
@@ -221,6 +236,26 @@ router.patch('/:rc_key/assign-status', async (req, res, next) => {
        WHERE rc_key = $1
        RETURNING rc_key, assign_status, to_char(assigned_dt, 'YYYY-MM-DD') AS assigned_dt`,
       [rc_key, status]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Rock not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH the table's in-place Bereaved parent toggle. Only the rock: the
+// flag never flows back to its rock request.
+router.patch('/:rc_key/bereaved-parent', async (req, res, next) => {
+  const { rc_key } = req.params;
+  const value = req.body?.bereaved_parent;
+  if (typeof value !== 'boolean') return res.status(400).json({ error: 'bereaved_parent must be true or false.' });
+  try {
+    const { rows } = await pool.query(
+      `UPDATE catalog SET bereaved_parent = $2, update_dt = CURRENT_TIMESTAMP
+       WHERE rc_key = $1
+       RETURNING rc_key, bereaved_parent`,
+      [rc_key, value]
     );
     if (rows.length === 0) return res.status(404).json({ error: 'Rock not found' });
     res.json(rows[0]);

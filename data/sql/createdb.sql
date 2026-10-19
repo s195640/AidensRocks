@@ -86,7 +86,10 @@ CREATE TABLE public.catalog (
     assign_status character varying(10) DEFAULT 'available' NOT NULL
         CONSTRAINT catalog_assign_status_check
         CHECK (assign_status IN ('available', 'assigned', 'keep', 'unknown')),
-    assigned_dt date
+    assigned_dt date,
+    -- copied from the linked rock request, or set on the rock itself
+    -- (see migrations/0.19-rock-bereaved-parent/)
+    bereaved_parent boolean DEFAULT false NOT NULL
 );
 
 

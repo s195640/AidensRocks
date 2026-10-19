@@ -7,6 +7,7 @@ import LightboxRock from "../../../../components/lightbox-rock/LightboxRock";
 import RockRequestInfoDialog from "../rock-request-info-dlg/RockRequestInfoDialog";
 import RockJourneyDialog from "../../../../components/rock-map/rock-journey-dialog/RockJourneyDialog";
 import ToggleSwitch from "../../../../components/simple-components/toggle-switch/ToggleSwitch";
+import { FaHandHoldingHeart } from "react-icons/fa";
 import { ASSIGN_STATUSES } from "../assignStatuses";
 
 // jsQR's binarizer struggles to find small QR modules in full-resolution camera
@@ -112,6 +113,7 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
   const [comment, setComment] = useState("");
   const [assignStatus, setAssignStatus] = useState("available");
   const [assignedDt, setAssignedDt] = useState("");
+  const [bereaved, setBereaved] = useState(false);
   const [error, setError] = useState("");
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
@@ -152,6 +154,7 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
     setComment(selectedRock.comment || "");
     setAssignStatus(selectedRock.assign_status || "available");
     setAssignedDt(selectedRock.assigned_dt || "");
+    setBereaved(!!selectedRock.bereaved_parent);
     setImageFile(null);
     setError("");
     setShowJourney(false);
@@ -204,6 +207,7 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
       formData.append("comment", comment);
       formData.append("assign_status", assignStatus);
       formData.append("assigned_dt", assignedDt);
+      formData.append("bereaved_parent", String(bereaved));
       if (imageFile) formData.append("image", imageFile);
 
       await axios.put(`/api/rocks/${selectedRock.rc_key}`, formData);
@@ -544,6 +548,12 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
 
             <label>Assigned Date</label>
             <input type="date" value={assignedDt} onChange={(e) => setAssignedDt(e.target.value)} />
+
+            <label className={styles.bereavedLabel}>
+              <input type="checkbox" checked={bereaved} onChange={(e) => setBereaved(e.target.checked)} />
+              <FaHandHoldingHeart className={bereaved ? styles.bereavedOn : styles.bereavedOff} />
+              Bereaved parent
+            </label>
 
             {linkedRequest && (
               <>

@@ -304,6 +304,56 @@ describe('rock requests (admin)', () => {
     await api().patch('/api/rock-requests/1').set(A).send({ priority: 'normal', bereaved_parent: false });
   });
 
+  it("bereaved parent flows request -> linked rocks on link and on change, never back", async () => {
+    const rockFlags = async () =>
+      Object.fromEntries(
+        (await sql('SELECT rock_number, bereaved_parent FROM catalog WHERE rock_number IN (103, 104)')).map((r) => [
+          r.rock_number,
+          r.bereaved_parent,
+        ])
+      );
+    const reqFlag = async (k) => (await sql('SELECT bereaved_parent FROM rock_requests WHERE rq_key = $1', [k]))[0].bereaved_parent;
+    const base = { name: 'Bereaved', rocks_requested: 2 };
+
+    // linking copies the request's flag
+    const created = await api().post('/api/rock-requests/admin-create').set(A)
+      .send({ ...base, bereaved_parent: true, rock_numbers: '103' });
+    const k = created.body.rq_key;
+    expect(await rockFlags()).toEqual({ 103: true, 104: false });
+
+    // a rock's own flag (table PATCH) never changes the request
+    const patchRock = (rc, v) => api().patch(`/api/rocks/${rc}/bereaved-parent`).set(A).send({ bereaved_parent: v });
+    expect((await patchRock(3, false)).body).toEqual({ rc_key: 3, bereaved_parent: false });
+    expect(await reqFlag(k)).toBe(true);
+    // ...and re-saving the request unchanged doesn't undo it
+    expect((await api().put(`/api/rock-requests/${k}`).set(A).send({ ...base, bereaved_parent: true, rock_numbers: '103' })).status).toBe(200);
+    expect(await rockFlags()).toEqual({ 103: false, 104: false });
+
+    // changing the request's flag (in-place PATCH or edit PUT) copies it to its rocks
+    expect((await api().patch(`/api/rock-requests/${k}`).set(A).send({ bereaved_parent: false })).status).toBe(200);
+    expect((await api().patch(`/api/rock-requests/${k}`).set(A).send({ bereaved_parent: true })).status).toBe(200);
+    expect(await rockFlags()).toEqual({ 103: true, 104: false });
+    expect((await api().put(`/api/rock-requests/${k}`).set(A).send({ ...base, bereaved_parent: false, rock_numbers: '103,104' })).status).toBe(200);
+    expect(await rockFlags()).toEqual({ 103: false, 104: false });
+    // a PATCH that doesn't touch the flag leaves a hand-set rock alone
+    await patchRock(4, true);
+    expect((await api().patch(`/api/rock-requests/${k}`).set(A).send({ priority: 'high' })).status).toBe(200);
+    expect(await rockFlags()).toEqual({ 103: false, 104: true });
+
+    // unlinking clears it
+    expect((await api().put(`/api/rock-requests/${k}`).set(A).send({ ...base, rock_numbers: '' })).status).toBe(200);
+    expect(await rockFlags()).toEqual({ 103: false, 104: false });
+
+    // the Edit Rock dialog's PUT sets it too; bad values are a 400
+    expect((await api().put('/api/rocks/4').set(A).field('artist_keys', '[]').field('comment', 'Rock with no artist')
+      .field('bereaved_parent', 'true')).status).toBe(200);
+    expect((await rockFlags())[104]).toBe(true);
+    expect((await api().put('/api/rocks/4').set(A).field('artist_keys', '[]').field('bereaved_parent', 'yes')).status).toBe(400);
+    expect((await patchRock(4, 'yes')).status).toBe(400);
+    expect((await patchRock(999999, true)).status).toBe(404);
+    await patchRock(4, false);
+  });
+
   it('public requests start with a priority from their message and need-by date', async () => {
     const inDays = (days) => {
       const d = new Date();

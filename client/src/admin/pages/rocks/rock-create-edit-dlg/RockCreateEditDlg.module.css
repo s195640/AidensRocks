@@ -68,6 +68,29 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
+/* Bereaved parent checkbox (same heart-hand icon as Rock Requests). */
+.bereavedLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  cursor: pointer;
+}
+
+.bereavedLabel input {
+  width: auto;
+  margin: 0;
+  padding: 0;
+}
+
+.bereavedOn {
+  color: #b5476f;
+}
+
+.bereavedOff {
+  color: #c8c8c8;
+}
+
 /* Opens the rock's journey (same look as the table's Rock # link). */
 .journeyLink {
   background: none;

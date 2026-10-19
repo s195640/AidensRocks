@@ -13,6 +13,29 @@
   color: #124a85;
 }
 
+/* Bereaved parent toggle (same look as Rock Requests). */
+.bereavedButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  padding: 2px;
+  border: none;
+  background: none;
+  color: #c8c8c8;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.bereavedButton:hover {
+  color: #999;
+}
+
+.bereavedButton.bereavedOn,
+.bereavedButton.bereavedOn:hover {
+  color: #b5476f;
+}
+
 .statusSelect {
   width: 100%;
   padding: 0.2rem;

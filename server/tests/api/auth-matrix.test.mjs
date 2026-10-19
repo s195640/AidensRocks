@@ -80,6 +80,7 @@ const ROUTES = [
   ['POST', '/api/rocks', 'admin'],
   ['PUT', `/api/rocks/${X}`, 'admin'],
   ['PATCH', `/api/rocks/${X}/assign-status`, 'admin'],
+  ['PATCH', `/api/rocks/${X}/bereaved-parent`, 'admin'],
   ['DELETE', `/api/rocks/${X}`, 'admin'],
   ['GET', '/api/rock-requests', 'admin'],
   ['POST', '/api/rock-requests/admin-create', 'admin'],

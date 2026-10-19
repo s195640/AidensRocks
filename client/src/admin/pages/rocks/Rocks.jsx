@@ -103,6 +103,21 @@ const Rocks = () => {
     }
   };
 
+  // The table's in-place Bereaved parent toggle, same pattern as the status.
+  // Only changes the rock, never its rock request.
+  const handleBereavedChange = async (rock, bereaved_parent) => {
+    const applyToRow = (value) =>
+      setRocks((rows) => rows.map((r) => (r.rc_key === rock.rc_key ? { ...r, bereaved_parent: value } : r)));
+    applyToRow(bereaved_parent);
+    try {
+      await axios.patch(`/api/rocks/${rock.rc_key}/bereaved-parent`, { bereaved_parent });
+    } catch (err) {
+      console.error(err);
+      applyToRow(rock.bereaved_parent);
+      alert(err.response?.data?.error || "Failed to update bereaved parent.");
+    }
+  };
+
   const handleEditByNumber = () => {
     const rock = rocks.find((r) => r.rock_number === parseInt(rockNumber));
     if (rock) openDialog(rock);
@@ -222,6 +237,7 @@ const Rocks = () => {
           onEdit={openDialog}
           onDelete={handleDelete}
           onStatusChange={handleStatusChange}
+          onBereavedChange={handleBereavedChange}
           statusFilter={statusFilter}
           recentHours={recentHours}
           searchTerm={searchTerm}

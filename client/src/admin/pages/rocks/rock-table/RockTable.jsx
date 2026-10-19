@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Table from "../../../../components/simple-components/table/Table";
 import RockRequestInfoDialog from "../rock-request-info-dlg/RockRequestInfoDialog";
 import RockJourneyDialog from "../../../../components/rock-map/rock-journey-dialog/RockJourneyDialog";
-import { FaEdit, FaTrash, FaClipboardList } from "react-icons/fa";
+import { FaEdit, FaTrash, FaClipboardList, FaHandHoldingHeart } from "react-icons/fa";
 import { ASSIGN_STATUSES } from "../assignStatuses";
 import styles from "./RockTable.module.css";
 
@@ -11,6 +11,7 @@ export default function RockTable({
   onEdit,
   onDelete,
   onStatusChange,
+  onBereavedChange,
   statusFilter,
   recentHours,
   searchTerm,
@@ -75,6 +76,14 @@ export default function RockTable({
     { key: "rock_number", label: "Rock", defaultWidth: 80, sortable: true, },
     { key: "image", label: "Image", defaultWidth: 75 },
     { key: "assign_status", label: "Status", defaultWidth: 110, sortable: true },
+    {
+      key: "bereaved_parent",
+      label: <FaHandHoldingHeart title="Bereaved parent" aria-label="Bereaved parent" />,
+      defaultWidth: 45,
+      sortable: true,
+      // Flagged first when sorted ascending.
+      sortValue: (row) => (row.bereaved_parent ? 0 : 1),
+    },
     { key: "artists", label: "Artists", defaultWidth: 120, sortable: true, },
     { key: "comment", label: "Comment", sortable: true, },
     {
@@ -142,6 +151,19 @@ export default function RockTable({
         </select>
       );
     if (key === "assigned_dt") return row.assigned_dt || "-";
+    // Same hand-holding-heart toggle as Rock Requests: lit when set.
+    if (key === "bereaved_parent")
+      return (
+        <button
+          type="button"
+          className={`${styles.bereavedButton} ${row.bereaved_parent ? styles.bereavedOn : ""}`}
+          aria-pressed={!!row.bereaved_parent}
+          title={row.bereaved_parent ? "Bereaved parent" : "Mark as bereaved parent"}
+          onClick={() => onBereavedChange(row, !row.bereaved_parent)}
+        >
+          <FaHandHoldingHeart size={16} />
+        </button>
+      );
     if (key === "request_name") return row._requestName || "-";
     if (key === "request_email") return row._requestEmail || "-";
     if (key === "request_address")
