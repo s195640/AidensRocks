@@ -1,4 +1,4 @@
--- STEP 01 of 01 -- run on BOTH servers (Node A, then Node B).
+-- STEP 01 of 02 -- run on BOTH servers (Node A, then Node B).
 -- Finish this step on both servers before deploying the code (the 0.19
 -- code selects this column). Needs 0.18-rock-assign-status already run.
 --

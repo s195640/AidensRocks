@@ -39,6 +39,10 @@ export default function RockTable({
         return {
           ...row,
           _linkedRequest: linkedRequest,
+          _artistNames: (row.artists || [])
+            .map((a) => a.display_name)
+            .filter(Boolean)
+            .join(", "),
           _requestName: linkedRequest?.name || "",
           _requestEmail: linkedRequest?.email || "",
           _requestAddress: linkedRequest?.address || "",
@@ -56,10 +60,9 @@ export default function RockTable({
     );
     if (!term) return byFilters;
     return byFilters.filter((row) => {
-      const artistNames = (row.artists || []).map((a) => a.display_name).join(", ");
       return [
         row.rock_number,
-        artistNames,
+        row._artistNames,
         row.comment,
         row._requestName,
         row._requestEmail,
@@ -84,7 +87,15 @@ export default function RockTable({
       // Flagged first when sorted ascending.
       sortValue: (row) => (row.bereaved_parent ? 0 : 1),
     },
-    { key: "artists", label: "Artists", defaultWidth: 120, sortable: true, },
+    {
+      key: "artists",
+      label: "Artists",
+      defaultWidth: 120,
+      sortable: true,
+      // row.artists is an array of objects, which doesn't compare; sort by
+      // the names as shown. null puts rocks with no artist last either way.
+      sortValue: (row) => row._artistNames || null,
+    },
     { key: "comment", label: "Comment", sortable: true, },
     {
       key: "assigned_dt",
@@ -134,7 +145,7 @@ export default function RockTable({
       ) : (
         row.rock_number
       );
-    if (key === "artists") return row.artists.map((a) => a.display_name).join(", ");
+    if (key === "artists") return row._artistNames;
     // Saves as soon as it changes (no dialog).
     if (key === "assign_status")
       return (
