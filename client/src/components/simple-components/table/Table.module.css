@@ -123,11 +123,46 @@ tr:hover td {
   cursor: pointer;
 }
 
+/* overflow: hidden (for the rounded corners) would stop the header cells
+   sticking. Collapsed borders belong to the table, not the cell, so they
+   don't move with a sticky cell -- the header's top border stayed behind
+   as a 1px gap the rows showed through. Separate borders are part of each
+   cell; drawing only right + bottom (plus the outer edges) keeps 1px lines. */
+.stickyHeader {
+  overflow: visible;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.stickyHeader th,
+.stickyHeader td {
+  border-width: 0 1px 1px 0;
+}
+
+.stickyHeader th {
+  position: sticky;
+  z-index: 2;
+  border-top-width: 1px;
+}
+
+.stickyHeader th:first-child,
+.stickyHeader td:first-child {
+  border-left-width: 1px;
+}
+
 @media (max-width: 640px) {
   .table {
     display: block;
     overflow-x: auto;
     white-space: nowrap;
+  }
+
+  /* The table scrolling sideways in itself would trap the sticky header
+     row; a sticky table leaves the scrolling to its wrapper instead. */
+  .table.stickyHeader {
+    display: table;
+    overflow: visible;
+    white-space: normal;
   }
 }
 

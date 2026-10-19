@@ -1,7 +1,24 @@
-.searchRow {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 1rem;
+.statusSelect {
+  width: 100%;
+  padding: 0.2rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.status_available {
+  background-color: #e8f5e9;
+}
+
+.status_assigned {
+  background-color: #e3f2fd;
+}
+
+.status_keep {
+  background-color: #fff8e1;
+}
+
+.status_unknown {
+  background-color: #f3e5f5;
 }
 
 .searchInput {
@@ -40,4 +57,25 @@
 .thumb:hover {
   transform: scale(1.1);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Phones: Actions stays pinned at the right edge while the other columns
+   scroll sideways under it. Cells have their own row background, so
+   nothing shows through. "table" in the selectors outranks Table's
+   ".stickyHeader th" z-index: the Actions header sits above both the
+   other headers and the pinned cells.
+   The cells stay at z-index 0: the unpositioned cells they cover paint
+   below them anyway, and anything higher would draw them over the music
+   player (fixed at the bottom, no z-index, later in the page). */
+@media (max-width: 769px) {
+  table .actionsCol {
+    position: sticky;
+    right: 0;
+    z-index: 0;
+    box-shadow: -3px 0 4px rgba(0, 0, 0, 0.12);
+  }
+
+  table th.actionsCol {
+    z-index: 3;
+  }
 }

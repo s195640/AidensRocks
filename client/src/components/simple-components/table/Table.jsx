@@ -2,6 +2,8 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import styles from "./Table.module.css";
 
+// A column can carry an optional className, added to its <th> and every
+// <td> (e.g. to pin it in place on a phone).
 const Table = ({
   columns = [],
   data = [],
@@ -13,6 +15,11 @@ const Table = ({
   loading = false,
   // Optional (row) => extra class for that row's <tr>, e.g. to tint it.
   rowClassName,
+  // Optional px offset: the header row sticks that far from the top of the
+  // nearest scrolling box (a page's own scroll area, or the page itself)
+  // while the rows scroll under it. Also turns off the phone layout's
+  // sideways scroll inside the table, so wrap it in a box that scrolls.
+  stickyHeaderTop,
 }) => {
   const [sortConfig, setSortConfig] = useState(defaultSort);
   const [tableData, setTableData] = useState(data);
@@ -66,7 +73,7 @@ const Table = ({
             const isFlexible = col.defaultWidth == null;
             const widthStyle = isFlexible ? { minWidth: 80 } : { width: col.defaultWidth };
             return (
-              <td key={col.key} style={{ ...widthStyle, fontSize }} className={styles.tableCell}>
+              <td key={col.key} style={{ ...widthStyle, fontSize }} className={`${styles.tableCell} ${col.className || ""}`}>
                 {renderCell ? renderCell(row, col.key) : row[col.key]}
               </td>
             );
@@ -84,7 +91,9 @@ const Table = ({
   const renderTable = (body) => (
     <div className={styles.tableWrapper}>
       <table
-        className={`${styles.table} ${loading ? styles.disabled : ""}`}
+        className={`${styles.table} ${stickyHeaderTop != null ? styles.stickyHeader : ""} ${
+          loading ? styles.disabled : ""
+        }`}
         style={{ fontSize }}
       >
         <thead>
@@ -97,8 +106,12 @@ const Table = ({
                   key={col.key}
                   ref={(el) => (headerRefs.current[col.key] = el)}
                   onClick={() => handleSort(col)}
-                  className={`${col.sortable ? styles.sortable : styles.notSortable}`}
-                  style={{ ...widthStyle, fontSize }}
+                  className={`${col.sortable ? styles.sortable : styles.notSortable} ${col.className || ""}`}
+                  style={{
+                    ...widthStyle,
+                    fontSize,
+                    ...(stickyHeaderTop != null && { top: stickyHeaderTop }),
+                  }}
                 >
                   <div className={styles.headerCell}>
                     <span className={styles.headerLabel}>{col.label}</span>
@@ -172,7 +185,7 @@ const Table = ({
                           <td
                             key={col.key}
                             style={{ ...widthStyle, fontSize }}
-                            className={styles.tableCell}
+                            className={`${styles.tableCell} ${col.className || ""}`}
                           >
                             {renderCell ? renderCell(row, col.key) : row[col.key]}
                           </td>

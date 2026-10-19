@@ -81,7 +81,12 @@ CREATE TABLE public.catalog (
     create_dt timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     update_dt timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     comment text,
-    rq_key integer
+    rq_key integer,
+    -- see migrations/0.18-rock-assign-status/
+    assign_status character varying(10) DEFAULT 'available' NOT NULL
+        CONSTRAINT catalog_assign_status_check
+        CHECK (assign_status IN ('available', 'assigned', 'keep', 'unknown')),
+    assigned_dt date
 );
 
 

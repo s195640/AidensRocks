@@ -79,6 +79,7 @@ const ROUTES = [
   ['GET', '/api/rocks', 'admin'],
   ['POST', '/api/rocks', 'admin'],
   ['PUT', `/api/rocks/${X}`, 'admin'],
+  ['PATCH', `/api/rocks/${X}/assign-status`, 'admin'],
   ['DELETE', `/api/rocks/${X}`, 'admin'],
   ['GET', '/api/rock-requests', 'admin'],
   ['POST', '/api/rock-requests/admin-create', 'admin'],

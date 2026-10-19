@@ -6,6 +6,7 @@ import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import LightboxRock from "../../../../components/lightbox-rock/LightboxRock";
 import RockRequestInfoDialog from "../rock-request-info-dlg/RockRequestInfoDialog";
 import ToggleSwitch from "../../../../components/simple-components/toggle-switch/ToggleSwitch";
+import { ASSIGN_STATUSES } from "../assignStatuses";
 
 // jsQR's binarizer struggles to find small QR modules in full-resolution camera
 // photos (lots of JPEG noise relative to module size), so scan progressively
@@ -91,6 +92,12 @@ const rockNumberFromQrText = (qrText) => {
   }
 };
 
+// Today as YYYY-MM-DD in local time (toISOString would give UTC's date).
+const todayLocal = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
 const defaultArtistKeys = (artists) => {
   const defaultArtist = artists.find((a) => a.display_name === "Ashley Armitage");
   return defaultArtist ? [defaultArtist.ra_key] : [];
@@ -102,6 +109,8 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
   const [selectedArtistKeys, setSelectedArtistKeys] = useState([]);
   const [imageFile, setImageFile] = useState(null);
   const [comment, setComment] = useState("");
+  const [assignStatus, setAssignStatus] = useState("available");
+  const [assignedDt, setAssignedDt] = useState("");
   const [error, setError] = useState("");
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
@@ -139,6 +148,8 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
     // keeping that null made every save fail.
     setSelectedArtistKeys((selectedRock.artists || []).map((a) => a.ra_key).filter((k) => k != null));
     setComment(selectedRock.comment || "");
+    setAssignStatus(selectedRock.assign_status || "available");
+    setAssignedDt(selectedRock.assigned_dt || "");
     setImageFile(null);
     setError("");
   }, [selectedRock, isOpen]);
@@ -188,6 +199,8 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
       formData.append("rock_number", rockNumber);
       formData.append("artist_keys", JSON.stringify(selectedArtistKeys));
       formData.append("comment", comment);
+      formData.append("assign_status", assignStatus);
+      formData.append("assigned_dt", assignedDt);
       if (imageFile) formData.append("image", imageFile);
 
       await axios.put(`/api/rocks/${selectedRock.rc_key}`, formData);
@@ -222,6 +235,14 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
         );
       }
     }
+  };
+
+  // Same defaults as the table's dropdown: assigned fills in today if there's
+  // no date yet, available clears it. The date can still be edited after.
+  const handleStatusChange = (status) => {
+    setAssignStatus(status);
+    if (status === "available") setAssignedDt("");
+    else if (status === "assigned" && !assignedDt) setAssignedDt(todayLocal());
   };
 
   const openImageDialog = () => {
@@ -502,6 +523,18 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
               rows={4}
               placeholder="Add optional comment here..."
             ></textarea>
+
+            <label>Status</label>
+            <select value={assignStatus} onChange={(e) => handleStatusChange(e.target.value)}>
+              {ASSIGN_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+
+            <label>Assigned Date</label>
+            <input type="date" value={assignedDt} onChange={(e) => setAssignedDt(e.target.value)} />
 
             {linkedRequest && (
               <>

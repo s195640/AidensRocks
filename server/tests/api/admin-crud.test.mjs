@@ -76,6 +76,37 @@ describe('rocks (/api/rocks) [S5 A7]', () => {
     expect(await sql('SELECT * FROM artist_link WHERE rc_key = 4')).toEqual([]);
   });
 
+  it('assign status: defaults to available, table PATCH stamps/clears the date, dialog PUT sets both', async () => {
+    const listed = async () => (await api().get('/api/rocks').set(A)).body.find((r) => r.rc_key === 2);
+    const today = (await sql(`SELECT to_char(CURRENT_DATE, 'YYYY-MM-DD') AS d`))[0].d;
+    expect(await listed()).toMatchObject({ assign_status: 'available', assigned_dt: null });
+
+    const patch = (assign_status) => api().patch('/api/rocks/2/assign-status').set(A).send({ assign_status });
+    expect((await patch('assigned')).body).toEqual({ rc_key: 2, assign_status: 'assigned', assigned_dt: today });
+    // keep leaves the date; re-assigning an assigned rock keeps its date
+    await sql(`UPDATE catalog SET assigned_dt = '2025-01-02' WHERE rc_key = 2`);
+    expect((await patch('assigned')).body.assigned_dt).toBe('2025-01-02');
+    expect((await patch('keep')).body).toMatchObject({ assign_status: 'keep', assigned_dt: '2025-01-02' });
+    expect((await patch('available')).body).toMatchObject({ assign_status: 'available', assigned_dt: null });
+    expect((await patch('lost')).status).toBe(400);
+    expect((await api().patch('/api/rocks/999999/assign-status').set(A).send({ assign_status: 'keep' })).status).toBe(404);
+
+    const put = (fields) => {
+      let req = api().put('/api/rocks/2').set(A).field('artist_keys', '[2]').field('comment', 'Green rock');
+      for (const [k, v] of Object.entries(fields)) req = req.field(k, v);
+      return req;
+    };
+    expect((await put({ assign_status: 'unknown', assigned_dt: '2025-03-04' })).status).toBe(200);
+    expect(await listed()).toMatchObject({ assign_status: 'unknown', assigned_dt: '2025-03-04' });
+    // a PUT without assign_status leaves both alone
+    expect((await put({})).status).toBe(200);
+    expect(await listed()).toMatchObject({ assign_status: 'unknown', assigned_dt: '2025-03-04' });
+    expect((await put({ assign_status: 'available', assigned_dt: '' })).status).toBe(200);
+    expect(await listed()).toMatchObject({ assign_status: 'available', assigned_dt: null });
+    expect((await put({ assign_status: 'nope' })).status).toBe(400);
+    expect((await put({ assign_status: 'keep', assigned_dt: 'March 4' })).status).toBe(400);
+  });
+
   it('bad artist_keys is a 400', async () => {
     expect((await api().put('/api/rocks/4').set(A).field('artist_keys', 'nope')).status).toBe(400);
   });
@@ -209,6 +240,10 @@ describe('rock requests (admin)', () => {
     });
     expect(put.status).toBe(200);
     expect((await sql('SELECT rq_key FROM catalog WHERE rock_number = 101'))[0].rq_key).toBe(1);
+    // linking marks the rock assigned today
+    expect(
+      (await sql(`SELECT assign_status, assigned_dt = CURRENT_DATE AS today FROM catalog WHERE rock_number = 101`))[0]
+    ).toEqual({ assign_status: 'assigned', today: true });
     const unknownRock = await api().put('/api/rock-requests/1').set(A).send({
       name: 'Requester', email: 'requester@example.com', address: '1 Main St', rocks_requested: 2, rock_numbers: '5555',
     });
@@ -218,6 +253,9 @@ describe('rock requests (admin)', () => {
     await api().put('/api/rock-requests/1').set(A).send({
       name: 'Requester', email: 'requester@example.com', address: '1 Main St', rocks_requested: 2, rock_numbers: '',
     });
+    // unlinking puts it back to available
+    expect((await sql('SELECT rq_key, assign_status, assigned_dt FROM catalog WHERE rock_number = 101'))[0])
+      .toEqual({ rq_key: null, assign_status: 'available', assigned_dt: null });
     expect((await api().delete('/api/rock-requests/1').set(A)).status).toBe(200);
     expect((await api().post('/api/rock-requests/1/undelete').set(A)).status).toBe(200);
   });

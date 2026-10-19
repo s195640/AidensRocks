@@ -1,94 +1,182 @@
-.rocksContainer {
-  padding: 1rem;
-  padding-top: 60px;
-  background-color: #f9f9f9;
-}
-
-.headerTop {
-  position: sticky;
-  top: 53px;
-  z-index: 5;
-  background-color: #f9f9f9;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #ddd;
-}
-
-.headerLeft h2 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.totals {
-  margin-top: 0.3rem;
-  font-size: 0.9rem;
-  color: #555;
-  line-height: 1.3;
-}
-
-.headerRight {
+/* Fills the screen below the fixed navbar (50px): the header keeps its
+   height and the table area takes the rest and scrolls on its own. No
+   position/z-index here -- see the comment in Rocks.jsx. */
+.page {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  height: 100vh;
+  height: 100dvh;
+  box-sizing: border-box;
+  padding: 58px 1rem 0.75rem;
+  background-color: #f9f9f9;
+}
+
+.header {
+  flex: none;
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+  white-space: nowrap;
+}
+
+.count {
+  font-size: 0.9rem;
+  font-weight: normal;
+  color: #666;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.rockNumberInput {
+  width: 90px;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background-color: #2196f3;
+  color: white;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.iconButton:hover {
+  background-color: #1976d2;
 }
 
 .createButton {
   background-color: #4caf50;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background 0.2s;
 }
 
 .createButton:hover {
   background-color: #45a049;
 }
 
-.editRock {
+/* Chips on the left, status + search on the right; stacks on a phone. */
+.filterRow {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
 }
 
-.editRock input {
-  width: 100px;
-  padding: 0.4rem;
+.filterChips {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.filterChip {
+  flex: none;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 999px;
+  background-color: #fff;
+  color: #555;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.filterChip:hover {
+  border-color: #4caf50;
+}
+
+.chipCount {
+  font-weight: 600;
+}
+
+.filterChipActive,
+.filterChipActive:hover {
+  background-color: #4caf50;
+  border-color: #4caf50;
+  color: #fff;
+}
+
+.searchGroup {
+  display: flex;
+  gap: 0.4rem;
+  flex: 0 1 460px;
+  min-width: 0;
+}
+
+.statusFilter,
+.searchInput {
+  height: 36px;
+  box-sizing: border-box;
   border: 1px solid #ccc;
   border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: #fff;
 }
 
-.editRock button {
-  padding: 0.4rem 0.8rem;
-  border: none;
-  border-radius: 6px;
-  background-color: #2196f3;
-  color: white;
-  cursor: pointer;
-  transition: background 0.2s;
+.statusFilter {
+  flex: none;
+  padding: 0 0.4rem;
 }
 
-.editRock button:hover {
-  background-color: #1976d2;
+.searchInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 0.6rem;
 }
 
-.thumb {
-  width: 50px;
-  height: 50px;
-  object-fit: cover;
+.searchInput:focus,
+.rockNumberInput:focus {
+  border-color: #4caf50;
+  box-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
+  outline: none;
+}
+
+/* The only scrolling part of the page. overscroll-behavior keeps a swipe
+   that reaches the end from scrolling the page behind it. */
+.tableArea {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
   border-radius: 8px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
 }
 
-.thumb:hover {
-  transform: scale(1.1);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+/* Wide enough that columns stay readable; narrower screens scroll sideways
+   inside .tableArea. */
+.tableArea table {
+  min-width: 1100px;
+  box-shadow: none;
+  border-radius: 0;
 }
 
 .successToast {
@@ -126,32 +214,42 @@
   }
 }
 
-@media (max-width: 600px) {
-  .headerTop {
-    top: 50px;
+@media (max-width: 769px) {
+  .page {
+    padding: 56px 0.5rem 0.5rem;
   }
 
-  .rocksTable th,
-  .rocksTable td {
-    padding: 0.5rem;
-    font-size: 0.5rem;
+  .title {
+    font-size: 1.25rem;
   }
 
-  .createButton {
-    font-size: 0.6rem;
-    padding: 0.4rem 0.6rem;
+  .rockNumberInput {
+    width: 72px;
   }
 
-  .rocksHeader h2 {
-    font-size: 1rem;
+  .filterRow {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .editRock input {
-    width: 60px;
+  /* One swipeable line of chips instead of wrapping. */
+  .filterChips {
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
-  .editRock button {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.8rem;
+  .filterChips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .searchGroup {
+    flex: none;
+  }
+
+  /* 16px stops iOS zooming in when a field gets focus. */
+  .rockNumberInput,
+  .statusFilter,
+  .searchInput {
+    font-size: 16px;
   }
 }

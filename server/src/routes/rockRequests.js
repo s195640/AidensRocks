@@ -436,15 +436,21 @@ async function findRockNumberProblems(client, rockNumbers, rqKey) {
 }
 
 // Unlinks any catalog rows assigned to this request that are no longer
-// listed, then (re)links everything currently listed.
+// listed (back to available, date cleared), then links the newly listed
+// ones (assigned, dated today). Rocks already linked are left alone, so a
+// status set by hand in the Rock Catalog survives re-saving the request.
 async function syncRockNumbers(client, rqKey, rockNumbers) {
   await client.query(
-    'UPDATE catalog SET rq_key = NULL, update_dt = CURRENT_TIMESTAMP WHERE rq_key = $1 AND NOT (rock_number = ANY($2::int[]))',
+    `UPDATE catalog
+     SET rq_key = NULL, assign_status = 'available', assigned_dt = NULL, update_dt = CURRENT_TIMESTAMP
+     WHERE rq_key = $1 AND NOT (rock_number = ANY($2::int[]))`,
     [rqKey, rockNumbers]
   );
   if (rockNumbers.length > 0) {
     await client.query(
-      'UPDATE catalog SET rq_key = $1, update_dt = CURRENT_TIMESTAMP WHERE rock_number = ANY($2::int[])',
+      `UPDATE catalog
+       SET rq_key = $1, assign_status = 'assigned', assigned_dt = CURRENT_DATE, update_dt = CURRENT_TIMESTAMP
+       WHERE rock_number = ANY($2::int[]) AND rq_key IS DISTINCT FROM $1`,
       [rqKey, rockNumbers]
     );
   }

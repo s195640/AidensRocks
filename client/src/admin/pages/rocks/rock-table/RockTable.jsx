@@ -1,11 +1,23 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Table from "../../../../components/simple-components/table/Table";
 import RockRequestInfoDialog from "../rock-request-info-dlg/RockRequestInfoDialog";
 import { FaEdit, FaTrash, FaClipboardList } from "react-icons/fa";
+import { ASSIGN_STATUSES } from "../assignStatuses";
 import styles from "./RockTable.module.css";
 
-export default function RockTable({ rocks, onEdit, onDelete, openImageDialog, requests }) {
-  const [searchTerm, setSearchTerm] = useState("");
+export default function RockTable({
+  rocks,
+  onEdit,
+  onDelete,
+  onStatusChange,
+  statusFilter,
+  recentHours,
+  searchTerm,
+  onShownCountChange,
+  stickyHeaderTop,
+  openImageDialog,
+  requests,
+}) {
   const [viewingRequest, setViewingRequest] = useState(null);
 
   const requestByRqKey = useMemo(() => {
@@ -34,8 +46,13 @@ export default function RockTable({ rocks, onEdit, onDelete, openImageDialog, re
 
   const filteredRocks = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
-    if (!term) return _data;
-    return _data.filter((row) => {
+    const since = recentHours ? Date.now() - recentHours * 60 * 60 * 1000 : null;
+    const byFilters = _data.filter(
+      (row) =>
+        (!statusFilter || row.assign_status === statusFilter) && (!since || new Date(row.create_dt) > since)
+    );
+    if (!term) return byFilters;
+    return byFilters.filter((row) => {
       const artistNames = (row.artists || []).map((a) => a.display_name).join(", ");
       return [
         row.rock_number,
@@ -46,40 +63,68 @@ export default function RockTable({ rocks, onEdit, onDelete, openImageDialog, re
         row._requestAddress,
       ].some((field) => String(field ?? "").toLowerCase().includes(term));
     });
-  }, [_data, searchTerm]);
+  }, [_data, searchTerm, statusFilter, recentHours]);
+
+  useEffect(() => {
+    onShownCountChange?.(filteredRocks.length);
+  }, [filteredRocks.length, onShownCountChange]);
 
   const columns = [
     { key: "rock_number", label: "Rock", defaultWidth: 80, sortable: true, },
+    { key: "image", label: "Image", defaultWidth: 75 },
+    { key: "assign_status", label: "Status", defaultWidth: 110, sortable: true },
     { key: "artists", label: "Artists", defaultWidth: 120, sortable: true, },
     { key: "comment", label: "Comment", sortable: true, },
     {
+      key: "assigned_dt",
+      label: "Assigned",
+      defaultWidth: 100,
+      sortable: true,
+      sortValue: (row) => row.assigned_dt || "",
+    },
+    {
       key: "request_name",
-      label: "Request Name",
+      label: "Name",
       defaultWidth: 120,
       sortable: true,
       sortValue: (row) => row._requestName,
     },
     {
       key: "request_email",
-      label: "Request Email",
+      label: "Email",
       defaultWidth: 140,
       sortable: true,
       sortValue: (row) => row._requestEmail,
     },
     {
       key: "request_address",
-      label: "Request Address",
+      label: "Address",
       defaultWidth: 160,
       sortable: true,
       sortValue: (row) => row._requestAddress,
     },
     { key: "create_dt", label: "Created", defaultWidth: 120, sortable: true },
-    { key: "image", label: "Image", defaultWidth: 75 },
-    { key: "actions", label: "Actions", defaultWidth: 85 },
+    { key: "actions", label: "Actions", defaultWidth: 85, className: styles.actionsCol },
   ];
 
   const renderCell = (row, key) => {
     if (key === "artists") return row.artists.map((a) => a.display_name).join(", ");
+    // Saves as soon as it changes (no dialog).
+    if (key === "assign_status")
+      return (
+        <select
+          className={`${styles.statusSelect} ${styles[`status_${row.assign_status}`] || ""}`}
+          value={row.assign_status}
+          onChange={(e) => onStatusChange(row, e.target.value)}
+        >
+          {ASSIGN_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      );
+    if (key === "assigned_dt") return row.assigned_dt || "-";
     if (key === "request_name") return row._requestName || "-";
     if (key === "request_email") return row._requestEmail || "-";
     if (key === "request_address")
@@ -140,16 +185,13 @@ export default function RockTable({ rocks, onEdit, onDelete, openImageDialog, re
 
   return (
     <>
-      <div className={styles.searchRow}>
-        <input
-          type="text"
-          placeholder="Search rock #, artists, comment, request name/email/address..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className={styles.searchInput}
-        />
-      </div>
-      <Table columns={columns} data={filteredRocks} renderCell={renderCell} enableRowDrag={false} />
+      <Table
+        columns={columns}
+        data={filteredRocks}
+        renderCell={renderCell}
+        enableRowDrag={false}
+        stickyHeaderTop={stickyHeaderTop}
+      />
 
       <RockRequestInfoDialog
         isOpen={!!viewingRequest}

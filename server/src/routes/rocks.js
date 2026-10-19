@@ -19,6 +19,20 @@ function parseArtistKeys(raw) {
   const ids = value.map(Number).filter((n) => Number.isInteger(n) && n > 0);
   return [...new Set(ids)];
 }
+
+const ASSIGN_STATUSES = ['available', 'assigned', 'keep', 'unknown'];
+
+// assign_status / assigned_dt from the Edit Rock dialog. Returns null when
+// no status was sent (leave both alone), or throws a message for a 400.
+function parseAssignment(body) {
+  if (body.assign_status === undefined) return null;
+  if (!ASSIGN_STATUSES.includes(body.assign_status)) {
+    throw new Error(`assign_status must be one of ${ASSIGN_STATUSES.join(', ')}.`);
+  }
+  const date = String(body.assigned_dt ?? '').trim();
+  if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('assigned_dt must be YYYY-MM-DD.');
+  return { status: body.assign_status, date: date || null };
+}
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -54,7 +68,9 @@ router.get('/', async (req, res, next) => {
   try {
     const result = await pool.query(`
       SELECT rc.rc_key, rc.rock_number, rc.create_dt, rc.update_dt,
-             rc.comment, rc.rq_key,
+             rc.comment, rc.rq_key, rc.assign_status,
+             -- a DATE, as text so node-pg doesn't shift it to a UTC timestamp
+             to_char(rc.assigned_dt, 'YYYY-MM-DD') AS assigned_dt,
              json_agg(json_build_object('ra_key', ra.ra_key, 'display_name', ra.display_name)) AS artists
       FROM catalog rc
       LEFT JOIN artist_link ral ON rc.rc_key = ral.rc_key
@@ -120,6 +136,12 @@ router.put('/:rc_key', upload.single('image'), async (req, res, next) => {
     const { artist_keys = '[]', comment = '' } = req.body;
     const artists = parseArtistKeys(artist_keys);
     if (!artists) return res.status(400).json({ error: 'artist_keys must be a JSON array of artist ids.' });
+    let assignment;
+    try {
+      assignment = parseAssignment(req.body);
+    } catch (e) {
+      return res.status(400).json({ error: e.message });
+    }
 
     await client.query('BEGIN');
 
@@ -130,6 +152,13 @@ router.put('/:rc_key', upload.single('image'), async (req, res, next) => {
        WHERE rc_key = $1`,
       [rc_key, comment]
     );
+
+    if (assignment) {
+      await client.query(
+        `UPDATE catalog SET assign_status = $2, assigned_dt = $3 WHERE rc_key = $1`,
+        [rc_key, assignment.status, assignment.date]
+      );
+    }
 
     await client.query(`DELETE FROM artist_link WHERE rc_key = $1`, [
       rc_key,
@@ -160,6 +189,36 @@ router.put('/:rc_key', upload.single('image'), async (req, res, next) => {
     next(err);
   } finally {
     if (client) client.release();
+  }
+});
+
+// PATCH the table's in-place Status dropdown. Changing to assigned stamps
+// today's date (an already-assigned rock keeps its date); available clears
+// it; keep/unknown leave it alone.
+router.patch('/:rc_key/assign-status', async (req, res, next) => {
+  const { rc_key } = req.params;
+  const status = req.body?.assign_status;
+  if (!ASSIGN_STATUSES.includes(status)) {
+    return res.status(400).json({ error: `assign_status must be one of ${ASSIGN_STATUSES.join(', ')}.` });
+  }
+  try {
+    const { rows } = await pool.query(
+      `UPDATE catalog
+       SET assigned_dt = CASE
+             WHEN $2::text = 'available' THEN NULL
+             WHEN $2::text = 'assigned' AND assign_status <> 'assigned' THEN CURRENT_DATE
+             ELSE assigned_dt
+           END,
+           assign_status = $2::text,
+           update_dt = CURRENT_TIMESTAMP
+       WHERE rc_key = $1
+       RETURNING rc_key, assign_status, to_char(assigned_dt, 'YYYY-MM-DD') AS assigned_dt`,
+      [rc_key, status]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Rock not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    next(err);
   }
 });
 
