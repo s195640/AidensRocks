@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Table from "../../../../components/simple-components/table/Table";
 import RockRequestInfoDialog from "../rock-request-info-dlg/RockRequestInfoDialog";
+import RockJourneyDialog from "../../../../components/rock-map/rock-journey-dialog/RockJourneyDialog";
 import { FaEdit, FaTrash, FaClipboardList } from "react-icons/fa";
 import { ASSIGN_STATUSES } from "../assignStatuses";
 import styles from "./RockTable.module.css";
@@ -19,6 +20,7 @@ export default function RockTable({
   requests,
 }) {
   const [viewingRequest, setViewingRequest] = useState(null);
+  const [journeyRock, setJourneyRock] = useState(null);
 
   const requestByRqKey = useMemo(() => {
     const map = new Map();
@@ -108,6 +110,21 @@ export default function RockTable({
   ];
 
   const renderCell = (row, key) => {
+    // Opens the same journey dialog visitors see (as on the Activity page);
+    // a rock with no public journey yet is plain text.
+    if (key === "rock_number")
+      return row.has_journey ? (
+        <button
+          type="button"
+          className={styles.linkButton}
+          onClick={() => setJourneyRock(row.rock_number)}
+          title="See this rock's journey"
+        >
+          {row.rock_number}
+        </button>
+      ) : (
+        row.rock_number
+      );
     if (key === "artists") return row.artists.map((a) => a.display_name).join(", ");
     // Saves as soon as it changes (no dialog).
     if (key === "assign_status")
@@ -192,6 +209,8 @@ export default function RockTable({
         enableRowDrag={false}
         stickyHeaderTop={stickyHeaderTop}
       />
+
+      <RockJourneyDialog rockNumber={journeyRock} onClose={() => setJourneyRock(null)} />
 
       <RockRequestInfoDialog
         isOpen={!!viewingRequest}

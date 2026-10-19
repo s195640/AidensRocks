@@ -140,3 +140,24 @@ Feature-scoped log, separate from other features' logs under `data/ai-build-docs
 **Files changed:** `client/src/admin/pages/rocks/rock-table/RockTable.jsx`, `VERSION`
 - Column order now starts Rock, Image, Status, Artists, Comment, Assigned, ...
 - **VERSION:** `0.18.14` → `0.18.15`.
+
+## Phase 17 — Rock # opens its journey (2026-10-19)
+**Status:** Complete (awaiting manual UI check)
+**Files changed:** `server/src/routes/rocks.js`, `server/tests/api/admin-crud.test.mjs`, `client/src/admin/pages/rocks/rock-table/RockTable.jsx` (+ `.module.css`), `VERSION`
+- `GET /api/rocks` returns `has_journey`: the rock has at least one public journey stop, per `utils/visibleJourneySql.js`, the same rule the journey popup itself uses.
+- The Rock column (still first) shows the number as a link when `has_journey` is set, opening `RockJourneyDialog` like the Activity page's Rock Journeys panel. Rocks without a public journey are plain text. Same link style as the Activity page's `.linkButton`.
+- A rock whose only stops are hidden or still processing isn't clickable until one publishes; it updates on the next page load.
+- **VERSION:** `0.18.15` → `0.18.16`.
+
+## Phase 18 — "View journey" link in the Edit Rock dialog (2026-10-19)
+**Status:** Complete (awaiting manual UI check)
+**Files changed:** `client/src/admin/pages/rocks/rock-create-edit-dlg/RockCreateEditDlg.jsx` (+ `.module.css`), `VERSION`
+- Edit Rock shows a "View journey" link beside the rock's photo when `has_journey` is set, opening the same `RockJourneyDialog` as the table's Rock # link. It's rendered as a sibling of the edit Dialog (like `RockRequestInfoDialog`) so it stacks on top, and only while the edit dialog is open.
+- **VERSION:** `0.18.16` → `0.18.17`.
+
+## Phase 19 — Any status change fills an empty date (2026-10-19)
+**Status:** Complete
+**Files changed:** `server/src/routes/rocks.js`, `server/tests/api/admin-crud.test.mjs`, `client/src/admin/pages/rocks/rock-create-edit-dlg/RockCreateEditDlg.jsx`, `VERSION`
+- Changing to keep or unknown now fills in today when the Assigned date is empty, and keeps a date that's already set. Assigned still stamps today when the rock wasn't already assigned. Available still clears the date (confirmed with the user).
+- Same rule in the table dropdown (`PATCH .../assign-status`) and the Edit Rock dialog's Status select.
+- **VERSION:** `0.18.17` → `0.18.18`.

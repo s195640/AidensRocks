@@ -88,6 +88,11 @@ describe('rocks (/api/rocks) [S5 A7]', () => {
     expect((await patch('assigned')).body.assigned_dt).toBe('2025-01-02');
     expect((await patch('keep')).body).toMatchObject({ assign_status: 'keep', assigned_dt: '2025-01-02' });
     expect((await patch('available')).body).toMatchObject({ assign_status: 'available', assigned_dt: null });
+    // keep/unknown fill in today when there's no date, and keep one that's set
+    expect((await patch('unknown')).body).toMatchObject({ assign_status: 'unknown', assigned_dt: today });
+    await sql(`UPDATE catalog SET assigned_dt = '2025-01-02' WHERE rc_key = 2`);
+    expect((await patch('keep')).body.assigned_dt).toBe('2025-01-02');
+    expect((await patch('available')).body.assigned_dt).toBe(null);
     expect((await patch('lost')).status).toBe(400);
     expect((await api().patch('/api/rocks/999999/assign-status').set(A).send({ assign_status: 'keep' })).status).toBe(404);
 
@@ -105,6 +110,13 @@ describe('rocks (/api/rocks) [S5 A7]', () => {
     expect(await listed()).toMatchObject({ assign_status: 'available', assigned_dt: null });
     expect((await put({ assign_status: 'nope' })).status).toBe(400);
     expect((await put({ assign_status: 'keep', assigned_dt: 'March 4' })).status).toBe(400);
+  });
+
+  it('has_journey is true only for a rock with a public journey stop', async () => {
+    const byNumber = Object.fromEntries((await api().get('/api/rocks').set(A)).body.map((r) => [r.rock_number, r]));
+    expect(byNumber[101].has_journey).toBe(true); // visible stops
+    expect(byNumber[103].has_journey).toBe(false); // only a hidden stop
+    expect(byNumber[104].has_journey).toBe(false); // no stops
   });
 
   it('bad artist_keys is a 400', async () => {

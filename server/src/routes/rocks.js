@@ -42,6 +42,7 @@ const ensureDir = require('../utils/ensureDir');
 const convertToWebP = require('../utils/convert-to-webp/convertToWebP');
 const createThumbnails = require('../utils/convert-to-webp/createThumbnails');
 const requireAdminAuth = require('../middleware/requireAdminAuth');
+const visibleJourneySql = require('../utils/visibleJourneySql');
 
 router.use(requireAdminAuth);
 
@@ -71,6 +72,11 @@ router.get('/', async (req, res, next) => {
              rc.comment, rc.rq_key, rc.assign_status,
              -- a DATE, as text so node-pg doesn't shift it to a UTC timestamp
              to_char(rc.assigned_dt, 'YYYY-MM-DD') AS assigned_dt,
+             -- the rock number opens its journey only when there's a public one
+             EXISTS (
+               SELECT 1 FROM journey j
+               WHERE j.rock_number = rc.rock_number AND ${visibleJourneySql('j')}
+             ) AS has_journey,
              json_agg(json_build_object('ra_key', ra.ra_key, 'display_name', ra.display_name)) AS artists
       FROM catalog rc
       LEFT JOIN artist_link ral ON rc.rc_key = ral.rc_key
@@ -194,7 +200,7 @@ router.put('/:rc_key', upload.single('image'), async (req, res, next) => {
 
 // PATCH the table's in-place Status dropdown. Changing to assigned stamps
 // today's date (an already-assigned rock keeps its date); available clears
-// it; keep/unknown leave it alone.
+// it; changing to keep/unknown fills in today only when there's no date.
 router.patch('/:rc_key/assign-status', async (req, res, next) => {
   const { rc_key } = req.params;
   const status = req.body?.assign_status;
@@ -207,6 +213,7 @@ router.patch('/:rc_key/assign-status', async (req, res, next) => {
        SET assigned_dt = CASE
              WHEN $2::text = 'available' THEN NULL
              WHEN $2::text = 'assigned' AND assign_status <> 'assigned' THEN CURRENT_DATE
+             WHEN $2::text <> assign_status THEN COALESCE(assigned_dt, CURRENT_DATE)
              ELSE assigned_dt
            END,
            assign_status = $2::text,

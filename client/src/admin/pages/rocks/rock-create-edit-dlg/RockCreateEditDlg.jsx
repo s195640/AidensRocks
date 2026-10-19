@@ -5,6 +5,7 @@ import styles from "./RockCreateEditDlg.module.css";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
 import LightboxRock from "../../../../components/lightbox-rock/LightboxRock";
 import RockRequestInfoDialog from "../rock-request-info-dlg/RockRequestInfoDialog";
+import RockJourneyDialog from "../../../../components/rock-map/rock-journey-dialog/RockJourneyDialog";
 import ToggleSwitch from "../../../../components/simple-components/toggle-switch/ToggleSwitch";
 import { ASSIGN_STATUSES } from "../assignStatuses";
 
@@ -115,6 +116,7 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
   const [showRequestInfo, setShowRequestInfo] = useState(false);
+  const [showJourney, setShowJourney] = useState(false);
 
   const linkedRequest =
     selectedRock?.rq_key != null
@@ -152,6 +154,7 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
     setAssignedDt(selectedRock.assigned_dt || "");
     setImageFile(null);
     setError("");
+    setShowJourney(false);
   }, [selectedRock, isOpen]);
 
   useEffect(() => {
@@ -237,12 +240,12 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
     }
   };
 
-  // Same defaults as the table's dropdown: assigned fills in today if there's
-  // no date yet, available clears it. The date can still be edited after.
+  // Like the table's dropdown: available clears the date, any other status
+  // fills in today if there's no date yet. The date can still be edited after.
   const handleStatusChange = (status) => {
     setAssignStatus(status);
     if (status === "available") setAssignedDt("");
-    else if (status === "assigned" && !assignedDt) setAssignedDt(todayLocal());
+    else if (!assignedDt) setAssignedDt(todayLocal());
   };
 
   const openImageDialog = () => {
@@ -489,6 +492,12 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
                 className={styles.existingImage}
                 onClick={openImageDialog}
               />
+              {/* Same rule as the table's Rock # link: only rocks with a public journey. */}
+              {selectedRock.has_journey && (
+                <button type="button" className={styles.journeyLink} onClick={() => setShowJourney(true)}>
+                  View journey
+                </button>
+              )}
             </div>
 
             <label>Artists*</label>
@@ -746,6 +755,12 @@ const RockCreateEditDlg = ({ isOpen, onClose, onSave, artists, selectedRock, roc
           for position:fixed descendants, so a fixed overlay nested inside
           would render relative to that dialog's box instead of the
           viewport. See RockRequestsEditDialog.jsx for the same fix. */}
+      {/* A sibling of the edit Dialog for the same reason as below; only
+          while the edit dialog is open, so Escape there doesn't strand it. */}
+      {showEditDialog && showJourney && (
+        <RockJourneyDialog rockNumber={selectedRock.rock_number} onClose={() => setShowJourney(false)} />
+      )}
+
       <RockRequestInfoDialog
         isOpen={showRequestInfo}
         onClose={() => setShowRequestInfo(false)}
