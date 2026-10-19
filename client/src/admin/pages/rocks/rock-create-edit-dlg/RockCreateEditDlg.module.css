@@ -163,3 +163,80 @@
 .batchCardRotate:hover {
   background: #4caf50;
 }
+
+.batchCardImageClickable {
+  cursor: pointer;
+}
+
+.batchCardNote {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #555;
+  overflow-wrap: anywhere;
+}
+
+.batchCard label.qrNotFound {
+  color: #d32f2f;
+}
+
+.batchCardArtistRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.clearArtistButton {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid #999;
+  color: #555;
+  border-radius: 4px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.clearArtistButton:hover {
+  background: #eee;
+}
+
+.commonArtistRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.detailImage {
+  max-width: 100%;
+  max-height: 260px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  object-fit: contain;
+}
+
+.scanningPanel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem 1.5rem;
+  color: #333;
+}
+
+.spinner {
+  width: 44px;
+  height: 44px;
+  border: 5px solid #e0e0e0;
+  border-top-color: #4caf50;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
