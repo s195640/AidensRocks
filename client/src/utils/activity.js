@@ -418,6 +418,19 @@ const apiPattern = (url = "") =>
   url.split("?")[0].replace(window.location.origin, "").replace(/\/\d+(?=\/|$)/g, "/:n").slice(0, 200);
 
 let unloading = false;
+// When the page last went to the background (performance.now() clock). A
+// phone that locks or switches apps mid-request (e.g. iOS Safari) kills the
+// connection, so the request fails with a network error that isn't ours.
+let lastHiddenAt = null;
+
+// A network error (no response) while offline, or for a request that was in
+// flight when the page went to the background: the visitor's connection, not
+// the site.
+const isBackgroundNetworkError = (status, config) =>
+  status === 0 &&
+  (document.visibilityState === "hidden" ||
+    navigator.onLine === false ||
+    (lastHiddenAt != null && config?.activityStart != null && lastHiddenAt >= config.activityStart));
 
 const isSameSiteApi = (url = "") => url.startsWith("/api/") || url.startsWith(`${window.location.origin}/api/`);
 
@@ -472,7 +485,7 @@ function onAxiosError(error) {
     const status = error.response?.status ?? 0;
     const method = (error.config?.method || "get").toUpperCase();
     checkSlow(error.config, status);
-    if (isLoadError(status, method)) {
+    if (isLoadError(status, method) && !isBackgroundNetworkError(status, error.config)) {
       const target = apiPattern(error.config?.url);
       trackError("load_error", `${method}|${target}|${status}`, { method, status, code: error.code || null }, target);
     }
@@ -516,6 +529,11 @@ let tileErrors = new Map(); // host -> { count }
 
 function onResourceError(event) {
   try {
+    // Leaving the page cancels loads still in progress, and some browsers
+    // (Android Chrome) report those as errors. Mobile browsers often only
+    // send visibilitychange (not pagehide) when a tab is closed or switched
+    // away from, so a hidden page counts as leaving too.
+    if (unloading || document.visibilityState === "hidden") return;
     const el = event.target;
     if (!el || el === window || !el.tagName) return;
     const tag = el.tagName.toLowerCase();
@@ -642,6 +660,7 @@ export function initActivity() {
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") {
+        lastHiddenAt = performance.now();
         pauseTimers();
         // pagehide (which can come first) has already reported this page.
         if (!unloading) {

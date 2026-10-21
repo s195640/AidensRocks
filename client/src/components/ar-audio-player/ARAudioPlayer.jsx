@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import CustomCloseComponent from "./CustomCloseComponent";
 import CustomLyricsComponent from "./CustomLyricsComponent";
 import PlayCountTracker from "./PlayCountTracker";
+import PlayGuard from "./PlayGuard";
 import Dialog from "../simple-components/dialog/Dialog";
 import styles from "./ARAudioPlayer.module.css";
 
@@ -161,6 +162,9 @@ const ARAudioPlayer = () => {
         </AudioPlayer.CustomComponent>
         <AudioPlayer.CustomComponent id="playerLyricsComponent">
           <PlayCountTracker />
+        </AudioPlayer.CustomComponent>
+        <AudioPlayer.CustomComponent id="playerLyricsComponent">
+          <PlayGuard />
         </AudioPlayer.CustomComponent>
       </AudioPlayer>
       </div>
