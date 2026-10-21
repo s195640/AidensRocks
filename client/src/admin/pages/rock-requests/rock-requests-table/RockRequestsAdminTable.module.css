@@ -35,6 +35,34 @@
   margin-top: 0;
 }
 
+/* Small per-priority counts under a section heading. */
+.priorityBreakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0.35rem 0 0.5rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.breakdownItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.breakdownIcon_high {
+  color: #1c6dc2;
+}
+
+.breakdownIcon_normal {
+  color: #888;
+}
+
+.breakdownIcon_low {
+  color: #c62828;
+}
+
 .emptyMessage {
   text-align: center;
   color: #777;

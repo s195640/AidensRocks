@@ -55,6 +55,24 @@ const RockRequestsAdminTable = ({
     return `(${rows.length} ${rows.length === 1 ? "request" : "requests"}, ${rocks} ${rocks === 1 ? "rock" : "rocks"})`;
   };
 
+  // Small line under a section heading: requests / rocks per priority.
+  const priorityBreakdown = (rows) => (
+    <div className={styles.priorityBreakdown}>
+      {PRIORITY_OPTIONS.map(({ value, label }) => {
+        const matching = rows.filter((r) => (r.priority || "normal") === value);
+        const rocks = matching.reduce((sum, r) => sum + (Number(r.rocks_requested) || 0), 0);
+        const Icon = PRIORITY_ICONS[value];
+        return (
+          <span key={value} className={styles.breakdownItem}>
+            <Icon size={10} className={styles[`breakdownIcon_${value}`]} />
+            {label}: {matching.length} {matching.length === 1 ? "request" : "requests"}, {rocks}{" "}
+            {rocks === 1 ? "rock" : "rocks"}
+          </span>
+        );
+      })}
+    </div>
+  );
+
   const defaultSort = { key: "create_dt", direction: "desc" };
 
   // The whole row is tinted by priority: blue High, red Low, Normal plain.
@@ -267,6 +285,7 @@ const RockRequestsAdminTable = ({
           className={styles.searchInput}
         />
       </div>
+      {priorityBreakdown(pendingData)}
       {pendingData.length === 0 ? (
         <p className={styles.emptyMessage}>No pending rock requests.</p>
       ) : (
@@ -282,6 +301,7 @@ const RockRequestsAdminTable = ({
       )}
 
       <h3 className={styles.sectionHeading}>Shipped {totals(shippedData)}</h3>
+      {priorityBreakdown(shippedData)}
       {shippedData.length === 0 ? (
         <p className={styles.emptyMessage}>No shipped rock requests yet.</p>
       ) : (
