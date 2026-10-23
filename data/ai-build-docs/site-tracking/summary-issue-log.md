@@ -462,3 +462,21 @@ Asked for: the Dashboard's Visitors by Day "By Platform" stacked chart on the Ac
 - The shared activity `Table` (`activityUi.jsx`) now shows 10 rows a page with Prev / Next and "1–10 of N". Every column header sorts (numbers most-first on the first click, text A-Z, a second click flips it, blanks always last) unless the column sets `sort: false`. Columns whose cell is formatted or derived give a `sortValue(row)` (e.g. Submit rate sorts by submitted / opened, Share by the count). A table that passes `search(row) -> text` gets a search box once it has more than one page of rows. A new search, sort or data load goes back to page 1.
 - Every table on the Activity page uses it. Not sortable: the multi-part text columns (Rock Searches "How" and "From", Rock Journeys "Opened from", Links Out "Where"). Search is on each table's name / rock / page / link column; the two Forms tables search form + source / reason.
 - **Server:** the panel queries' `LIMIT 20/30/50` (top-N lists) are now one `TABLE_LIMIT = 500` in `activityAdmin.js`, so sort and search see the whole range, not just the old top 20. Rows still come back in the same order.
+
+## Broken audio on phones: music player no longer preloads (0.20.8)
+
+- **Report:** "Broken audio: `/media/music/:n/*`" kept coming back after 0.20.6 (which skips errors on a hidden or closing page). The 2026-10-23 occurrence was Linux (Android), page visible, with no events before it. That fits the footer player's automatic download of the first song's mp3 at page load breaking off on a phone connection, not a missing file.
+- **Player:** `ARAudioPlayer` sets `preload = "none"` on the library's `<audio>` in a layout effect (react-modern-audio-player has no preload option; the layout effect runs before the browser starts the fetch). No mp3 is downloaded until play is pressed, and the duration shows once it loads. Seeking before then was already a no-op in the library.
+- **Tracking (`activity.js`):** `<audio>`/`<video>` errors with `error.code` 1 (aborted) or 2 (network), or any media error while `navigator.onLine` is false, are no longer reported. A missing or unplayable file (code 4) still is. Audio/video events now carry `code` and `message` (the browser's `MediaError.message`, shown as the occurrence message).
+- **Site Health:** a broken-media occurrence shows its exact file (`File: /media/music/<m_key>/song.mp3 (error code N)`), in the panel and the copied text. The group title only has the pattern.
+- Lint clean. Not run: regression suite, browser check of the player (per the UI verification workflow).
+- **VERSION:** `0.20.7` → `0.20.8`.
+
+## Site Health: Hide fixed + Copy all errors (0.20.9)
+
+- **Hide fixed** checkbox (on by default) next to Include admins / Include internal: the Errors list shows only New and Known groups. Unchecked shows Fixed ones too. Client-side filter on the existing `/errors` list (no server change). Marking a group Fixed while the box is on drops it from the list. With every group fixed, the list says "No unfixed errors in this range."
+- **Copy all errors** button beside the Errors heading copies every group listed (so it follows Hide fixed and the range / admins / internal filters) as one plain-text report: a header with the filters and copy time, then per group its type/title, first seen, status, fixed-in version, times, visitors, last seen, pages, platforms, versions and note, and each recent occurrence (up to the 25 the detail endpoint returns) with page, platform, version, account, message, file (broken media), component stack, stack, user agent and what they did just before. Details load 4 groups at a time from `/errors/:fingerprint`. A group whose details fail says so and the rest still copy.
+- The clipboard gets a promise (`ClipboardItem`) so the write stays tied to the click while details load (Safari rejects a write made after awaits). Plain-http admin falls back to `execCommand`.
+- The single-occurrence Copy text now includes the user agent too (shares `occurrenceLines` with Copy all).
+- Lint + build clean. Not run: regression suite, browser check.
+- **VERSION:** `0.20.8` → `0.20.9`.

@@ -101,6 +101,17 @@
   margin: 18px 0 8px;
 }
 
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 0 8px;
+}
+
+.sectionHeader .sectionTitle {
+  margin: 0;
+}
+
 .message {
   text-align: center;
   color: #666;
@@ -303,4 +314,9 @@
 
 .copyBtn:hover {
   background: #f0f0f0;
+}
+
+.copyBtn:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }

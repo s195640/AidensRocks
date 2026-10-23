@@ -554,10 +554,17 @@ function onResourceError(event) {
       return;
     }
 
+    // <audio>/<video> say why they failed. 1 (aborted) and 2 (the download
+    // broke off) are the visitor's connection, as is any failure while
+    // offline. A missing or unplayable file is 4, and is still reported.
+    const code = el.error?.code ?? null;
+    if (code === 1 || code === 2 || navigator.onLine === false) return;
+
     const kind = tag === "img" ? "image" : tag === "source" ? el.parentElement?.tagName?.toLowerCase() || "video" : tag;
     const target = url.origin === window.location.origin ? url.pathname : `${url.host}${url.pathname}`;
     const where = el.closest?.("[data-activity-where]")?.dataset.activityWhere || window.location.pathname;
-    trackError("media_error", `media|${target}`, { kind, where }, clip(target, 200));
+    const why = code != null ? { code, message: clip(el.error.message || "", 200) || null } : {};
+    trackError("media_error", `media|${target}`, { kind, where, ...why }, clip(target, 200));
   } catch {
     // observing only
   }

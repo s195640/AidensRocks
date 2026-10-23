@@ -1,6 +1,6 @@
 import axios from "axios";
 import AudioPlayer from "react-modern-audio-player";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import CustomCloseComponent from "./CustomCloseComponent";
 import CustomLyricsComponent from "./CustomLyricsComponent";
 import PlayCountTracker from "./PlayCountTracker";
@@ -116,6 +116,19 @@ const ARAudioPlayer = () => {
   }, []);
 
   const playerMounted = !loading && showPlayer && songs.length > 0;
+
+  // The player sits in the footer of every page and gives its <audio> no
+  // preload, so every page view downloaded the first song's mp3 even when
+  // nobody pressed play (mobile data, and a "Broken audio" report whenever
+  // a phone's connection dropped mid-download). react-modern-audio-player
+  // has no preload option. A layout effect runs in the same task as the
+  // commit that set src, before the browser starts fetching, so "none"
+  // takes effect. Pressing play loads the song; the duration shows once it
+  // has.
+  useLayoutEffect(() => {
+    const audio = playerRef.current?.querySelector("audio");
+    if (audio) audio.preload = "none";
+  }, [playerMounted]);
   useEffect(() => {
     const el = playerRef.current;
     if (!el) return;

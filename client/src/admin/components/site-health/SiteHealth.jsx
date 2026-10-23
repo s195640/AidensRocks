@@ -51,14 +51,25 @@ function trailText(t) {
   return `${label} ${t.target_id ? `${t.target_id} ` : ""}${t.path ? `(${t.path})` : ""}`.trim();
 }
 
+// The exact file a broken-media occurrence failed on (the group title only
+// has the pattern), plus the browser's error code for audio/video.
+const mediaFileText = (o) => `File: ${o.target_id}${o.meta?.code != null ? ` (error code ${o.meta.code})` : ""}`;
+
+// A group's heading lines, for the copied text.
+const groupHeaderLines = (group, fallbackTitle = "") => [
+  `${TYPE_LABELS[group.type] || group.type || "Error"}: ${group.title || fallbackTitle}`.trim(),
+  `First seen ${formatLocalDateTime(group.first_seen)}${group.fixed_in_version ? ` · marked fixed in ${group.fixed_in_version}` : ""}`,
+  `Status: ${STATUS_LABELS[group.status] || group.status}`,
+];
+
 // Everything shown for one occurrence, as plain text for pasting into a bug
 // report or a chat.
 function occurrenceText(group, o) {
+  return [...groupHeaderLines(group, o.message || ""), "", ...occurrenceLines(group, o)].join("\n");
+}
+
+function occurrenceLines(group, o) {
   const lines = [
-    `${TYPE_LABELS[group.type] || group.type || "Error"}: ${group.title || o.message || ""}`.trim(),
-    `First seen ${formatLocalDateTime(group.first_seen)}${group.fixed_in_version ? ` · marked fixed in ${group.fixed_in_version}` : ""}`,
-    `Status: ${STATUS_LABELS[group.status] || group.status}`,
-    "",
     [
       formatLocalDateTime(o.created_at),
       o.page || "—",
@@ -71,15 +82,59 @@ function occurrenceText(group, o) {
       .join(" · "),
   ];
   if (o.message) lines.push(o.message);
+  if (group.type === "media_error" && o.target_id) lines.push(mediaFileText(o));
   if (o.meta?.component_stack) lines.push("", "Component stack", o.meta.component_stack.trim());
   if (o.stack) {
     lines.push("", `Stack${o.source === "client" && !o.resolved ? " (minified: no source map for this version)" : ""}`, o.stack);
   }
+  if (o.user_agent) lines.push(`User agent: ${o.user_agent}`);
   if (o.trail?.length > 0) {
     lines.push("", "What they did just before");
     o.trail.forEach((t) => lines.push(`${trailText(t)} ${formatLocalDateTime(t.created_at)}`));
   }
-  return lines.join("\n");
+  return lines;
+}
+
+// "Copy all errors": every listed group (`rows`, as in the Errors table)
+// with its recent occurrences, as one plain-text report. Details are
+// fetched a few groups at a time so a long list doesn't swamp the server.
+async function allErrorsText(rows, params, filterText) {
+  const details = new Array(rows.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < rows.length) {
+      const i = next++;
+      try {
+        const { data } = await axios.get(`/api/admin/site-health/errors/${rows[i].fingerprint}`, { params });
+        details[i] = data;
+      } catch {
+        details[i] = null;
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: 4 }, worker));
+
+  const out = [`Site Health errors (${rows.length}) · ${filterText} · copied ${formatLocalDateTime(new Date().toISOString())}`];
+  rows.forEach((row, i) => {
+    const group = details[i]?.group || row;
+    out.push(
+      "",
+      "=".repeat(60),
+      `${i + 1}. ${groupHeaderLines(group).join("\n")}`,
+      `${row.count} times · ${row.visitors} visitors · last seen ${formatLocalDateTime(row.last_seen)}`
+    );
+    if (row.pages?.length) out.push(`Pages: ${row.pages.join(", ")}`);
+    if (row.platforms?.length) out.push(`Platforms: ${row.platforms.join(", ")}`);
+    if (row.versions?.length) out.push(`Versions: ${row.versions.join(", ")}`);
+    if (group.note) out.push(`Note: ${group.note}`);
+    if (!details[i]) {
+      out.push("", "(Couldn't load this error's occurrences.)");
+      return;
+    }
+    const occ = details[i].occurrences;
+    occ.forEach((o, n) => out.push("", `--- Occurrence ${n + 1} of ${occ.length}`, ...occurrenceLines(group, o)));
+  });
+  return out.join("\n");
 }
 
 // navigator.clipboard only exists on https/localhost, so fall back to a
@@ -101,11 +156,11 @@ async function copyText(text) {
   if (!ok) throw new Error("copy failed");
 }
 
-const CopyButton = ({ getText }) => {
+const CopyButton = ({ getText, label = "Copy", title = "Copy all details to the clipboard" }) => {
   const [state, setState] = useState("idle");
 
   useEffect(() => {
-    if (state === "idle") return;
+    if (state === "idle" || state === "copying") return;
     const t = setTimeout(() => setState("idle"), 2000);
     return () => clearTimeout(t);
   }, [state]);
@@ -114,10 +169,21 @@ const CopyButton = ({ getText }) => {
     <button
       type="button"
       className={styles.copyBtn}
-      title="Copy all details to the clipboard"
+      title={title}
+      disabled={state === "copying"}
       onClick={async () => {
         try {
-          await copyText(getText());
+          setState("copying");
+          const text = getText();
+          // Text still being fetched: hand the clipboard the promise, so
+          // the write stays tied to this click (Safari refuses a write
+          // made after the fetches finish).
+          if (text instanceof Promise && window.ClipboardItem && navigator.clipboard?.write) {
+            const blob = text.then((t) => new Blob([t], { type: "text/plain" }));
+            await navigator.clipboard.write([new window.ClipboardItem({ "text/plain": blob })]);
+          } else {
+            await copyText(await text);
+          }
           setState("copied");
         } catch {
           setState("failed");
@@ -125,7 +191,7 @@ const CopyButton = ({ getText }) => {
       }}
     >
       {state === "copied" ? <FiCheck /> : <FiCopy />}
-      {state === "copied" ? "Copied" : state === "failed" ? "Copy failed" : "Copy"}
+      {state === "copied" ? "Copied" : state === "failed" ? "Copy failed" : state === "copying" ? "Copying..." : label}
     </button>
   );
 };
@@ -203,6 +269,7 @@ const ErrorDetail = ({ fingerprint, queryKey, onStatus }) => {
             <CopyButton getText={() => occurrenceText(group, o)} />
           </div>
           {o.message && <div className={styles.occMessage}>{o.message}</div>}
+          {group.type === "media_error" && o.target_id && <div className={styles.occMessage}>{mediaFileText(o)}</div>}
           {o.meta?.component_stack && (
             <pre className={styles.stack}>{o.meta.component_stack.trim()}</pre>
           )}
@@ -236,6 +303,7 @@ const SiteHealth = () => {
   const [range, setRange] = useState("7");
   const [includeAdmins, setIncludeAdmins] = useState(false);
   const [includeInternal, setIncludeInternal] = useState(false);
+  const [hideFixed, setHideFixed] = useState(true);
   const [errors, setErrors] = useState(null);
   const [slow, setSlow] = useState([]);
   const [speed, setSpeed] = useState([]);
@@ -275,6 +343,15 @@ const SiteHealth = () => {
     setErrors((rows) => rows.map((r) => (r.fingerprint === fingerprint ? { ...r, status } : r)));
 
   const newCount = errors?.filter((e) => e.status === "new").length ?? 0;
+  const shownErrors = (errors || []).filter((e) => !hideFixed || e.status !== "fixed");
+  const filterText = [
+    RANGES.find((r) => r.value === range)?.label,
+    hideFixed ? "New and Known" : "all statuses",
+    includeAdmins && "admins included",
+    includeInternal && "internal included",
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div className={styles.container}>
@@ -297,6 +374,9 @@ const SiteHealth = () => {
           <label>
             <input type="checkbox" checked={includeInternal} onChange={(e) => setIncludeInternal(e.target.checked)} /> Include internal
           </label>
+          <label>
+            <input type="checkbox" checked={hideFixed} onChange={(e) => setHideFixed(e.target.checked)} /> Hide fixed
+          </label>
         </div>
       </div>
 
@@ -306,9 +386,20 @@ const SiteHealth = () => {
         <div className={styles.message}>Loading Site Health...</div>
       ) : (
         <>
-          <h3 className={styles.sectionTitle}>Errors</h3>
-          {errors.length === 0 ? (
-            <div className={styles.message}>No errors in this range.</div>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>Errors</h3>
+            {shownErrors.length > 0 && (
+              <CopyButton
+                label="Copy all errors"
+                title="Copy every error listed, with its recent occurrences, to the clipboard"
+                getText={() => allErrorsText(shownErrors, JSON.parse(queryKey), filterText)}
+              />
+            )}
+          </div>
+          {shownErrors.length === 0 ? (
+            <div className={styles.message}>
+              {errors.length > 0 ? "No unfixed errors in this range." : "No errors in this range."}
+            </div>
           ) : (
             <div className={styles.tableWrapper}>
               <table className={styles.table}>
@@ -322,7 +413,7 @@ const SiteHealth = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {errors.map((e) => (
+                  {shownErrors.map((e) => (
                     <Fragment key={e.fingerprint}>
                       <tr
                         className={styles.errorRow}
