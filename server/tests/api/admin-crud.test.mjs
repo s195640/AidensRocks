@@ -203,6 +203,40 @@ describe('journey admin', () => {
     expect((await api().put('/api/journey-admin/3').set(A).send({ ...body, rock_number: '102' })).status).toBe(200);
   });
 
+  it('giving a rock-0 upload a real number publishes its processed images', async () => {
+    const uuid = '0a0a0a0a-0000-4000-8000-000000000000';
+    const [{ rps_key }] = await sql(
+      `INSERT INTO journey (rock_qr_number, rock_number, location, date, comment, name, email, uuid, show)
+       VALUES (0, 0, 'Santorini', '2025-09-01', 'No number', 'Finder', NULL, $1, false) RETURNING rps_key`,
+      [uuid]
+    );
+    // One processed image (webp exists) and one that failed processing (no webp).
+    await sql(
+      `INSERT INTO journey_image (rps_key, original_name, current_name, upload_order, show)
+       VALUES ($1, 'ok.jpg', $2, 1, false), ($1, 'bad.jpg', $3, 2, false)`,
+      [rps_key, `1_${uuid}`, `2_${uuid}`]
+    );
+    const webp = path.join(MEDIA_ROOT, 'rocks', '0', uuid, 'webp', `1_${uuid}.webp`);
+    fs.mkdirSync(path.dirname(webp), { recursive: true });
+    fs.writeFileSync(webp, await makeImage('webp'));
+
+    const body = {
+      rock_number: '104', location: 'Santorini', date: '2025-09-01', comment: 'No number',
+      name: 'Finder', email: '', show: true, latitude: null, longitude: null,
+    };
+    try {
+      expect((await api().put(`/api/journey-admin/${rps_key}`).set(A).send(body)).status).toBe(200);
+      const images = await sql('SELECT original_name, show FROM journey_image WHERE rps_key = $1 ORDER BY upload_order', [rps_key]);
+      expect(images).toEqual([{ original_name: 'ok.jpg', show: true }, { original_name: 'bad.jpg', show: false }]);
+      const pub = await api().get('/api/rock-posts/104');
+      expect(pub.body.some((p) => p.rps_key === rps_key)).toBe(true);
+    } finally {
+      await sql('DELETE FROM journey_image WHERE rps_key = $1', [rps_key]);
+      await sql('DELETE FROM journey WHERE rps_key = $1', [rps_key]);
+      fs.rmSync(path.join(MEDIA_ROOT, 'rocks', '104', uuid), { recursive: true, force: true });
+    }
+  });
+
   it('[#12] deleting one image removes its files and leaves the others', async () => {
     const [j] = await sql('SELECT rock_number, uuid FROM journey WHERE rps_key = 2');
     const dir = path.join(MEDIA_ROOT, 'rocks', String(j.rock_number), j.uuid);

@@ -13,6 +13,8 @@ const createThumbnails = require('../utils/convert-to-webp/createThumbnails');
 const processVideo = require('../utils/processVideo');
 const isVideoFile = require('../utils/isVideoFile');
 const requireAdminAuth = require('../middleware/requireAdminAuth');
+const notifyFollowers = require('../utils/rock-upload/notifyFollowers');
+const recordServerError = require('../utils/errors/recordServerError');
 
 const router = express.Router();
 intParams(router, 'rps_key', 'rpi_key');
@@ -320,6 +322,24 @@ router.delete("/images/:rpi_key", async (req, res) => {
 });
 
 // PUT /api/journey-admin/:rps_key
+// Shows a renumbered journey's hidden images that have a processed webp.
+// Returns how many it showed.
+async function publishImagesAfterRenumber(rps_key, dir) {
+  const { rows } = await pool.query(
+    "SELECT rpi_key, current_name FROM journey_image WHERE rps_key = $1 AND show = FALSE",
+    [rps_key]
+  );
+  const ready = rows
+    .filter((r) => fs.existsSync(path.join(dir, "webp", `${r.current_name}.webp`)))
+    .map((r) => r.rpi_key);
+  if (ready.length === 0) return 0;
+  await pool.query(
+    "UPDATE journey_image SET show = TRUE, update_dt = CURRENT_TIMESTAMP WHERE rpi_key = ANY($1::int[])",
+    [ready]
+  );
+  return ready.length;
+}
+
 router.put("/:rps_key", async (req, res) => {
   const { rps_key } = req.params;
   const {
@@ -426,6 +446,23 @@ router.put("/:rps_key", async (req, res) => {
     if (result.rowCount === 0) {
       await moveBack();
       return res.status(404).json({ error: "Post not found" });
+    }
+
+    // ✅ 5. A rock-0 upload ("no number") is processed but never published
+    // (processImagesInBackground skips it). Giving it a real number does
+    // the publishing that upload skipped: images whose webp exists are
+    // shown (a file that failed processing has none and stays hidden), and
+    // if the stop is now public the rock's followers are told. The
+    // journey's own Show is the admin's, from the form.
+    const publishedFromZero =
+      Number(oldRockNumber) === 0 && Number(rock_number) > 0 && uuid
+        ? await publishImagesAfterRenumber(rps_key, newDir)
+        : 0;
+    if (publishedFromZero > 0 && result.rows[0].show) {
+      notifyFollowers(Number(rock_number), { location, date }).catch((err) => {
+        console.error(`⚠️ Follower notification failed for rock ${rock_number}:`, err);
+        recordServerError(err, { kind: 'background', meta: { rock_number, rps_key, step: 'notify_followers' } });
+      });
     }
 
     res.json(result.rows[0]);

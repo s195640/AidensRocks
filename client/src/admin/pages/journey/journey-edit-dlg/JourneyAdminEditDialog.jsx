@@ -273,8 +273,11 @@ const JourneyAdminEditDialog = ({
     }
   };
 
+  // The saved rock number (the folder the files are in), not the form's:
+  // typing a new number used to point every thumbnail at a folder that
+  // doesn't exist until Save moves it there.
   const getThumbnailUrl = (img) =>
-    `/media/rocks/${formData.rock_number}/${post.uuid}/sm/${img.current_name}.webp`;
+    `/media/rocks/${post.rock_number}/${post.uuid}/sm/${img.current_name}.webp`;
 
   const missingCoordinates = !formData.coordinates;
 
