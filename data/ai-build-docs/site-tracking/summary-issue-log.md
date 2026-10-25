@@ -525,3 +525,19 @@ Asked for: the Dashboard's Visitors by Day "By Platform" stacked chart on the Ac
 - Under the table: the "N new errors in Site Health" note (left, only when there are any) and "See all activity →" (right).
 - No server change. Lint clean. Not run: regression suite, browser check.
 - **VERSION:** `0.20.14` → `0.20.15`.
+
+## Broken media from image-blocking clients (0.20.16)
+
+- **Report:** Site Health still listed "Broken audio: `/media/music/:n/*`", "Broken image: `/*`" and "Broken image: `/media/music/:n/*`" as new after their fixes. The occurrences on old versions (iPhone audio before 0.20.8, WeChat images while leaving the page before 0.20.6) are covered by those fixes. Everything since comes from one Linux client with a "Chrome 145" user agent (real visitors are on 150). On 2026-10-23 14:03, 14:04 and 2026-10-25 12:32 it failed `/logo.webp`, `/media/music/2/sm.webp` and `/media/music/2/song.mp3` (code 4) all at once, landing straight on `/map`, `/share-your-rock` and `/login` with no events before. `/logo.webp` ships with every build, so that's a scraper/scanner blocking image and media requests, which `BOT_RE` can't catch from its user agent.
+- **Change (approved by the user), `activity.js` `onResourceError`:** a failed `/logo.webp` (the navbar logo, same origin) marks the page load as blocking media, and from then on no `media_error` is sent for it, the logo included. Each `media_error` now waits 3 s (`MEDIA_REPORT_DELAY_MS`) before it's queued, because the logo can fail after the other files.
+- **Trade-off:** if the logo itself were really missing (a bad deploy), no broken media would be reported for any visitor. That would show on every page, so it wouldn't go unnoticed. A real broken file is reported 3 s later than before, and is lost if the visitor leaves the page within those 3 s.
+- **Test:** new browser test in `client/e2e/activity.spec.js` (logo blocked + a missing image → no `media_error`). The existing broken-image test still covers reporting.
+- **VERSION:** `0.20.15` → `0.20.16`.
+
+## Admin journey edit: Rock # opens the full journey (0.20.17)
+
+- Per the user: in Admin → Journey, the edit dialog's title "Rock #N" is now a link that opens the rock's full public journey (`RockJourneyDialog`), the same view the Activity page's rock links open. Uses the saved rock number, not the form field. Portaled to `<body>` so it stacks above the edit `Dialog`.
+- **Decision (not asked, noted here):** it's the public view, so hidden stops/images don't appear in it, same as from the Activity page. Opening it records a `rock_view`, but `/admin` is never tracked, so nothing is sent.
+- **Known:** Escape closes the edit dialog (existing behavior), even while the journey view is on top.
+- Lint clean. Not run: regression suite, browser check.
+- **VERSION:** `0.20.16` → `0.20.17`.

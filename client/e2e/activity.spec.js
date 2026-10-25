@@ -211,6 +211,25 @@ test("broken images and rate limits are recorded; 404s are not", async ({ page }
   expect(ofType(activity.events(), "load_error").some((e) => e.meta.status === 404)).toBe(false);
 });
 
+test("a client that blocks the site logo reports no broken media", async ({ page }) => {
+  // Scrapers/scanners that block images fail every file on the page; the
+  // logo always exists, so its failure marks the rest as noise.
+  await page.route("**/logo.webp", (route) => route.abort());
+  const activity = collectActivity(page);
+  await page.goto("/");
+  await page.evaluate(() => {
+    const img = document.createElement("img");
+    img.src = "/media/albums/Nope/webp/missing-2.webp";
+    document.body.appendChild(img);
+  });
+  await page.waitForTimeout(4000); // past the media report delay
+  await page.locator("nav").first().getByText("Map", { exact: true }).first().click();
+  await expect
+    .poll(() => ofType(activity.events(), "page_view").map((e) => e.path), { timeout: 15_000 })
+    .toContain("/map");
+  expect(ofType(activity.events(), "media_error")).toEqual([]);
+});
+
 test("API calls carry the visit id for matching server errors", async ({ page }) => {
   const visitIds = new Set();
   page.on("request", (req) => {

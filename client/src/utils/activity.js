@@ -24,6 +24,8 @@ const MAX_ERRORS_PER_PAGE = 30;
 const PERF_DELAY_MS = 3000;
 const SLOW_REQUEST_MS = 10000;
 const TILE_REPORT_DELAY_MS = 3000;
+const MEDIA_REPORT_DELAY_MS = 3000;
+const SITE_LOGO_PATH = "/logo.webp"; // components/navbar/Navbar.jsx
 const DEVICE_KEY = "ar_device_id";
 const VISIT_KEY = "ar_visit";
 
@@ -526,6 +528,7 @@ export function reportShownError(code, message) {
 // that fails to load, site-wide. It only observes. Leaflet map tiles are
 // collapsed to one event per page per tile server, with a count.
 let tileErrors = new Map(); // host -> { count }
+let mediaBlocked = false; // the site logo failed: see onResourceError
 
 function onResourceError(event) {
   try {
@@ -564,7 +567,15 @@ function onResourceError(event) {
     const target = url.origin === window.location.origin ? url.pathname : `${url.host}${url.pathname}`;
     const where = el.closest?.("[data-activity-where]")?.dataset.activityWhere || window.location.pathname;
     const why = code != null ? { code, message: clip(el.error.message || "", 200) || null } : {};
-    trackError("media_error", `media|${target}`, { kind, where, ...why }, clip(target, 200));
+
+    // The navbar logo ships with every build, so if it fails this client is
+    // blocking images/media (a scraper or scanner with a normal Chrome user
+    // agent), and every broken file it reports is noise. The logo can fail
+    // after the others, so each report waits a moment before it's sent.
+    if (url.origin === window.location.origin && url.pathname === SITE_LOGO_PATH) mediaBlocked = true;
+    setTimeout(() => {
+      if (!mediaBlocked) trackError("media_error", `media|${target}`, { kind, where, ...why }, clip(target, 200));
+    }, MEDIA_REPORT_DELAY_MS);
   } catch {
     // observing only
   }

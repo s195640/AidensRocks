@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import heic2any from "heic2any";
 import { Play, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-react";
 import Dialog from "../../../../components/simple-components/dialog/Dialog";
+import RockJourneyDialog from "../../../../components/rock-map/rock-journey-dialog/RockJourneyDialog";
 import authFetch from "../../../utils/authFetch";
 import styles from "./JourneyAdminEditDialog.module.css";
 
@@ -63,6 +65,7 @@ const JourneyAdminEditDialog = ({
   const [error, setError] = useState("");
 
   const [newImages, setNewImages] = useState([]);
+  const [journeyRock, setJourneyRock] = useState(null);
   const [imageError, setImageError] = useState("");
   const [heicLoading, setHeicLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -282,7 +285,19 @@ const JourneyAdminEditDialog = ({
       className={styles.editDialog}
       title={
         <>
-          Edit Journey Post — Rock #{post.rock_number}
+          Edit Journey Post — Rock #
+          {Number(post.rock_number) > 0 ? (
+            <button
+              type="button"
+              className={styles.rockLink}
+              onClick={() => setJourneyRock(Number(post.rock_number))}
+              title="See this rock's full journey"
+            >
+              {post.rock_number}
+            </button>
+          ) : (
+            post.rock_number
+          )}
           {totalJourneys > 0 && (
             <span className={styles.journeyCount}>
               ({totalJourneys} journey{totalJourneys === 1 ? "" : "s"})
@@ -537,6 +552,12 @@ const JourneyAdminEditDialog = ({
           </div>
         )}
       </div>
+      {/* Portaled to <body> so it stacks above the edit Dialog instead of
+          inside its stacking context. */}
+      {createPortal(
+        <RockJourneyDialog rockNumber={journeyRock} onClose={() => setJourneyRock(null)} />,
+        document.body
+      )}
     </Dialog>
   );
 };
