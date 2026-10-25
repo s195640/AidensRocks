@@ -182,6 +182,17 @@
   color: #1e6b34;
 }
 
+.category {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: #e8f1f8;
+  color: #2a5d84;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 .typeLabel {
   font-size: 0.75rem;
   color: #777;

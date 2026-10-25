@@ -195,6 +195,38 @@ describe('Activity page panels', () => {
     expect(glance.visitors).toBeGreaterThanOrEqual(1);
     expect(glance).toHaveProperty('new_errors');
 
+    // Yesterday (noon UTC): a visitor, a journey post, a rock request and a
+    // server error, plus a deleted request and an internal error that don't
+    // count.
+    const y = glance.yesterday;
+    const vid = randomUUID();
+    const did = randomUUID();
+    const noon = "date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' - INTERVAL '12 hours'";
+    await sql(`INSERT INTO visit (id, device_id, started_at, platform) VALUES ($1, $2, ${noon}, 'Windows')`, [vid, did]);
+    await sql(
+      `INSERT INTO site_event (id, visit_id, device_id, created_at, type, path) VALUES ($1, $2, $3, ${noon}, 'page_view', '/')`,
+      [randomUUID(), vid, did]
+    );
+    await sql(`INSERT INTO journey (rock_qr_number, rock_number, create_dt) VALUES (8182, 8182, ${noon})`);
+    await sql(
+      `INSERT INTO rock_requests (name, rocks_requested, create_dt, deleted)
+       VALUES ('Glance Yesterday', 1, ${noon}, false), ('Glance Deleted', 1, ${noon}, true)`
+    );
+    await sql(
+      `INSERT INTO server_error (id, created_at, kind, is_internal, method, route, status, message, fingerprint)
+       VALUES ($1, ${noon}, 'request', false, 'GET', '/api/glance-test', 500, 'boom', 'glance-yesterday'),
+              ($2, ${noon}, 'request', true, 'GET', '/api/glance-test', 500, 'boom', 'glance-yesterday')`,
+      [randomUUID(), randomUUID()]
+    );
+    const after = (await api().get('/api/admin/activity/glance').set(A).query({ tz: 'UTC' })).body;
+    expect(after.yesterday).toEqual({
+      visitors: y.visitors + 1,
+      journey_posts: y.journey_posts + 1,
+      rock_requests: y.rock_requests + 1,
+      errors: y.errors + 1,
+    });
+    expect(after).toHaveProperty('errors');
+
     // The same panel from a range that starts tomorrow-ish: nothing from today.
     const bad = await get('visitors', { range: '14', tz: 'UTC' });
     expect(bad.status).toBe(400);

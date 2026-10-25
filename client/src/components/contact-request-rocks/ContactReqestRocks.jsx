@@ -39,7 +39,7 @@ const ContactRequestRocks = ({ onClose, source = null }) => {
   const [postalCode, setPostalCode] = useState("");
   const [address, setAddress] = useState("");
   const [country, setCountry] = useState("");
-  const [rocksRequested, setRocksRequested] = useState("");
+  const [rocksRequested, setRocksRequested] = useState("1");
   const [neededBy, setNeededBy] = useState("");
   const [noRush, setNoRush] = useState(false);
   const [message, setMessage] = useState("");

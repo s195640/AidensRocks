@@ -57,7 +57,7 @@ const mediaFileText = (o) => `File: ${o.target_id}${o.meta?.code != null ? ` (er
 
 // A group's heading lines, for the copied text.
 const groupHeaderLines = (group, fallbackTitle = "") => [
-  `${TYPE_LABELS[group.type] || group.type || "Error"}: ${group.title || fallbackTitle}`.trim(),
+  `${group.category ? `[${group.category}] ` : ""}${TYPE_LABELS[group.type] || group.type || "Error"}: ${group.title || fallbackTitle}`.trim(),
   `First seen ${formatLocalDateTime(group.first_seen)}${group.fixed_in_version ? ` · marked fixed in ${group.fixed_in_version}` : ""}`,
   `Status: ${STATUS_LABELS[group.status] || group.status}`,
 ];
@@ -426,6 +426,7 @@ const SiteHealth = () => {
                           <span className={`${styles.status} ${styles[`status_${e.status}`]}`}>
                             {STATUS_LABELS[e.status]}
                           </span>
+                          {e.category && <span className={styles.category}>{e.category}</span>}
                           <span className={styles.typeLabel}>{TYPE_LABELS[e.type] || e.type}</span>
                           <div className={styles.errorTitle}>{e.title}</div>
                           <div className={styles.errorWhere}>

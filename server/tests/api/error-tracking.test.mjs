@@ -10,6 +10,7 @@ import { clearMail, listMail, waitForMail } from '../helpers/mailpit.mjs';
 
 const { errorCapture } = require('../../src/middleware/errorCapture');
 const { runDailySummary } = require('../../src/utils/scheduledJobs');
+const { errorCategory } = require('../../src/utils/errors/errorCategory');
 
 const CHROME = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36';
 const ALERTS_TO = 'failures@aidensrocks.com'; // the templates' seeded Send To
@@ -161,6 +162,21 @@ describe('Site Health endpoints', () => {
     expect(group.pages).toContain('/map');
     expect(group.platforms).toContain('Windows');
     expect(group.versions).toContain('0.15.12');
+    expect(group.category).toBe('Script error');
+  });
+
+  it('gives each group a short category', () => {
+    const cat = (type, title) => errorCategory({ type, title });
+    expect(cat('load_error', 'GET /api/albums/ failed (network error)')).toBe('Connection drop');
+    expect(cat('load_error', 'POST /api/rock-count failed (500)')).toBe('Server error');
+    expect(cat('load_error', 'POST /api/auth/login failed (429)')).toBe('Rate limited');
+    expect(cat('error_shown', 'Shown to visitor (signin): Email or password is incorrect.')).toBe('Sign-in failed');
+    expect(cat('error_shown', 'Shown to visitor (upload_submit): Sorry, something went wrong.')).toBe('Upload failed');
+    expect(cat('error_shown', "Shown to visitor (albums_load): The photo albums couldn't be loaded right now.")).toBe("Couldn't load");
+    expect(cat('error_shown', 'Shown to visitor (something_new): Hi')).toBe('Message shown');
+    expect(cat('render_crash', 'Page crashed: boom')).toBe('Page crash');
+    expect(cat('server_request', 'GET / → 500: column x does not exist')).toBe('Server error');
+    expect(cat('server_email', 'Email failed: timeout')).toBe('Email failed');
   });
 
   it('internal errors are hidden unless asked for', async () => {

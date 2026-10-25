@@ -480,3 +480,48 @@ Asked for: the Dashboard's Visitors by Day "By Platform" stacked chart on the Ac
 - The single-occurrence Copy text now includes the user agent too (shares `occurrenceLines` with Copy all).
 - Lint + build clean. Not run: regression suite, browser check.
 - **VERSION:** `0.20.8` → `0.20.9`.
+
+## Site Health: error categories (0.20.10)
+
+- Asked for: a short category on each error ("password login fail / connection drop, that sort of thing").
+- **Server:** new `utils/errors/errorCategory.js` works it out from the group's `type` + `title` (not stored, so existing groups get one too; no schema change). `/api/admin/site-health/errors` rows and the `/errors/:fingerprint` group carry `category`.
+  - Failed requests by status: network error → Connection drop, 5xx → Server error, 429 Rate limited, 413 Too large, 408 Timed out, other 4xx Rejected.
+  - Messages shown, by code: signin Sign-in failed, signup Sign-up failed, forgot/reset_password Password reset, verify_email Email verify, upload_submit Upload failed, upload_files Upload files, rock_request Rock request, track_rock_number Bad input, my_rocks My rocks, entry_not_found Not found; any other `*_load` Couldn't load, else Message shown.
+  - The rest by type: Page crash, Script error, Broken media, Map tiles, Server error (or its 4xx category), Background job, Email failed, Server crash.
+- **Client:** a blue category chip after the status chip in the Errors list; the copied text's heading starts with `[Category]`.
+- **Decision (not asked, noted here):** the category names and mapping above. A new `useShownError` code needs an entry in `SHOWN_CATEGORIES` to get its own name.
+- **Test:** `error-tracking.test.mjs` checks the mapping and that the list returns `category` (16 pass). Lint clean. Not run: regression suite, browser check.
+- **VERSION:** `0.20.9` → `0.20.10`.
+
+## Dashboard glance: Yesterday next to Today (0.20.12)
+
+- Asked for: the Dashboard's Today row to show Yesterday too.
+- **Server:** `/api/admin/activity/glance` also returns `yesterday: { visitors, visits, page_views }`, all of yesterday in the viewer's timezone, with the same filters (no admins, no internal). Today's fields stay top-level, so existing callers are unchanged. One query with `FILTER`s over events since the start of yesterday.
+- **Client:** `TodayGlance` shows **Today** ... | **Yesterday** ... (visitors, visits, page views each), split by a thin divider. The new-errors alert and the "See all activity" link are unchanged.
+- **Test:** `activity-admin.test.mjs` inserts a visit with two page views at yesterday noon UTC and checks they land in `yesterday`, not today (20 pass with `tracking-review-fixes`). Lint clean. Not run: regression suite, browser check.
+- **VERSION:** `0.20.11` → `0.20.12`.
+
+## Dashboard glance: visitors / journey posts / rock requests (0.20.13)
+
+- Per the user, the Today and Yesterday counts are now **visitors · journey posts · rock requests** (visits and page views dropped).
+- **Server:** `/api/admin/activity/glance` returns `visitors`, `journey_posts`, `rock_requests` (today) and the same three under `yesterday`, plus `new_errors`. Visitors keep the same filters (no admins, no internal).
+- **Decisions (not asked, noted here):**
+  - A journey post counts on the day its `journey` row was created, whether or not it's shown yet. A post still processing, or one that failed, is still a submission.
+  - Deleted rock requests don't count.
+- **Client:** `TodayGlance` labels say "1 journey post" / "2 journey posts" etc.
+- **Test:** `activity-admin.test.mjs` adds a yesterday visitor, journey and request (plus a deleted request) and checks the yesterday counts (20 pass with `tracking-review-fixes`). Not run: regression suite, browser check.
+- **VERSION:** `0.20.12` → `0.20.13`.
+
+## Dashboard glance: errors per day (0.20.14)
+
+- Per the user, Today and Yesterday also show **errors**: `/api/admin/activity/glance` returns `errors` and `yesterday.errors`.
+- **Decision (not asked, noted here):** it counts error occurrences (browser + server, through `occurrencesSql`), with admins and internal traffic left out, which is what Site Health shows by default. It's every occurrence, not distinct error kinds, and Known/Fixed ones count too. The number is red when above 0. The separate "N new errors in Site Health" alert is unchanged.
+- **Test:** `activity-admin.test.mjs` adds a yesterday server error (counts) and an internal one (doesn't). 36 pass with `tracking-review-fixes` and `error-tracking`. Lint clean. Not run: regression suite, browser check.
+- **VERSION:** `0.20.13` → `0.20.14`.
+
+## Dashboard glance: table layout (0.20.15)
+
+- Per the user, to look better on a phone: `TodayGlance` is now a small table instead of one wrapping line. Rows **Today** / **Yesterday**, columns **Visitors · Journey posts · Rock requests · Errors** (fixed layout, so the columns line up and fit at phone width; headers wrap to two lines there). Errors are red when above 0.
+- Under the table: the "N new errors in Site Health" note (left, only when there are any) and "See all activity →" (right).
+- No server change. Lint clean. Not run: regression suite, browser check.
+- **VERSION:** `0.20.14` → `0.20.15`.

@@ -8,7 +8,7 @@ const db = require('../db/pool');
 const requireAdminAuth = require('../middleware/requireAdminAuth');
 const { activityFilters, EVENTS, dayOf, metaNum, metaBool } = require('../utils/activityFilters');
 const { addDays, dayIn } = require('../utils/statsRange');
-const { NEW_ERRORS_SQL } = require('../utils/errors/occurrences');
+const { NEW_ERRORS_SQL, occurrencesSql } = require('../utils/errors/occurrences');
 
 const router = express.Router();
 router.use(requireAdminAuth);
@@ -485,8 +485,13 @@ router.get(
 );
 
 // -------------------------------------------------------------------- glance
-// The Dashboard's "Today" row: today (in the viewer's timezone) so far,
-// admins and internal traffic left out, plus error kinds still marked New.
+// The Dashboard's "Today" row: today (in the viewer's timezone) so far and
+// all of yesterday -- visitors (admins and internal traffic left out),
+// journey posts submitted (any upload, shown yet or not), rock requests
+// (not deleted) and errors (occurrences, browser + server, admins and
+// internal left out, as Site Health shows by default) -- plus error kinds
+// still marked New. Today's counts are
+// top-level; yesterday's are under `yesterday`.
 router.get('/glance', async (req, res) => {
   try {
     const tz = String(req.query.tz || 'UTC');
@@ -497,18 +502,32 @@ router.get('/glance', async (req, res) => {
       return res.status(400).json({ error: 'Invalid timezone' });
     }
     const { rows } = await db.query(
-      `WITH ev AS (
-         SELECT e.* FROM site_event e JOIN visit v ON v.id = e.visit_id
-          WHERE e.created_at >= ($1::date::timestamp AT TIME ZONE $2)
-            AND NOT e.is_admin AND NOT v.is_internal)
-       SELECT COUNT(DISTINCT device_id)::int AS visitors,
-              COUNT(DISTINCT visit_id)::int AS visits,
-              (COUNT(*) FILTER (WHERE type = 'page_view'))::int AS page_views,
-              (${NEW_ERRORS_SQL}) AS new_errors
-         FROM ev`,
-      [today, tz]
+      `WITH b AS (SELECT $1::date::timestamp AT TIME ZONE $3 AS today, $2::date::timestamp AT TIME ZONE $3 AS yesterday),
+       ev AS (
+         SELECT e.device_id, e.created_at >= b.today AS is_today
+           FROM site_event e JOIN visit v ON v.id = e.visit_id, b
+          WHERE e.created_at >= b.yesterday
+            AND NOT e.is_admin AND NOT v.is_internal),
+       posts AS (SELECT j.create_dt >= b.today AS is_today FROM journey j, b WHERE j.create_dt >= b.yesterday),
+       requests AS (
+         SELECT r.create_dt >= b.today AS is_today FROM rock_requests r, b
+          WHERE r.create_dt >= b.yesterday AND NOT r.deleted),
+       errs AS (
+         SELECT o.created_at >= b.today AS is_today
+           FROM (${occurrencesSql({ start: '($2::date::timestamp AT TIME ZONE $3)', admins: 'FALSE', internal: 'FALSE' })}) o, b)
+       SELECT (SELECT COUNT(DISTINCT device_id) FILTER (WHERE is_today) FROM ev)::int AS visitors,
+              (SELECT COUNT(*) FILTER (WHERE is_today) FROM posts)::int AS journey_posts,
+              (SELECT COUNT(*) FILTER (WHERE is_today) FROM requests)::int AS rock_requests,
+              (SELECT COUNT(*) FILTER (WHERE is_today) FROM errs)::int AS errors,
+              (SELECT COUNT(DISTINCT device_id) FILTER (WHERE NOT is_today) FROM ev)::int AS y_visitors,
+              (SELECT COUNT(*) FILTER (WHERE NOT is_today) FROM posts)::int AS y_journey_posts,
+              (SELECT COUNT(*) FILTER (WHERE NOT is_today) FROM requests)::int AS y_rock_requests,
+              (SELECT COUNT(*) FILTER (WHERE NOT is_today) FROM errs)::int AS y_errors,
+              (${NEW_ERRORS_SQL}) AS new_errors`,
+      [today, addDays(today, -1), tz]
     );
-    res.json(rows[0]);
+    const { y_visitors: visitors, y_journey_posts: posts, y_rock_requests: requests, y_errors: errors, ...todayRow } = rows[0];
+    res.json({ ...todayRow, yesterday: { visitors, journey_posts: posts, rock_requests: requests, errors } });
   } catch (err) {
     console.error('Activity glance failed:', err);
     res.status(500).json({ error: 'Could not load today' });

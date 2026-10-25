@@ -32,3 +32,9 @@ Make the Request A Rock dialog editable from Page Details, in a new **Dialogs** 
 - The note is plain text, shown in muted text after the label (it's part of the label's accessible name).
 - The 100-rock ceiling stays: an admin limit can only lower it.
 - The message is hidden until it has loaded, so the built-in wording never flashes before the edited one.
+
+## # Rocks defaults to 1 (0.20.11)
+
+- Per the user, the Request A Rock dialog's **# Rocks** field starts at 1 instead of blank (`ContactReqestRocks.jsx`). The visitor can still change it, and the 1-to-limit check is unchanged; clearing it still shows "Number of rocks is required."
+- Lint clean. Not run: regression suite, browser check.
+- **VERSION:** `0.20.10` → `0.20.11`.

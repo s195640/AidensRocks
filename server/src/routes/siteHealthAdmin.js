@@ -15,6 +15,7 @@ const { activityFilters, metaNum } = require('../utils/activityFilters');
 const resolveStack = require('../utils/errors/resolveStack');
 const { occurrencesSql } = require('../utils/errors/occurrences');
 const { CLIENT_ERROR_TYPES } = require('../utils/errors/fingerprint');
+const { errorCategory } = require('../utils/errors/errorCategory');
 
 const router = express.Router();
 router.use(requireAdminAuth);
@@ -48,7 +49,7 @@ router.get('/errors', async (req, res) => {
         LIMIT 200`,
       params
     );
-    res.json(rows);
+    res.json(rows.map((g) => ({ ...g, category: errorCategory(g) })));
   } catch (err) {
     console.error('Site health: error groups failed:', err);
     res.status(500).json({ error: 'Could not load errors' });
@@ -118,7 +119,7 @@ router.get('/errors/:fingerprint', async (req, res) => {
         };
       })
     );
-    res.json({ group, occurrences });
+    res.json({ group: { ...group, category: errorCategory(group) }, occurrences });
   } catch (err) {
     console.error('Site health: error detail failed:', err);
     res.status(500).json({ error: 'Could not load this error' });
