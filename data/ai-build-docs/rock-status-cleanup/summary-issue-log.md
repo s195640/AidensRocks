@@ -45,3 +45,10 @@ Feature-scoped log, separate from other features' logs under `data/ai-build-docs
 - **Rock 904 itself** was renumbered before this fix, so it needs its image enabled once (edit dialog → Enable). Its followers were not notified.
 - **Test:** `admin-crud.test.mjs` adds a rock-0 journey with one processed and one failed image, renumbered to 104: the processed one shows, the failed one doesn't, and it's in `/api/rock-posts/104`. Full API suite 508 pass, lint clean. Not run: browser suite.
 - **VERSION:** `0.20.17` → `0.20.18`.
+
+## Journey table: no catalog picture for rock 0 (0.20.19)
+
+- Per the user: the Journey admin table requested `/media/catalog/0/a_sm.webp` for rock-0 ("number unknown") journeys (535 Hershey, 696 McHenry in the prod copy), a 404 in the console on every load. It was hidden by `onError`, but looked like 904's renumber was still pointing at 0. `JourneyAdminTable` now renders no picture for a rock number that isn't > 0.
+- Also confirmed in the prod copy: journey 810 is `rock_number = 904` with its files under `rocks/904/`; its image (rpi_key 1987) still needs Enable.
+- Lint clean. Not run: regression suite, browser check.
+- **VERSION:** `0.20.18` → `0.20.19`.

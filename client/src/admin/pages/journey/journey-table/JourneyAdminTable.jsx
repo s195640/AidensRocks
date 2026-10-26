@@ -108,6 +108,8 @@ const JourneyAdminTable = ({
   const renderCell = (post, colKey) => {
     switch (colKey) {
       case "image":
+        // Rock 0 ("number unknown") has no catalog picture to show.
+        if (!(Number(post.rock_number) > 0)) return null;
         return (
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
             <img
